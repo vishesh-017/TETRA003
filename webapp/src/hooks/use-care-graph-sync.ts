@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { subscribeStore } from "@/data/store";
@@ -9,57 +9,70 @@ import { getSupabaseClient } from "@/lib/supabase";
 /**
  * Keep every role dashboard in sync with the shared local store and
  * optional Supabase Realtime tables that drive care workflows.
+ * Debounced so rapid store writes cannot freeze the UI.
  */
 export function useCareGraphSync() {
   const qc = useQueryClient();
   const { user } = useAuth();
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    return subscribeStore(() => {
-      void invalidateCareGraph(qc);
-    });
+    const schedule = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        void invalidateCareGraph(qc);
+      }, 80);
+    };
+
+    const unsub = subscribeStore(schedule);
+    return () => {
+      unsub();
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, [qc]);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
     if (!supabase || !user) return;
 
+    const bump = () => void invalidateCareGraph(qc);
+
     const channel = supabase
       .channel(`care-graph-${user.id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "alerts" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "recovery_scores" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "checkins" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "medicine_events" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "investigations" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments" },
-        () => void invalidateCareGraph(qc),
+        bump,
       )
       .subscribe();
 

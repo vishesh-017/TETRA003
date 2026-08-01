@@ -71,8 +71,12 @@ export interface DemoHospital {
   pmjay_empanelled: boolean;
   is_emergency: boolean;
   phone?: string;
-  /** Demo services list for executive / map detail panels */
+  /** Clinical services offered */
   services?: string[];
+  /** Departments where PM-JAY cashless packages apply */
+  pmjay_departments?: string[];
+  /** Short area label for cards */
+  area?: string;
 }
 
 export type OfflineSyncState = "pending" | "syncing" | "synced" | "failed";

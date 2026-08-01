@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { AppLocaleProvider } from "@/i18n/locale-context";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -22,19 +23,21 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          {children}
-          <Toaster
-            richColors
-            position="top-right"
-            closeButton
-            toastOptions={{
-              className:
-                "!rounded-2xl !border !border-border/80 !shadow-lift !backdrop-blur-md",
-              duration: 3200,
-            }}
-          />
-        </AuthProvider>
+        <AppLocaleProvider>
+          <AuthProvider>
+            {children}
+            <Toaster
+              richColors
+              position="top-right"
+              closeButton
+              toastOptions={{
+                className:
+                  "!rounded-2xl !border !border-border/80 !shadow-lift !backdrop-blur-md",
+                duration: 3200,
+              }}
+            />
+          </AuthProvider>
+        </AppLocaleProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

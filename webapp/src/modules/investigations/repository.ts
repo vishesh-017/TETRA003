@@ -143,6 +143,14 @@ function notifyCaregivers(patientId: string, title: string, body: string) {
 
 export const investigationRepository = {
   syncOverdueStatuses() {
+    const store = getStore();
+    const needsUpdate = store.investigations.some(
+      (row) =>
+        (row.status === "pending" || row.status === "scheduled") &&
+        daysUntil(row.due_date) < 0,
+    );
+    if (!needsUpdate) return;
+
     const now = new Date().toISOString();
     updateStore((draft) => {
       for (const row of draft.investigations) {

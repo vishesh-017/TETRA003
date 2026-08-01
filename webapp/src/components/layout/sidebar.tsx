@@ -24,10 +24,16 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { HealNexusLogo, HealNexusMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useShell } from "@/contexts/shell-context";
+import {
+  GROUP_LABEL_KEYS,
+  NAV_LABEL_KEYS,
+} from "@/i18n/dictionaries";
+import { useAppLocale } from "@/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
@@ -160,6 +166,7 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
 export function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useAppLocale();
   const { sidebarCollapsed, mobileOpen, setMobileOpen, toggleCollapsed } =
     useShell();
   const role = user?.role ?? "patient";
@@ -170,6 +177,15 @@ export function Sidebar() {
     setMobileOpen(false);
     await logout();
     navigate("/login", { replace: true });
+  };
+
+  const labelFor = (label: string) => {
+    const key = NAV_LABEL_KEYS[label];
+    return key ? t(key) : label;
+  };
+  const groupFor = (label: string) => {
+    const key = GROUP_LABEL_KEYS[label];
+    return key ? t(key) : label;
   };
 
   return (
@@ -208,15 +224,32 @@ export function Sidebar() {
           <div className={cn("hidden", collapsed && "md:block")}>
             <HealNexusMark size={32} />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close navigation"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:inline-flex"
+              onClick={toggleCollapsed}
+              aria-label={t("toggle_sidebar")}
+              title={t("toggle_sidebar")}
+            >
+              <ChevronsLeft
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  collapsed && "rotate-180",
+                )}
+              />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close navigation"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-3">
@@ -228,7 +261,7 @@ export function Sidebar() {
                   collapsed && "md:sr-only",
                 )}
               >
-                {group.label}
+                {groupFor(group.label)}
               </p>
               <div className="space-y-1">
                 {group.items.map((item) => (
@@ -236,7 +269,7 @@ export function Sidebar() {
                     key={item.href}
                     to={item.href}
                     end={item.href.split("/").length <= 2}
-                    title={item.label}
+                    title={labelFor(item.label)}
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
                       cn(
@@ -250,7 +283,7 @@ export function Sidebar() {
                   >
                     <item.icon className="h-4 w-4 shrink-0" aria-hidden />
                     <span className={cn(collapsed && "md:sr-only")}>
-                      {item.label}
+                      {labelFor(item.label)}
                     </span>
                   </NavLink>
                 ))}
@@ -266,39 +299,27 @@ export function Sidebar() {
               collapsed && "md:hidden",
             )}
           >
-            AI assists. Clinicians decide.
+            {t("ai_disclaimer")}
           </p>
-          <div className="flex gap-2">
+          <div className={cn(collapsed && "md:hidden")}>
+            <LanguageSwitcher />
+          </div>
+          {user ? (
             <Button
               variant="outline"
-              size="icon"
-              className="hidden md:inline-flex"
-              onClick={toggleCollapsed}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              title="Toggle sidebar ([)"
+              className={cn(
+                "w-full justify-start gap-2 text-[#E11D48] hover:bg-rose-50 hover:text-[#E11D48]",
+                collapsed && "md:justify-center md:px-0",
+              )}
+              onClick={() => void handleLogout()}
+              aria-label={t("sign_out")}
             >
-              <ChevronsLeft
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  collapsed && "rotate-180",
-                )}
-              />
+              <LogOut className="h-4 w-4" />
+              <span className={cn(collapsed && "md:sr-only")}>
+                {t("sign_out")}
+              </span>
             </Button>
-            {user ? (
-              <Button
-                variant="outline"
-                className={cn(
-                  "flex-1 justify-start gap-2",
-                  collapsed && "md:flex-none md:justify-center md:px-0",
-                )}
-                onClick={() => void handleLogout()}
-                aria-label="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className={cn(collapsed && "md:sr-only")}>Logout</span>
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </aside>
     </>

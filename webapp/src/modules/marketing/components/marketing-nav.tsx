@@ -3,8 +3,10 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { HealNexusMark } from "@/components/brand/logo";
 import { useAuth } from "@/contexts/auth-context";
+import { useAppLocale } from "@/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { roleHomePath } from "@/services/auth.service";
 
@@ -21,6 +23,7 @@ export function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { isAuthenticated, user } = useAuth();
+  const { t } = useAppLocale();
   const location = useLocation();
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export function MarketingNav() {
   const primaryHref =
     isAuthenticated && user ? roleHomePath(user.role) : "/signup";
   const primaryLabel =
-    isAuthenticated && user ? "Open dashboard" : "Get Started";
+    isAuthenticated && user ? "Open dashboard" : t("get_started");
 
   return (
     <header
@@ -75,12 +78,13 @@ export function MarketingNav() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <LanguageSwitcher compact />
           {isAuthenticated && user ? null : (
             <Link
               to="/login"
               className="rounded-xl px-3.5 py-2 text-[13px] font-semibold text-[#475569] transition hover:text-[#0F172A]"
             >
-              Login
+              {t("login")}
             </Link>
           )}
           <Link

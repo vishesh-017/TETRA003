@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { BentoFeatures } from "@/modules/marketing/landing/bento-features";
 import { DoctorPreview } from "@/modules/marketing/landing/doctor-preview";
 import { FinalCta } from "@/modules/marketing/landing/final-cta";
-import { LandingHero } from "@/modules/marketing/landing/hero-section";
+import { ImmersiveHero } from "@/modules/marketing/landing/immersive-hero";
 import { JourneyTimeline } from "@/modules/marketing/landing/journey-timeline";
 import { PatientPreview } from "@/modules/marketing/landing/patient-preview";
 import { StatsSection } from "@/modules/marketing/landing/stats-section";
@@ -25,8 +25,8 @@ export function LandingPage() {
   }, [location.hash]);
 
   return (
-    <div className="relative overflow-x-clip">
-      <LandingHero />
+    <div className="relative overflow-x-clip bg-[#FAFCFF]">
+      <ImmersiveHero />
       <BentoFeatures />
       <JourneyTimeline />
       <DoctorPreview />

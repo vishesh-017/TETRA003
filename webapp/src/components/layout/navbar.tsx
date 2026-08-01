@@ -1,11 +1,14 @@
-import { Bell, LogOut, Menu, Moon, Sun } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, Moon, PanelLeft, Sun } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { HealNexusLogo } from "@/components/brand/logo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useShell } from "@/contexts/shell-context";
 import { useTheme } from "@/contexts/theme-context";
+import { useAppLocale } from "@/i18n/locale-context";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -15,8 +18,11 @@ interface NavbarProps {
 export function Navbar({ title }: NavbarProps) {
   const { user, logout, isDemoMode } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { setMobileOpen } = useShell();
+  const { setMobileOpen, toggleCollapsed } = useShell();
+  const { t } = useAppLocale();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const notificationsHref =
     user?.role === "patient"
@@ -27,15 +33,41 @@ export function Navbar({ title }: NavbarProps) {
           ? "/caregiver/alerts"
           : "/doctor";
 
+  const roleLabel =
+    user?.role === "patient"
+      ? t("role_patient")
+      : user?.role === "doctor"
+        ? t("role_doctor")
+        : user?.role === "caregiver"
+          ? t("role_caregiver")
+          : t("role_health_worker");
+
   const handleLogout = async () => {
+    setMenuOpen(false);
     await logout();
     navigate("/login", { replace: true });
   };
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-card/75 backdrop-blur-xl">
       <div className="flex h-16 items-center justify-between gap-3 px-4 md:px-6">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -45,6 +77,16 @@ export function Navbar({ title }: NavbarProps) {
           >
             <Menu className="h-5 w-5" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:inline-flex"
+            onClick={toggleCollapsed}
+            aria-label={t("toggle_sidebar")}
+            title={t("toggle_sidebar")}
+          >
+            <PanelLeft className="h-5 w-5" />
+          </Button>
           <div className="md:hidden">
             <HealNexusLogo compact />
           </div>
@@ -52,23 +94,18 @@ export function Navbar({ title }: NavbarProps) {
             <p className="hidden truncate text-sm font-semibold text-foreground md:block">
               {title}
             </p>
-          ) : (
-            <p className="hidden text-sm text-muted-foreground md:block">
-              Press{" "}
-              <kbd className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px]">
-                [
-              </kbd>{" "}
-              to toggle sidebar
-            </p>
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
+          <LanguageSwitcher className="hidden sm:inline-flex" compact />
+
           {isDemoMode ? (
-            <span className="hidden rounded-full border border-success/30 bg-success/15 px-2.5 py-1 text-[11px] font-semibold text-success-foreground sm:inline">
-              Live
+            <span className="inline-flex items-center rounded-full bg-[#22C55E] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
+              {t("live")}
             </span>
           ) : null}
+
           <Button
             variant="ghost"
             size="icon"
@@ -83,6 +120,7 @@ export function Navbar({ title }: NavbarProps) {
               <Sun className="h-4 w-4" />
             )}
           </Button>
+
           <Link
             to={notificationsHref}
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
@@ -90,32 +128,63 @@ export function Navbar({ title }: NavbarProps) {
           >
             <Bell className="h-4 w-4" />
           </Link>
-          <div
-            className={cn(
-              "hidden items-center gap-3 rounded-2xl border border-border/80 bg-background/80 px-3 py-1.5 sm:flex",
-            )}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
-              {(user?.full_name || "?").slice(0, 1).toUpperCase()}
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold leading-tight">
-                {user?.full_name}
-              </p>
-              <p className="text-[11px] capitalize text-muted-foreground">
-                {user?.role?.replace("_", " ")}
-              </p>
-            </div>
+
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex items-center gap-2 rounded-2xl border border-border/80 bg-background/90 py-1 pl-1 pr-2 transition hover:border-primary/30 sm:pr-3"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0F766E] text-xs font-bold text-white">
+                {(user?.full_name || "?")
+                  .split(" ")
+                  .map((p) => p[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+              <span className="hidden text-left sm:block">
+                <span className="block max-w-[120px] truncate text-sm font-semibold leading-tight">
+                  {user?.full_name}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {roleLabel}
+                </span>
+              </span>
+              <ChevronDown
+                className={cn(
+                  "hidden h-3.5 w-3.5 text-muted-foreground transition sm:block",
+                  menuOpen && "rotate-180",
+                )}
+              />
+            </button>
+
+            {menuOpen ? (
+              <div
+                role="menu"
+                className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 overflow-hidden rounded-2xl border border-border/80 bg-white p-2 shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+              >
+                <p className="px-2.5 py-1.5 text-xs font-bold text-[#0F172A]">
+                  {t("account")}
+                </p>
+                <div className="mx-1 mb-1 border-t border-border/70" />
+                <div className="px-1 py-1 sm:hidden">
+                  <LanguageSwitcher />
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => void handleLogout()}
+                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-semibold text-[#E11D48] transition hover:bg-rose-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t("sign_out")}
+                </button>
+              </div>
+            ) : null}
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="sm:hidden"
-            aria-label="Logout"
-            onClick={() => void handleLogout()}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </header>

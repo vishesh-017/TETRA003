@@ -240,10 +240,11 @@
 
 /* ─── Marketing shell (landing) — Space Grotesk · funded SaaS look ─── */
 .marketing-shell {
+  color-scheme: light;
   --hn-primary: #2563eb;
   --hn-secondary: #14b8a6;
   --hn-accent: #22c55e;
-  --hn-bg: #f8fafc;
+  --hn-bg: #fafcff;
   --hn-card: #ffffff;
   --hn-text: #0f172a;
   --hn-muted: #64748b;
