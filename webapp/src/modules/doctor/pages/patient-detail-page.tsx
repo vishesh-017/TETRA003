@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import {
@@ -7,6 +7,7 @@ import {
   InsightsPanel,
   RecoveryCard,
   RiskCard,
+  TrendCard,
 } from "@/components/health-engine";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
@@ -27,6 +28,8 @@ import { buildObservationsForPatient } from "@/modules/prediction/adapters";
 import { CarePlanReview } from "@/modules/doctor/components/care-plan-review";
 import { DischargeForm } from "@/modules/doctor/components/discharge-form";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
+import { RecoveryTimeline } from "@/modules/doctor/intelligence/components/recovery-timeline";
+import { useAiPatientSummary } from "@/modules/doctor/intelligence/hooks";
 import {
   useDoctorAppointments,
   useDoctorMutations,
@@ -44,15 +47,21 @@ const TABS = [
   { id: "medicines", label: "Medicines" },
   { id: "appointments", label: "Appointments" },
   { id: "checkins", label: "Check-ins" },
+  { id: "timeline", label: "Recovery Timeline" },
+  { id: "trends", label: "Trend Graphs" },
   { id: "ai", label: "AI Summary" },
   { id: "risk", label: "Risk Status" },
   { id: "passport", label: "Passport" },
+  { id: "caregiver", label: "Caregiver" },
+  { id: "notes", label: "Doctor Notes" },
   { id: "discharge", label: "Discharge & Care Companion" },
 ];
 
 export function PatientDetailPage() {
   const { patientId } = useParams();
-  const [tab, setTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") || "overview");
+  const aiIntel = useAiPatientSummary(patientId);
   const patient = useDoctorPatient(patientId);
   const discharges = usePatientDischarges(patientId);
   const carePlans = usePatientCarePlans(patientId);
@@ -60,6 +69,16 @@ export function PatientDetailPage() {
   const medicines = usePatientMedicines(patientId);
   const appointments = useDoctorAppointments({ patient_id: patientId });
   const mutations = useDoctorMutations();
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("tab");
+    if (fromUrl && fromUrl !== tab) setTab(fromUrl);
+  }, [searchParams, tab]);
+
+  const changeTab = (next: string) => {
+    setTab(next);
+    setSearchParams({ tab: next }, { replace: true });
+  };
 
   const latestDraft = useMemo(
     () => (discharges.data || []).find((item) => item.status === "draft"),
@@ -75,19 +94,6 @@ export function PatientDetailPage() {
       (carePlans.data || [])[0],
     [carePlans.data],
   );
-
-  if (patient.isLoading) return <LoadingScreen fullScreen={false} />;
-  if (patient.isError || !patient.data) {
-    return (
-      <ErrorState
-        title="Patient not found"
-        description={patient.error?.message || "Unable to load patient"}
-        onRetry={() => void patient.refetch()}
-      />
-    );
-  }
-
-  const data = patient.data;
 
   const health = useMemo(
     () =>
@@ -105,6 +111,19 @@ export function PatientDetailPage() {
     () => (patientId ? identityRepository.getTimeline(patientId) : []),
     [patientId, checkins.dataUpdatedAt, discharges.dataUpdatedAt],
   );
+
+  if (patient.isLoading) return <LoadingScreen fullScreen={false} />;
+  if (patient.isError || !patient.data) {
+    return (
+      <ErrorState
+        title="Patient not found"
+        description={patient.error?.message || "Unable to load patient"}
+        onRetry={() => void patient.refetch()}
+      />
+    );
+  }
+
+  const data = patient.data;
 
   const saveDischarge = (values: DischargeFormSchema) => {
     if (!patientId) return;
@@ -136,7 +155,7 @@ export function PatientDetailPage() {
         </div>
       </div>
 
-      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      <Tabs tabs={TABS} value={tab} onChange={changeTab} />
 
       {tab === "overview" ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -268,25 +287,144 @@ export function PatientDetailPage() {
         </Card>
       ) : null}
 
-      {tab === "ai" ? (
+      {tab === "timeline" && patientId ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>AI Patient Summary</CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={mutations.refreshAiSummary.isPending}
-              onClick={() => patientId && mutations.refreshAiSummary.mutate(patientId)}
-            >
-              Refresh summary
-            </Button>
+          <CardHeader>
+            <CardTitle>Recovery Timeline</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <AiDisclaimer />
-            <p className="rounded-xl bg-muted/60 p-4 text-sm leading-relaxed">
-              {data.ai_summary ||
-                "No summary yet. Finalize a discharge or refresh to generate an informational Care Companion summary."}
-            </p>
+          <CardContent>
+            <RecoveryTimeline patientId={patientId} />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {tab === "trends" && health ? (
+        <TrendCard trends={health.trends} />
+      ) : null}
+
+      {tab === "ai" ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>AI Patient Summary</CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={mutations.refreshAiSummary.isPending}
+                onClick={() =>
+                  patientId && mutations.refreshAiSummary.mutate(patientId)
+                }
+              >
+                Refresh summary
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <AiDisclaimer />
+              {aiIntel.data ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InfoCard
+                    title="Current condition"
+                    value={aiIntel.data.current_condition}
+                  />
+                  <InfoCard
+                    title="Recovery trend"
+                    value={aiIntel.data.recovery_trend}
+                  />
+                  <InfoCard
+                    title="Medicine adherence"
+                    value={aiIntel.data.medicine_adherence}
+                  />
+                  <InfoCard
+                    title="Recommended attention"
+                    value={aiIntel.data.attention_level.replaceAll("_", " ")}
+                  />
+                  <div className="rounded-xl border border-border p-4 sm:col-span-2">
+                    <p className="text-xs text-muted-foreground">
+                      Latest symptoms
+                    </p>
+                    <p className="mt-1 text-sm font-medium">
+                      {aiIntel.data.latest_symptoms.length
+                        ? aiIntel.data.latest_symptoms.join(", ")
+                        : "None reported"}
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      {aiIntel.data.narrative}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {aiIntel.data.disclaimer}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              <p className="rounded-xl bg-muted/60 p-4 text-sm leading-relaxed">
+                {data.ai_summary ||
+                  "No stored Care Companion summary yet. Finalize a discharge or refresh."}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      {tab === "caregiver" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Caregiver information</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <InfoCard
+              title="Name"
+              value={data.caregiver_info?.name || "—"}
+            />
+            <InfoCard
+              title="Phone"
+              value={data.caregiver_info?.phone || "—"}
+            />
+            <InfoCard
+              title="Relationship"
+              value={data.caregiver_info?.relationship || "—"}
+            />
+            <InfoCard
+              title="Emergency contact"
+              value={
+                data.emergency_contact
+                  ? `${data.emergency_contact.name || ""} · ${data.emergency_contact.phone || ""}`
+                  : "—"
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {tab === "notes" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Doctor notes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {(discharges.data || []).map((d) => (
+              <div key={d.id} className="rounded-xl border border-border p-3">
+                <p className="font-medium capitalize">{d.status} discharge</p>
+                <p className="mt-1 text-muted-foreground">
+                  {d.doctor_notes || "No clinician notes on this discharge."}
+                </p>
+                {d.special_instructions ? (
+                  <p className="mt-2">{d.special_instructions}</p>
+                ) : null}
+              </div>
+            ))}
+            {(carePlans.data || []).map((c) => (
+              <div key={c.id} className="rounded-xl border border-border p-3">
+                <p className="font-medium">Care plan review notes</p>
+                <p className="mt-1 text-muted-foreground">
+                  {c.doctor_review_notes ||
+                    c.caregiver_instructions ||
+                    "No review notes yet."}
+                </p>
+              </div>
+            ))}
+            {!discharges.data?.length && !carePlans.data?.length ? (
+              <p className="text-muted-foreground">No doctor notes yet.</p>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

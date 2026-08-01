@@ -36,11 +36,11 @@ const NAV_BY_ROLE: Record<
   Array<{ label: string; href: string; icon: typeof LayoutDashboard }>
 > = {
   doctor: [
-    { label: "Dashboard", href: "/doctor", icon: LayoutDashboard },
+    { label: "Intelligence", href: "/doctor", icon: LayoutDashboard },
     { label: "Patients", href: "/doctor/patients", icon: Users },
     { label: "High Risk", href: "/doctor/high-risk", icon: Activity },
     { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
-    { label: "Analytics", href: "/analytics", icon: ChartColumn },
+    { label: "Analytics", href: "/doctor/analytics", icon: ChartColumn },
     { label: "Benefits", href: "/government/benefits", icon: Sparkles },
     { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
     { label: "Hospitals", href: "/maps", icon: MapPinned },

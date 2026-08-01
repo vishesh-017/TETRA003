@@ -200,6 +200,20 @@ export function AppointmentsPage() {
                     <>
                       <Button
                         size="sm"
+                        onClick={() =>
+                          mutations.updateAppointment.mutate({
+                            id: appt.id,
+                            body: {
+                              status: "scheduled",
+                              notes: `${appt.notes || ""} [Approved by clinician]`.trim(),
+                            },
+                          })
+                        }
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => {
                           setEditing(appt);
@@ -224,7 +238,7 @@ export function AppointmentsPage() {
                           })
                         }
                       >
-                        Mark completed
+                        Complete
                       </Button>
                       <Button
                         size="sm"

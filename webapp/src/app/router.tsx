@@ -4,6 +4,7 @@ import { ProtectedRoute } from "@/components/routing/protected-route";
 import { AppLayout } from "@/layouts/app-layout";
 import { AuthLayout } from "@/layouts/auth-layout";
 import { AppointmentsPage } from "@/modules/doctor/pages/appointments-page";
+import { DoctorAnalyticsPage } from "@/modules/doctor/pages/analytics-page";
 import { DashboardPage } from "@/modules/doctor/pages/dashboard-page";
 import { HighRiskPage } from "@/modules/doctor/pages/high-risk-page";
 import { PatientDetailPage } from "@/modules/doctor/pages/patient-detail-page";
@@ -34,6 +35,7 @@ import { LifestyleSimulatorPage } from "@/modules/patient/pages/lifestyle-simula
 import { RecoveryPage } from "@/modules/patient/pages/recovery-page";
 import { SettingsPage } from "@/modules/patient/pages/settings-page";
 import { LoginPage } from "@/pages/auth/login-page";
+import { AnalyticsRedirect } from "@/pages/analytics-redirect";
 import { HomeRedirect } from "@/pages/home-redirect";
 import { ModulePlaceholder } from "@/pages/module-placeholder";
 import { NotFoundPage } from "@/pages/not-found-page";
@@ -54,6 +56,7 @@ export function AppRouter() {
         <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
           <Route element={<AppLayout />}>
             <Route path="/doctor" element={<DashboardPage />} />
+            <Route path="/doctor/analytics" element={<DoctorAnalyticsPage />} />
             <Route path="/doctor/patients" element={<PatientsPage />} />
             <Route path="/doctor/patients/:patientId" element={<PatientDetailPage />} />
             <Route path="/doctor/high-risk" element={<HighRiskPage />} />
@@ -130,16 +133,7 @@ export function AppRouter() {
           }
         >
           <Route element={<AppLayout />}>
-            <Route
-              path="/analytics"
-              element={
-                <ModulePlaceholder
-                  title="Analytics"
-                  description="Exactly three charts: Blood Sugar Trend, Blood Pressure Trend, and Recovery Score / Readmission Trend."
-                  showAiDisclaimer
-                />
-              }
-            />
+            <Route path="/analytics" element={<AnalyticsRedirect />} />
             <Route
               path="/documents"
               element={<Navigate to="/government/abha" replace />}
