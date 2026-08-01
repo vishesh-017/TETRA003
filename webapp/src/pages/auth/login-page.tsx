@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ export function LoginPage() {
     setFormError(null);
     try {
       await login(values);
-      navigate("/");
+      navigate("/app", { replace: true });
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to sign in",
@@ -66,11 +66,11 @@ export function LoginPage() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="font-display text-2xl">Sign in</CardTitle>
+        <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
         <CardDescription>
-          Access your HealNexus workspace with Supabase Auth
+          Sign in to your HealNexus workspace
           {!env.isSupabaseConfigured
-            ? ", or explore the scaffold with demo roles"
+            ? " — or explore instantly with a demo role"
             : ""}
           .
         </CardDescription>
@@ -102,7 +102,9 @@ export function LoginPage() {
               {...register("password")}
             />
             {errors.password ? (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.password.message}
+              </p>
             ) : null}
           </div>
 
@@ -140,6 +142,17 @@ export function LoginPage() {
             ))}
           </div>
         </div>
+
+        <p className="text-center text-sm text-muted-foreground">
+          New here?{" "}
+          <Link to="/signup" className="font-semibold text-primary hover:underline">
+            Get Started
+          </Link>
+          {" · "}
+          <Link to="/" className="font-semibold text-primary hover:underline">
+            Home
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

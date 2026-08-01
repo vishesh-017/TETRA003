@@ -1,8 +1,8 @@
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 import { ErrorState } from "@/components/feedback/error-state";
 import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { AiWeeklySummaryPanel } from "@/modules/analytics/components/ai-weekly-summary";
 import { AnalyticsFiltersBar } from "@/modules/analytics/components/analytics-filters";
 import { AnalyticsSkeleton } from "@/modules/analytics/components/analytics-skeleton";
@@ -40,39 +40,27 @@ export function ExecutiveAnalyticsPage() {
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6 pb-12">
-      <motion.header
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-wrap items-end justify-between gap-3"
-      >
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Decision support
-          </p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Executive Analytics
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Insight-driven recovery intelligence — how patients are recovering,
-            where attention is needed, and whether follow-ups and adherence are
-            working. Cohort size: {data.cohort_size}.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/doctor"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Intelligence Center
-          </Link>
-          <Link
-            to="/doctor/appointments"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Follow-ups
-          </Link>
-        </div>
-      </motion.header>
+      <PageHeader
+        eyebrow="Decision support"
+        title="Executive Analytics"
+        description={`Insight-driven recovery intelligence for ${data.cohort_size} patients — attention, adherence, and follow-up effectiveness.`}
+        actions={
+          <>
+            <Link
+              to="/doctor"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Intelligence
+            </Link>
+            <Link
+              to="/doctor/appointments"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Follow-ups
+            </Link>
+          </>
+        }
+      />
 
       <KpiStrip kpis={data.kpis} />
 

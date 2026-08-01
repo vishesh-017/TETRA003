@@ -1,7 +1,9 @@
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { EmptyState } from "@/components/feedback/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
@@ -24,12 +26,16 @@ export function PriorityQueue({
 }) {
   if (!patients.length) {
     return (
-      <div className="rounded-3xl border border-dashed border-border p-10 text-center">
-        <p className="font-display text-xl font-semibold">Queue is clear</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          No patients match the current filters.
-        </p>
-      </div>
+      <EmptyState
+        icon={Sparkles}
+        title="Queue is clear"
+        description="No patients match the current filters. Adjust filters or review the full patient list."
+        action={
+          <Link to="/doctor/patients" className={cn(buttonVariants())}>
+            View all patients
+          </Link>
+        }
+      />
     );
   }
 

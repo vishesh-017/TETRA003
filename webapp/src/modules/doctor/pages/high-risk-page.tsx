@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
@@ -27,14 +30,15 @@ export function HighRiskPage() {
     );
   }
 
+  const rows = query.data || [];
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold">High Risk Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Patients sorted by Recovery Score, readmission risk, progression, and adherence gaps.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Clinical focus"
+        title="High Risk"
+        description="Patients sorted by recovery, readmission risk, progression, and adherence gaps."
+      />
 
       <AiDisclaimer />
 
@@ -53,8 +57,21 @@ export function HighRiskPage() {
         </CardContent>
       </Card>
 
+      {!rows.length ? (
+        <EmptyState
+          icon={ShieldCheck}
+          title="No high-risk patients"
+          description="Your cohort looks stable right now. Keep monitoring from the Intelligence Center."
+          action={
+            <Link to="/doctor" className={cn(buttonVariants())}>
+              Open Intelligence Center
+            </Link>
+          }
+        />
+      ) : null}
+
       <div className="grid gap-3">
-        {(query.data || []).map((row) => (
+        {rows.map((row) => (
           <Card key={row.patient_id}>
             <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
               <div>

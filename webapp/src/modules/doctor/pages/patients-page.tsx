@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { Users } from "lucide-react";
+
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PatientForm } from "@/modules/doctor/components/patient-form";
@@ -28,7 +31,9 @@ export function PatientsPage() {
 
   const rows = useMemo(() => patients.data || [], [patients.data]);
 
-  if (patients.isLoading) return <LoadingScreen fullScreen={false} />;
+  if (patients.isLoading) {
+    return <LoadingScreen fullScreen={false} variant="skeleton" />;
+  }
   if (patients.isError) {
     return (
       <ErrorState
@@ -41,22 +46,21 @@ export function PatientsPage() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-semibold">Patient Management</h1>
-          <p className="text-sm text-muted-foreground">
-            Add, edit, search, and archive discharged patients under your care.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-        >
-          Add patient
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Caseload"
+        title="Patients"
+        description="Add, search, and manage discharged patients under your care."
+        actions={
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setShowForm(true);
+            }}
+          >
+            Add patient
+          </Button>
+        }
+      />
 
       <Card>
         <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_180px]">
@@ -112,6 +116,7 @@ export function PatientsPage() {
 
       {rows.length === 0 ? (
         <EmptyState
+          icon={Users}
           title="No patients yet"
           description="Add your first discharged patient to begin continuity monitoring."
           action={<Button onClick={() => setShowForm(true)}>Add patient</Button>}

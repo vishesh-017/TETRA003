@@ -2,12 +2,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Tabs } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,12 +72,11 @@ export function AppointmentsPage() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold">Follow-up Scheduling</h1>
-        <p className="text-sm text-muted-foreground">
-          Schedule, reschedule, and cancel appointments. Track upcoming, completed, and missed visits.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Follow-ups"
+        title="Appointments"
+        description="Schedule, reschedule, approve, and complete visits — keep recovery on track."
+      />
 
       <Card>
         <CardHeader>
@@ -177,11 +178,14 @@ export function AppointmentsPage() {
 
       <div className="grid gap-3">
         {filtered.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-sm text-muted-foreground">
-              No {tab} appointments.
-            </CardContent>
-          </Card>
+          <EmptyState
+            title={
+              tab === "scheduled"
+                ? "No appointments scheduled yet"
+                : `No ${tab} appointments`
+            }
+            description="Schedule a follow-up above to keep recovery on track."
+          />
         ) : (
           filtered.map((appt) => (
             <Card key={appt.id}>

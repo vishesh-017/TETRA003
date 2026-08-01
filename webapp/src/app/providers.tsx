@@ -24,7 +24,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           {children}
-          <Toaster richColors position="top-right" />
+          <Toaster
+            richColors
+            position="top-right"
+            closeButton
+            toastOptions={{
+              className:
+                "!rounded-2xl !border !border-border/80 !shadow-lift !backdrop-blur-md",
+              duration: 3200,
+            }}
+          />
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

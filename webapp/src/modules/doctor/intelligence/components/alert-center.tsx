@@ -1,7 +1,9 @@
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
+import { BellOff } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { EmptyState } from "@/components/feedback/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import type { IntelligenceAlert } from "@/modules/doctor/intelligence/types";
@@ -76,7 +78,12 @@ export function AlertCenter({
             </motion.div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">No active alerts.</p>
+          <EmptyState
+            icon={BellOff}
+            className="border-0 bg-transparent py-8 shadow-none"
+            title="No pending alerts"
+            description="You're caught up. New escalations will appear here instantly."
+          />
         )}
       </div>
     </section>

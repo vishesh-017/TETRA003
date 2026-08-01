@@ -81,12 +81,12 @@ export function HospitalMapPanel({ hospitals }: { hospitals: HospitalMapItem[] }
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-        <div className="overflow-hidden rounded-3xl border border-border">
+        <div className="map-shell h-[380px] rounded-3xl border border-border">
           <MapContainer
             center={[AHMEDABAD_MAP_CENTER.lat, AHMEDABAD_MAP_CENTER.lng]}
             zoom={12}
             scrollWheelZoom={false}
-            className="h-[380px] w-full"
+            className="h-full w-full rounded-3xl"
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'

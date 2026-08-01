@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Source Serif 4", ui-serif, Georgia, serif;
 
   --color-background: hsl(var(--background));
@@ -39,70 +39,77 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 14px);
 }
 
 :root {
-  /* Healthcare: Blue primary, Green secondary, White surfaces */
+  /* Primary blue · Secondary green · Success emerald · Warning amber · Danger red · Neutral slate */
   --background: 210 40% 98%;
-  --foreground: 215 32% 16%;
+  --foreground: 222 47% 11%;
   --card: 0 0% 100%;
-  --card-foreground: 215 32% 16%;
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 215 32% 16%;
-  --primary: 211 82% 42%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 211 90% 42%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 152 48% 40%;
+  --secondary: 160 55% 36%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 210 30% 94%;
+  --muted: 214 32% 95%;
   --muted-foreground: 215 16% 42%;
-  --accent: 204 70% 94%;
+  --accent: 210 80% 96%;
   --accent-foreground: 211 70% 28%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 28% 88%;
-  --input: 214 28% 88%;
-  --ring: 211 82% 42%;
-  --success: 152 48% 40%;
+  --border: 214 28% 90%;
+  --input: 214 28% 90%;
+  --ring: 211 90% 42%;
+  --success: 160 70% 36%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 26 83% 14%;
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 215 32% 16%;
-  --sidebar-border: 214 28% 90%;
-  --sidebar-accent: 210 40% 96%;
-  --radius: 0.9rem;
-  --shadow-soft: 0 8px 30px rgba(15, 53, 96, 0.08);
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-border: 214 28% 92%;
+  --sidebar-accent: 210 40% 97%;
+  --radius: 1rem;
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px rgba(15, 53, 96, 0.06);
+  --shadow-lift: 0 4px 6px rgba(15, 23, 42, 0.04),
+    0 16px 40px rgba(15, 53, 96, 0.1);
+  --space-page: 1.5rem;
 }
 
 .dark {
-  --background: 222 40% 8%;
-  --foreground: 210 30% 96%;
-  --card: 222 34% 11%;
-  --card-foreground: 210 30% 96%;
-  --popover: 222 34% 11%;
-  --popover-foreground: 210 30% 96%;
+  --background: 222 47% 7%;
+  --foreground: 210 40% 98%;
+  --card: 222 40% 10%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 40% 10%;
+  --popover-foreground: 210 40% 98%;
   --primary: 211 90% 58%;
-  --primary-foreground: 222 40% 8%;
-  --secondary: 152 45% 42%;
+  --primary-foreground: 222 47% 8%;
+  --secondary: 160 50% 42%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 222 24% 16%;
+  --muted: 217 28% 14%;
   --muted-foreground: 215 16% 68%;
-  --accent: 215 30% 18%;
-  --accent-foreground: 210 30% 96%;
-  --destructive: 0 70% 48%;
+  --accent: 217 28% 16%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 70% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border: 222 20% 20%;
-  --input: 222 20% 20%;
+  --border: 217 24% 18%;
+  --input: 217 24% 18%;
   --ring: 211 90% 58%;
-  --success: 152 45% 42%;
+  --success: 160 50% 42%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 26 83% 14%;
-  --sidebar: 222 34% 10%;
-  --sidebar-foreground: 210 30% 96%;
-  --sidebar-border: 222 20% 18%;
-  --sidebar-accent: 222 24% 14%;
-  --shadow-soft: 0 10px 36px rgba(0, 0, 0, 0.35);
+  --sidebar: 222 40% 9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 217 24% 16%;
+  --sidebar-accent: 217 28% 13%;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.2), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 8px 40px rgba(0, 0, 0, 0.45);
 }
 
 @layer base {
@@ -116,14 +123,69 @@
 
   body {
     @apply min-h-dvh bg-background font-sans text-foreground antialiased;
+    font-feature-settings: "ss01" on, "cv11" on;
     background-image:
-      radial-gradient(circle at top left, hsl(211 82% 42% / 0.06), transparent 28%),
-      radial-gradient(circle at top right, hsl(152 48% 40% / 0.05), transparent 24%);
+      radial-gradient(
+        ellipse 80% 50% at 0% -10%,
+        hsl(211 90% 42% / 0.07),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 0%,
+        hsl(160 55% 36% / 0.05),
+        transparent 45%
+      );
   }
 
   #root {
     @apply min-h-dvh;
   }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight text-balance;
+  }
+
+  p {
+    @apply text-pretty;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Leaflet panes use z-index 400–1000. Isolate them so they cannot cover the
+   app sidebar / mobile drawer (which sit above the page stacking context). */
+.leaflet-container {
+  position: relative !important;
+  z-index: 0 !important;
+  width: 100%;
+  height: 100%;
+}
+
+.map-shell {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  overflow: hidden;
+  transform: translateZ(0);
 }
 
 @layer utilities {
@@ -131,22 +193,47 @@
     box-shadow: var(--shadow-soft);
   }
 
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
+
   .font-display {
     font-family: var(--font-display);
   }
 
   .glass-panel {
-    @apply border border-white/40 bg-white/55 backdrop-blur-xl dark:border-white/10 dark:bg-white/5;
+    @apply border border-white/50 bg-white/65 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06];
+    box-shadow: var(--shadow-soft);
+  }
+
+  .surface-elevated {
+    @apply rounded-3xl border border-border/80 bg-card/80 backdrop-blur-md;
     box-shadow: var(--shadow-soft);
   }
 
   .wallet-shine {
-    background-image:
-      linear-gradient(
-        135deg,
-        hsl(211 82% 42% / 0.95),
-        hsl(211 70% 32% / 0.92) 45%,
-        hsl(152 48% 36% / 0.9)
-      );
+    background-image: linear-gradient(
+      135deg,
+      hsl(211 90% 42% / 0.96),
+      hsl(211 75% 34% / 0.93) 48%,
+      hsl(160 55% 34% / 0.92)
+    );
+  }
+
+  .text-label {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  .interactive-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .interactive-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .interactive-lift:active {
+    transform: translateY(0);
   }
 }

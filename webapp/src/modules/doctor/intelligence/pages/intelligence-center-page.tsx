@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { ErrorState } from "@/components/feedback/error-state";
 import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { AlertCenter } from "@/modules/doctor/intelligence/components/alert-center";
 import { CohortCharts } from "@/modules/doctor/intelligence/components/cohort-charts";
 import { CommandFilters } from "@/modules/doctor/intelligence/components/command-filters";
@@ -50,41 +50,30 @@ export function IntelligenceCenterPage() {
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-5 pb-10">
-      <motion.header
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-wrap items-end justify-between gap-3"
-      >
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            HealNexus
-          </p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Doctor Intelligence Center
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Instantly see who needs attention, why, and what to do next —
-            assistive insights, clinician control.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/doctor/appointments"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Follow-ups
-          </Link>
-          <Link
-            to="/doctor/patients"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            All patients
-          </Link>
-          <Link to="/doctor/analytics" className={cn(buttonVariants())}>
-            Executive Analytics
-          </Link>
-        </div>
-      </motion.header>
+      <PageHeader
+        eyebrow="Command center"
+        title="Intelligence"
+        description="Who needs attention, why, and what to do next — assistive insights with clinician control."
+        actions={
+          <>
+            <Link
+              to="/doctor/appointments"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Follow-ups
+            </Link>
+            <Link
+              to="/doctor/patients"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Patients
+            </Link>
+            <Link to="/doctor/analytics" className={cn(buttonVariants())}>
+              Analytics
+            </Link>
+          </>
+        }
+      />
 
       <SummaryStrip
         summary={data.summary}

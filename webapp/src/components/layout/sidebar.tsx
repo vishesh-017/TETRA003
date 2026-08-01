@@ -1,9 +1,10 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
   Bell,
   CalendarDays,
   ChartColumn,
+  ChevronsLeft,
   HeartPulse,
   Hospital,
   LayoutDashboard,
@@ -20,149 +21,258 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import { HealNexusLogo, HealNexusMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import { env } from "@/config/env";
 import { useAuth } from "@/contexts/auth-context";
+import { useShell } from "@/contexts/shell-context";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
-interface SidebarProps {
-  open?: boolean;
-  onClose?: () => void;
-}
+type NavItem = {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+};
 
-const NAV_BY_ROLE: Record<
-  UserRole,
-  Array<{ label: string; href: string; icon: typeof LayoutDashboard }>
-> = {
+type NavGroup = {
+  id: string;
+  label: string;
+  items: NavItem[];
+};
+
+const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
   doctor: [
-    { label: "Intelligence", href: "/doctor", icon: LayoutDashboard },
-    { label: "Patients", href: "/doctor/patients", icon: Users },
-    { label: "High Risk", href: "/doctor/high-risk", icon: Activity },
-    { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
-    { label: "Executive Analytics", href: "/doctor/analytics", icon: ChartColumn },
-    { label: "Benefits", href: "/government/benefits", icon: Sparkles },
-    { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
-    { label: "Hospitals", href: "/maps", icon: MapPinned },
+    {
+      id: "command",
+      label: "Command",
+      items: [
+        { label: "Intelligence", href: "/doctor", icon: LayoutDashboard },
+        { label: "Patients", href: "/doctor/patients", icon: Users },
+        { label: "High Risk", href: "/doctor/high-risk", icon: Activity },
+        { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
+        {
+          label: "Analytics",
+          href: "/doctor/analytics",
+          icon: ChartColumn,
+        },
+      ],
+    },
+    {
+      id: "network",
+      label: "Network",
+      items: [
+        { label: "Benefits", href: "/government/benefits", icon: Sparkles },
+        { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
+        { label: "Hospitals", href: "/maps", icon: MapPinned },
+      ],
+    },
   ],
   patient: [
-    { label: "Today", href: "/patient", icon: HeartPulse },
-    { label: "Care Plan", href: "/patient/care-plan", icon: Sparkles },
-    { label: "Check-in", href: "/patient/check-in", icon: Activity },
-    { label: "Medicines", href: "/patient/medicines", icon: Pill },
-    { label: "Appointments", href: "/patient/appointments", icon: CalendarDays },
-    { label: "Notifications", href: "/patient/notifications", icon: Bell },
-    { label: "Recovery Score", href: "/patient/recovery-score", icon: ChartColumn },
-    { label: "Passport", href: "/patient/passport", icon: Stethoscope },
-    { label: "Benefits", href: "/government/benefits", icon: Hospital },
-    { label: "Profile", href: "/patient/profile", icon: UserRound },
-    { label: "Settings", href: "/patient/settings", icon: Settings },
-    { label: "Hospitals", href: "/maps", icon: MapPinned },
+    {
+      id: "today",
+      label: "Care",
+      items: [
+        { label: "Today", href: "/patient", icon: HeartPulse },
+        { label: "Care Plan", href: "/patient/care-plan", icon: Sparkles },
+        { label: "Check-in", href: "/patient/check-in", icon: Activity },
+        { label: "Medicines", href: "/patient/medicines", icon: Pill },
+        {
+          label: "Appointments",
+          href: "/patient/appointments",
+          icon: CalendarDays,
+        },
+        { label: "Recovery", href: "/patient/recovery-score", icon: ChartColumn },
+      ],
+    },
+    {
+      id: "identity",
+      label: "Identity",
+      items: [
+        { label: "Passport", href: "/patient/passport", icon: Stethoscope },
+        { label: "Benefits", href: "/government/benefits", icon: Hospital },
+        { label: "Hospitals", href: "/maps", icon: MapPinned },
+        {
+          label: "Notifications",
+          href: "/patient/notifications",
+          icon: Bell,
+        },
+        { label: "Profile", href: "/patient/profile", icon: UserRound },
+        { label: "Settings", href: "/patient/settings", icon: Settings },
+      ],
+    },
   ],
   caregiver: [
-    { label: "Status", href: "/caregiver", icon: LayoutDashboard },
-    { label: "Alerts", href: "/caregiver/alerts", icon: Activity },
-    { label: "Analytics", href: "/analytics", icon: ChartColumn },
-    { label: "Hospitals", href: "/maps", icon: MapPinned },
+    {
+      id: "main",
+      label: "Support",
+      items: [
+        { label: "Status", href: "/caregiver", icon: LayoutDashboard },
+        { label: "Alerts", href: "/caregiver/alerts", icon: Activity },
+        { label: "Analytics", href: "/analytics", icon: ChartColumn },
+        { label: "Hospitals", href: "/maps", icon: MapPinned },
+      ],
+    },
   ],
   health_worker: [
-    { label: "Home", href: "/rural", icon: LayoutDashboard },
-    { label: "Screening", href: "/rural/screening", icon: HeartPulse },
-    { label: "Patients", href: "/rural/patients", icon: Users },
-    { label: "Visits", href: "/rural/visits", icon: CalendarDays },
-    { label: "Sync", href: "/rural/sync", icon: WifiOff },
-    { label: "Education", href: "/rural/education", icon: Stethoscope },
-    { label: "Alerts", href: "/rural/notifications", icon: Bell },
+    {
+      id: "field",
+      label: "Field",
+      items: [
+        { label: "Home", href: "/rural", icon: LayoutDashboard },
+        { label: "Screening", href: "/rural/screening", icon: HeartPulse },
+        { label: "Patients", href: "/rural/patients", icon: Users },
+        { label: "Visits", href: "/rural/visits", icon: CalendarDays },
+        { label: "Sync", href: "/rural/sync", icon: WifiOff },
+        { label: "Education", href: "/rural/education", icon: Stethoscope },
+        { label: "Alerts", href: "/rural/notifications", icon: Bell },
+      ],
+    },
   ],
 };
 
-export function Sidebar({ open = false, onClose }: SidebarProps) {
+export function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { sidebarCollapsed, mobileOpen, setMobileOpen, toggleCollapsed } =
+    useShell();
   const role = user?.role ?? "patient";
-  const items = NAV_BY_ROLE[role];
+  const groups = NAV_GROUPS[role];
+  const collapsed = sidebarCollapsed;
 
   const handleLogout = async () => {
-    onClose?.();
+    setMobileOpen(false);
     await logout();
     navigate("/login", { replace: true });
   };
 
   return (
     <>
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-foreground/30 transition md:hidden",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-        onClick={onClose}
-      />
+      <AnimatePresence>
+        {mobileOpen ? (
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1090] bg-foreground/35 backdrop-blur-[2px] md:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+        ) : null}
+      </AnimatePresence>
+
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-soft transition-transform md:static md:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full",
+          "fixed inset-y-0 left-0 z-[1100] flex flex-col border-r border-sidebar-border bg-sidebar/95 text-sidebar-foreground shadow-soft backdrop-blur-xl transition-[width,transform] duration-300 ease-out md:static md:z-auto md:translate-x-0",
+          collapsed ? "md:w-[76px]" : "md:w-72",
+          "w-72",
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
+        aria-label="Main navigation"
       >
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
-          <div>
-            <p className="font-display text-xl font-semibold text-primary">
-              {env.appName}
-            </p>
-            <p className="text-xs text-muted-foreground">Continuity of Care</p>
+        <div
+          className={cn(
+            "flex h-16 items-center border-b border-sidebar-border px-3",
+            collapsed ? "md:justify-center" : "justify-between",
+          )}
+        >
+          <div className={cn(collapsed && "md:hidden")}>
+            <HealNexusLogo showTagline />
+          </div>
+          <div className={cn("hidden", collapsed && "md:block")}>
+            <HealNexusMark size={32} />
           </div>
           <Button
             variant="ghost"
             size="icon"
             className="md:hidden"
-            onClick={onClose}
+            onClick={() => setMobileOpen(false)}
             aria-label="Close navigation"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3">
-          {items.map((item, index) => (
-            <motion.div
-              key={item.href}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.04 }}
-            >
-              <NavLink
-                to={item.href}
-                end={item.href.split("/").length <= 2}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-soft"
-                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
-                  )
-                }
+        <nav className="flex-1 space-y-5 overflow-y-auto p-3">
+          {groups.map((group) => (
+            <div key={group.id}>
+              <p
+                className={cn(
+                  "mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground",
+                  collapsed && "md:sr-only",
+                )}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </NavLink>
-            </motion.div>
+                {group.label}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    end={item.href.split("/").length <= 2}
+                    title={item.label}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                        collapsed && "md:justify-center md:px-2",
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-soft"
+                          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+                      )
+                    }
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" aria-hidden />
+                    <span className={cn(collapsed && "md:sr-only")}>
+                      {item.label}
+                    </span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
-        <div className="space-y-3 border-t border-sidebar-border p-4">
-          <div className="rounded-xl bg-sidebar-accent p-3 text-xs text-muted-foreground">
-            AI Care Companion assists clinicians. Doctors remain in control.
-          </div>
-          {user ? (
+        <div className="space-y-2 border-t border-sidebar-border p-3">
+          <p
+            className={cn(
+              "rounded-xl bg-sidebar-accent px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground",
+              collapsed && "md:hidden",
+            )}
+          >
+            AI assists. Clinicians decide.
+          </p>
+          <div className="flex gap-2">
             <Button
               variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() => void handleLogout()}
+              size="icon"
+              className="hidden md:inline-flex"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title="Toggle sidebar ([)"
             >
-              <LogOut className="h-4 w-4" />
-              Logout
+              <ChevronsLeft
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  collapsed && "rotate-180",
+                )}
+              />
             </Button>
-          ) : null}
+            {user ? (
+              <Button
+                variant="outline"
+                className={cn(
+                  "flex-1 justify-start gap-2",
+                  collapsed && "md:flex-none md:justify-center md:px-0",
+                )}
+                onClick={() => void handleLogout()}
+                aria-label="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className={cn(collapsed && "md:sr-only")}>Logout</span>
+              </Button>
+            ) : null}
+          </div>
         </div>
       </aside>
     </>

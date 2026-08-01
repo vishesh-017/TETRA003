@@ -37,12 +37,12 @@ export function HospitalMapPage() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-border shadow-soft">
+      <div className="map-shell h-[420px] rounded-3xl border border-border shadow-soft">
         <MapContainer
           center={center}
           zoom={12}
           scrollWheelZoom={false}
-          className="h-[420px] w-full"
+          className="h-full w-full rounded-3xl"
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'

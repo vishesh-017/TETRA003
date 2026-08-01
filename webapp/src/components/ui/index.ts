@@ -3,3 +3,7 @@ export * from "@/components/ui/button";
 export * from "@/components/ui/card";
 export * from "@/components/ui/input";
 export * from "@/components/ui/label";
+export * from "@/components/ui/page-header";
+export * from "@/components/ui/progress";
+export * from "@/components/ui/skeleton";
+export * from "@/components/ui/surface";

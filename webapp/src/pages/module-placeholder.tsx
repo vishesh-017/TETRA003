@@ -1,12 +1,8 @@
+import { Construction } from "lucide-react";
+
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { EmptyState } from "@/components/feedback/empty-state";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface ModulePlaceholderProps {
   title: string;
@@ -20,20 +16,14 @@ export function ModulePlaceholder({
   showAiDisclaimer = false,
 }: ModulePlaceholderProps) {
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-2xl">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <EmptyState
-            title="Module scaffold ready"
-            description="Routing, layout, and design system are in place. Business logic will be implemented in later phases."
-          />
-          {showAiDisclaimer ? <AiDisclaimer /> : null}
-        </CardContent>
-      </Card>
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <PageHeader title={title} description={description} eyebrow="Coming soon" />
+      <EmptyState
+        icon={Construction}
+        title="This view is prepared"
+        description="The experience shell is ready. Live workflows for this role will appear here without changing the rest of HealNexus."
+      />
+      {showAiDisclaimer ? <AiDisclaimer /> : null}
     </div>
   );
 }
