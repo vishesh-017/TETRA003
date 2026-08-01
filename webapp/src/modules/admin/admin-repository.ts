@@ -124,7 +124,7 @@ export function addPerson(input: {
         allergies,
         medical_history: diseases.length
           ? `Registered via admin · ${diseases.join(", ")}`
-          : "Registered via admin panel",
+          : null,
         emergency_contact:
           input.emergency_name || input.emergency_phone
             ? {
@@ -163,18 +163,7 @@ export function addPerson(input: {
         patient_id: patientId,
         status: "active",
       });
-
-      draft.recoveryScores.push({
-        patient_id: patientId,
-        score: 70,
-        computed_at: now,
-      });
-      draft.risks.push({
-        patient_id: patientId,
-        score: 35,
-        level: "moderate",
-        computed_at: now,
-      });
+      // No seeded recovery/risk — UI shows NA until first check-in.
     }
 
     if (input.role === "doctor") {

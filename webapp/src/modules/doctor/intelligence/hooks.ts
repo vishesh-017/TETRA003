@@ -38,8 +38,43 @@ export function useDoctorIntelligence(filters: IntelligenceFilters) {
 export function useAiPatientSummary(patientId?: string) {
   return useQuery({
     queryKey: ["doctor", "ai-summary-intel", patientId],
-    queryFn: () => intelligenceRepository.getAiPatientSummary(patientId!),
+    queryFn: async () => {
+      const base = intelligenceRepository.getAiPatientSummary(patientId!);
+      const { summarizePatientRoutineAsync } = await import(
+        "@/modules/ai-support/routine-summary"
+      );
+      const routine = await summarizePatientRoutineAsync(patientId!);
+      return {
+        ...base,
+        narrative: routine.paragraphs[0] || base.narrative,
+        latest_symptoms:
+          base.latest_symptoms.length > 0
+            ? base.latest_symptoms
+            : routine.bullets
+                .find((b) => b.startsWith("Reported symptoms"))
+                ?.replace("Reported symptoms: ", "")
+                .split(", ")
+                .filter(Boolean) || [],
+        disclaimer: `${base.disclaimer} · ${routine.provider}`,
+      };
+    },
     enabled: Boolean(patientId),
+    staleTime: 15_000,
+  });
+}
+
+/** Live doctor routine summary — local engine + OpenRouter when configured. */
+export function useDoctorRoutineSummary(patientId?: string) {
+  return useQuery({
+    queryKey: ["doctor", "routine-summary", patientId],
+    queryFn: async () => {
+      const { summarizePatientRoutineAsync } = await import(
+        "@/modules/ai-support/routine-summary"
+      );
+      return summarizePatientRoutineAsync(patientId!);
+    },
+    enabled: Boolean(patientId),
+    staleTime: 10_000,
   });
 }
 

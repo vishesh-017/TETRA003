@@ -118,10 +118,14 @@ export const patientRepository = {
     const patient = store.patients.find((p) => p.id === patientId)!;
     const profile = store.profiles.find((p) => p.id === patient.user_id)!;
     const tasks = mapTasks(patientId);
-    const recovery =
-      store.recoveryScores.find((r) => r.patient_id === patientId)?.score ?? 70;
-    const risk =
-      store.risks.find((r) => r.patient_id === patientId)?.level ?? "moderate";
+    const recoveryRow = store.recoveryScores.find(
+      (r) => r.patient_id === patientId,
+    );
+    const riskRow = store.risks.find((r) => r.patient_id === patientId);
+    const hasCheckins = store.checkins.some((c) => c.patient_id === patientId);
+    // New patients stay NA until first check-in / score sync — no fake defaults.
+    const recovery = hasCheckins || recoveryRow ? recoveryRow?.score ?? null : null;
+    const risk = hasCheckins || riskRow ? riskRow?.level ?? null : null;
     const next = store.appointments
       .filter((a) => a.patient_id === patientId && a.status === "scheduled")
       .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];

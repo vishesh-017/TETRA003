@@ -334,7 +334,8 @@ export type HealthRecordCategory =
   | "chronic_disease"
   | "vaccination"
   | "hospital_visit"
-  | "doctor_note";
+  | "doctor_note"
+  | "checkin";
 
 /** ABDM-compatible health record item (demo / future API). */
 export interface HealthRecordRow {
@@ -344,7 +345,7 @@ export interface HealthRecordRow {
   title: string;
   summary: string;
   recorded_at: string;
-  source: "abha_demo" | "local" | "manual";
+  source: "abha_demo" | "local" | "manual" | "patient_checkin";
   facility?: string | null;
   metadata?: Record<string, unknown>;
 }

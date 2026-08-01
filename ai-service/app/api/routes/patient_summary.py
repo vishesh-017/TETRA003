@@ -8,9 +8,9 @@ router = APIRouter(tags=["ai-patient-summary"])
 
 
 @router.post("/patient-summary", response_model=PatientSummaryResponse)
-def summarize_patient(
+async def summarize_patient(
     body: PatientSummaryRequest,
     service: PatientSummaryService = Depends(get_patient_summary_service),
 ) -> PatientSummaryResponse:
     """Produce a short assistive clinical summary (3–5 sentences)."""
-    return service.summarize(body)
+    return await service.summarize(body)

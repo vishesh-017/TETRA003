@@ -20,11 +20,11 @@ import {
   markNotification,
   updateScreening,
 } from "@/modules/rural/offline/storage";
+import { isOnline } from "@/modules/rural/offline/online";
+import { ruralRepository } from "@/modules/rural/repository";
 import type { RuralScreeningRecord, SyncSummary } from "@/modules/rural/types";
 
-export function isOnline(): boolean {
-  return typeof navigator === "undefined" ? true : navigator.onLine;
-}
+export { isOnline };
 
 function resolvePatientId(screening: RuralScreeningRecord): string {
   if (screening.patient_id) {
@@ -38,7 +38,15 @@ function resolvePatientId(screening: RuralScreeningRecord): string {
       screening.patient_name.trim().toLowerCase()
     );
   });
-  return byName?.id ?? IDS.patient;
+  if (byName?.id) return byName.id;
+  // Never silently attach camp strangers to the demo patient.
+  if (screening.patient_name.trim()) {
+    return ruralRepository.registerOfflinePatient({
+      full_name: screening.patient_name.trim(),
+      village: screening.village || undefined,
+    });
+  }
+  return IDS.patient;
 }
 
 function applyScreeningToStore(screening: RuralScreeningRecord) {

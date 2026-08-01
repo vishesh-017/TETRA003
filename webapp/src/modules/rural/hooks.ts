@@ -9,7 +9,8 @@ import {
   listScreenings,
   saveScreening,
 } from "@/modules/rural/offline/storage";
-import { isOnline, runRuralSync } from "@/modules/rural/offline/sync-engine";
+import { isOnline } from "@/modules/rural/offline/online";
+import { runRuralSync } from "@/modules/rural/offline/sync-engine";
 import { ruralRepository } from "@/modules/rural/repository";
 import { getEducationCards } from "@/modules/rural/services/education.service";
 import { useRuralLocale } from "@/modules/rural/i18n/locale-context";
@@ -96,8 +97,21 @@ export function useSaveScreening() {
     mutationFn: async (input: RuralScreeningInput) => {
       if (!user?.id) throw new Error("Sign in as a health worker to save");
       const hwId = ruralRepository.resolveHealthWorkerId(user.id);
+
+      // Camp rows often have only a name — create a local patient so they
+      // show on Patients & map. Storage is IndexedDB + localStorage (not cookies).
+      let payload = input;
+      if (!payload.patient_id && payload.patient_name.trim()) {
+        const patientId = ruralRepository.registerOfflinePatient({
+          full_name: payload.patient_name.trim(),
+          phone: payload.phone || undefined,
+          village: payload.village || undefined,
+        });
+        payload = { ...payload, patient_id: patientId };
+      }
+
       // Always persist offline first — never block on network sync.
-      const saved = await saveScreening(hwId, input);
+      const saved = await saveScreening(hwId, payload);
       if (isOnline()) {
         try {
           await runRuralSync();
@@ -113,6 +127,7 @@ export function useSaveScreening() {
         qc.invalidateQueries({ queryKey: keys.pending }),
         qc.invalidateQueries({ queryKey: keys.notifications }),
         qc.invalidateQueries({ queryKey: ["rural", "dashboard"] }),
+        qc.invalidateQueries({ queryKey: ["rural", "patients"] }),
         invalidateCareGraph(qc),
       ]);
     },

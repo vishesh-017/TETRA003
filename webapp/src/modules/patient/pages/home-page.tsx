@@ -71,12 +71,14 @@ export function PatientHomePage() {
           <ProgressBar value={data.progress_percent} />
         </div>
 
-        {intel ? (
+        {intel && data.recovery_score != null ? (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Badge variant="outline">
               Recovery Score {intel.recovery.recovery_score.toFixed(0)}
             </Badge>
-            <Badge className="capitalize">{intel.readmission.risk_category} risk</Badge>
+            <Badge className="capitalize">
+              {intel.readmission.risk_category} risk
+            </Badge>
             <Link
               to="/patient/recovery-score"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
@@ -84,7 +86,18 @@ export function PatientHomePage() {
               View insights
             </Link>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Recovery NA</Badge>
+            <Badge variant="outline">Risk NA</Badge>
+            <Link
+              to="/patient/check-in"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
+              First check-in
+            </Link>
+          </div>
+        )}
       </motion.section>
 
       {intel ? <AlertBanner alert={intel.alerts} /> : null}
@@ -164,8 +177,12 @@ export function PatientHomePage() {
                 <p className="text-xs text-muted-foreground">Recovery Score</p>
                 <p className="mt-1 flex items-center gap-1 font-display text-2xl font-semibold">
                   <HeartPulse className="h-4 w-4 text-secondary" />
-                  {data.recovery_score}
-                  <span className="text-sm font-normal text-muted-foreground">/ 100</span>
+                  {data.recovery_score != null ? data.recovery_score : "NA"}
+                  {data.recovery_score != null ? (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      / 100
+                    </span>
+                  ) : null}
                 </p>
               </div>
               <div>
@@ -173,14 +190,16 @@ export function PatientHomePage() {
                 <Badge
                   className="mt-2 capitalize"
                   variant={
-                    data.risk_level === "low"
-                      ? "secondary"
-                      : data.risk_level === "moderate"
-                        ? "warning"
-                        : "destructive"
+                    !data.risk_level
+                      ? "outline"
+                      : data.risk_level === "low"
+                        ? "secondary"
+                        : data.risk_level === "moderate"
+                          ? "warning"
+                          : "destructive"
                   }
                 >
-                  {data.risk_level}
+                  {data.risk_level || "NA"}
                 </Badge>
               </div>
             </CardContent>

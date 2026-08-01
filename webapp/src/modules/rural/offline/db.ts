@@ -30,7 +30,11 @@ function lsRead<T>(store: StoreName): T[] {
 }
 
 function lsWrite<T extends { id: string }>(store: StoreName, rows: T[]) {
-  localStorage.setItem(lsKey(store), JSON.stringify(rows));
+  try {
+    localStorage.setItem(lsKey(store), JSON.stringify(rows));
+  } catch {
+    // Quota / private mode — IndexedDB may still hold the row.
+  }
 }
 
 export function openRuralDb(): Promise<IDBDatabase> {
@@ -91,18 +95,22 @@ export async function idbPut<T extends { id: string }>(
     lsWrite(store, all);
     return row;
   };
-  if (!canUseIdb()) return toLocal();
+  // Always mirror to localStorage so saves survive if IndexedDB is cleared
+  // or blocked (no cookies / downloads required).
+  toLocal();
+  if (!canUseIdb()) return row;
   try {
     const db = await openRuralDb();
-    return await new Promise<T>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(store, "readwrite");
       tx.objectStore(store).put(row);
-      tx.oncomplete = () => resolve(row);
+      tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    return row;
   } catch {
-    // Private mode / quota / IDB blocked — still save offline via localStorage.
-    return toLocal();
+    // Private mode / quota / IDB blocked — localStorage already has the row.
+    return row;
   }
 }
 

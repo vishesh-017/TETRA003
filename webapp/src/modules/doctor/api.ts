@@ -57,6 +57,24 @@ export const doctorApi = {
       doctorRepository.updatePatient(actorId(token), id, body) as PatientDetail,
     ),
 
+  addDoctorNote: (token: string | null, patientId: string, body: string) =>
+    Promise.resolve(
+      doctorRepository.addDoctorNote(actorId(token), patientId, body),
+    ),
+
+  addMedicalHistoryEntry: (
+    token: string | null,
+    patientId: string,
+    body: string,
+  ) =>
+    Promise.resolve(
+      doctorRepository.addMedicalHistoryEntry(
+        actorId(token),
+        patientId,
+        body,
+      ) as PatientDetail,
+    ),
+
   archivePatient: (token: string | null, id: string) =>
     Promise.resolve(doctorRepository.archivePatient(actorId(token), id)),
 

@@ -146,6 +146,15 @@ export function normalizeSlots(slots: string[]): string[] {
   return [...new Set(mapped.filter((s) => allowed.has(s)))];
 }
 
+/** Map “times per day” (1–4) → meal slots. */
+export function slotsForTimesPerDay(times: number): string[] {
+  const n = Math.min(4, Math.max(1, Math.round(times)));
+  if (n === 1) return ["Morning"];
+  if (n === 2) return ["Morning", "Night"];
+  if (n === 3) return ["Morning", "Lunch", "Dinner"];
+  return ["Morning", "Lunch", "Dinner", "Night"];
+}
+
 export function frequencyFromSlots(slots: string[]): string {
   const n = normalizeSlots(slots).length;
   if (n <= 0) return "As directed";

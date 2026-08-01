@@ -14,7 +14,7 @@ import { getStore } from "@/data/store";
 import type { HealthIntelligenceBundle } from "@/lib/health-engine";
 import { cn } from "@/lib/utils";
 import { listCheckups } from "@/modules/ai-support/repository";
-import { summarizePatientRoutine } from "@/modules/ai-support/routine-summary";
+import { useDoctorRoutineSummary } from "@/modules/doctor/intelligence/hooks";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
 import type { PatientDetail } from "@/modules/doctor/types";
 
@@ -47,7 +47,8 @@ export function PatientRecordOverview({
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, 4);
   const latestCheckup = listCheckups(data.id)[0];
-  const routine = summarizePatientRoutine(data.id);
+  const routineQuery = useDoctorRoutineSummary(data.id);
+  const routine = routineQuery.data;
 
   const discharge = store.discharges.find((d) => d.patient_id === data.id);
   const doctor = store.doctors.find((d) => d.id === discharge?.doctor_id);
@@ -121,22 +122,28 @@ export function PatientRecordOverview({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <FlaskConical className="h-4 w-4 text-primary" />
-            {routine.headline}
+            {routine?.headline || "Routine summary"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          {routine.paragraphs.map((p) => (
+          {routineQuery.isLoading ? (
+            <p className="text-muted-foreground">Generating AI routine summary…</p>
+          ) : null}
+          {(routine?.paragraphs || []).map((p) => (
             <p key={p.slice(0, 40)} className="text-muted-foreground">
               {p}
             </p>
           ))}
           <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-            {routine.bullets.map((b) => (
+            {(routine?.bullets || []).map((b) => (
               <li key={b}>{b}</li>
             ))}
           </ul>
           <p className="text-[11px] text-muted-foreground">
-            Dynamic AI summary · {new Date(routine.generated_at).toLocaleString()}{" "}
+            Dynamic AI summary
+            {routine
+              ? ` · ${new Date(routine.generated_at).toLocaleString()} · ${routine.provider}`
+              : ""}{" "}
             · assistive only
           </p>
         </CardContent>

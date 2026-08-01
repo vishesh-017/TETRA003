@@ -1,5 +1,5 @@
 import { getStore, IDS, todayKey } from "@/data/store";
-import { applyStoredHabits, getLifestyleHabits } from "@/modules/patient/lifestyle-habits";
+import { applyStoredHabits } from "@/modules/patient/lifestyle-habits";
 import { patientRepository } from "@/modules/patient/repository";
 import type { PatientObservationBundle, TimedValue } from "@/modules/prediction/types";
 
@@ -17,6 +17,17 @@ function seriesFrom(
           },
     )
     .filter(Boolean) as TimedValue[];
+}
+
+/** Drop impossible field readings so one bad camp entry can't pin all risks at 100. */
+function sane(
+  value: number | null | undefined,
+  min: number,
+  max: number,
+): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  if (value < min || value > max) return null;
+  return value;
 }
 
 /** Resolve store patient id from auth user id or patient row id. */
@@ -79,15 +90,15 @@ export function buildRawObservationsFromLocal(
     .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
 
   const sugar = seriesFrom(
-    checkins.map((c) => c.blood_sugar),
+    checkins.map((c) => sane(c.blood_sugar, 40, 500)),
     checkins.map((c) => c.recorded_at),
   );
   const bpSys = seriesFrom(
-    checkins.map((c) => c.bp_systolic),
+    checkins.map((c) => sane(c.bp_systolic, 70, 260)),
     checkins.map((c) => c.recorded_at),
   );
   const bpDia = seriesFrom(
-    checkins.map((c) => c.bp_diastolic),
+    checkins.map((c) => sane(c.bp_diastolic, 40, 160)),
     checkins.map((c) => c.recorded_at),
   );
 
@@ -119,34 +130,25 @@ export function buildRawObservationsFromLocal(
   const appts = patientRepository.listAppointments(userId);
   const missedAppts = appts.filter((a) => a.status === "missed").length;
 
-  const habits = patientId ? getLifestyleHabits(patientId) : null;
-  const hasHabitRow = patientId
-    ? store.lifestyleHabits.some((h) => h.patient_id === patientId)
-    : false;
-
   const sleepFromCheckins = seriesFrom(
-    checkins.map((c) => c.sleep_hours),
+    checkins.map((c) => sane(c.sleep_hours, 2, 14)),
     checkins.map((c) => c.recorded_at),
   );
   const waterFromCheckins = seriesFrom(
-    checkins.map((c) => c.water_intake),
+    checkins.map((c) => sane(c.water_intake, 0, 20)),
     checkins.map((c) => c.recorded_at),
   );
   const weightFromCheckins = seriesFrom(
-    checkins.map((c) => c.weight),
+    checkins.map((c) => sane(c.weight, 25, 250)),
     checkins.map((c) => c.recorded_at),
   );
   const tempFromCheckins = seriesFrom(
-    checkins.map((c) => c.temperature),
+    checkins.map((c) => sane(c.temperature, 95, 106)),
     checkins.map((c) => c.recorded_at),
   );
 
-  // Exercise: only from saved lifestyle habit (live), never invented series.
-  const exercise_minutes =
-    hasHabitRow && habits
-      ? [{ value: habits.exercise_minutes_week / 7, recorded_at: todayKey() }]
-      : [];
-
+  // Raw baseline = check-ins only. Lifestyle habits are applied separately
+  // (applyStoredHabits / simulator) so before≠after when sliders move.
   return {
     patient_id: patientId || IDS.patient,
     patient_name: profile?.full_name || "Patient",
@@ -164,13 +166,9 @@ export function buildRawObservationsFromLocal(
     blood_pressure_systolic: bpSys,
     blood_pressure_diastolic: bpDia,
     blood_sugar: sugar,
-    sleep_hours: sleepFromCheckins.length
-      ? sleepFromCheckins
-      : hasHabitRow && habits
-        ? [{ value: habits.sleep_hours, recorded_at: todayKey() }]
-        : [],
+    sleep_hours: sleepFromCheckins,
     water_intake_glasses: waterFromCheckins,
-    exercise_minutes,
+    exercise_minutes: [],
     temperature_f: tempFromCheckins,
     weight_kg: weightFromCheckins,
     symptom_log: checkins.map((c) => ({

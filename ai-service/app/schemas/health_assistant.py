@@ -4,11 +4,17 @@ from app.schemas.common import AiMeta
 
 
 class HealthAssistantRequest(BaseModel):
-    question: str = Field(min_length=3, max_length=2000)
+    model_config = {"extra": "ignore"}
+
+    question: str = Field(min_length=1, max_length=2000)
     locale: str = "en"
     patient_context: str | None = Field(
         default=None,
         description="Optional non-identifying recovery context (no diagnosis requests).",
+    )
+    conversation: list[dict] | None = Field(
+        default=None,
+        description="Optional prior turns from the webapp (ignored if unused).",
     )
 
 

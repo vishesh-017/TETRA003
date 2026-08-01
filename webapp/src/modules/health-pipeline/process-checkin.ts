@@ -189,7 +189,10 @@ async function persistNotification(row: {
 }
 
 /** Sync store recovery/risk from Health Intelligence Engine (single source of truth). */
-export function syncScoresFromEngine(patientId: string): {
+export function syncScoresFromEngine(
+  patientId: string,
+  opts?: { refineMl?: boolean },
+): {
   health: HealthIntelligenceBundle;
   recovery_score: number;
   risk_level: RiskLevel;
@@ -201,9 +204,11 @@ export function syncScoresFromEngine(patientId: string): {
     consecutiveMissedMeds(patientId),
   );
   // Local engine is always dynamic from current vitals/adherence.
-  // Optional ML service can refine scores when VITE_AI_API_BASE_URL is set.
+  // Optional ML refine — skip while dragging lifestyle sliders (avoids API spam).
   const health = evaluateHealth(obs);
-  void refineScoresWithMl(patientId, obs, health).catch(() => undefined);
+  if (opts?.refineMl !== false) {
+    void refineScoresWithMl(patientId, obs, health).catch(() => undefined);
+  }
   const recoveryScore = Math.round(health.recovery.recovery_score);
   const riskLevel = mapReadmissionLevel(
     health.readmission.risk_category,
@@ -277,6 +282,9 @@ export async function processCheckInPipeline(
   );
 
   const health = evaluateHealth(obs);
+  // Optional remote refine — keep UI dynamic even if ML is slow/unavailable.
+  void refineScoresWithMl(patientId, obs, health).catch(() => undefined);
+
   const recoveryScore = Math.round(health.recovery.recovery_score);
   const riskLevel = mapReadmissionLevel(
     health.readmission.risk_category,
@@ -310,6 +318,37 @@ export async function processCheckInPipeline(
         level: riskLevel,
         computed_at: now,
       });
+    }
+
+    // Surface check-in on doctor timeline immediately.
+    if (checkIn) {
+      const hrId = `hr-${checkIn.id}`;
+      if (!draft.healthRecords.some((r) => r.id === hrId)) {
+        const profile = draft.profiles.find(
+          (p) =>
+            p.id === draft.patients.find((x) => x.id === patientId)?.user_id,
+        );
+        draft.healthRecords.unshift({
+          id: hrId,
+          patient_id: patientId,
+          category: "checkin",
+          title: "Daily health check-in",
+          summary: [
+            checkIn.bp_systolic != null
+              ? `BP ${checkIn.bp_systolic}/${checkIn.bp_diastolic ?? "—"}`
+              : null,
+            checkIn.blood_sugar != null ? `Sugar ${checkIn.blood_sugar}` : null,
+            checkIn.symptoms?.length
+              ? `Symptoms: ${checkIn.symptoms.slice(0, 3).join(", ")}`
+              : null,
+            profile?.full_name ? `Logged by ${profile.full_name}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Vitals logged",
+          recorded_at: checkIn.recorded_at,
+          source: "patient_checkin",
+        });
+      }
     }
   });
 

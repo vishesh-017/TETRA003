@@ -8,11 +8,21 @@ import {
   TrendCard,
 } from "@/components/health-engine";
 import { buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
+import { getStore } from "@/data/store";
 import { useHealthIntelligence } from "@/hooks/health-engine";
 import { cn } from "@/lib/utils";
+import { patientRepository } from "@/modules/patient/repository";
 
 export function RecoveryPage() {
+  const { user } = useAuth();
   const intel = useHealthIntelligence();
+  const patientId = user
+    ? patientRepository.resolvePatientId(user.id)
+    : null;
+  const hasCheckins = patientId
+    ? getStore().checkins.some((c) => c.patient_id === patientId)
+    : false;
 
   if (!intel) {
     return (
@@ -22,6 +32,23 @@ export function RecoveryPage() {
           Sign in as a patient. Score updates from check-ins, medicines, and
           vitals in the live store.
         </p>
+      </div>
+    );
+  }
+
+  if (!hasCheckins) {
+    return (
+      <div className="mx-auto max-w-xl space-y-4 pb-10">
+        <h1 className="font-display text-3xl font-semibold">Recovery</h1>
+        <p className="rounded-2xl border border-dashed border-border bg-card px-4 py-6 text-sm text-muted-foreground">
+          Recovery Score: <strong>NA</strong> · Risk: <strong>NA</strong>
+          <br />
+          Complete your first check-in so scores can calculate from your live
+          vitals — nothing is pre-filled for new accounts.
+        </p>
+        <Link to="/patient/check-in" className={cn(buttonVariants())}>
+          Start check-in
+        </Link>
       </div>
     );
   }

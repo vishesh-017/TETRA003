@@ -4,8 +4,8 @@ import {
   todayKey,
   updateStore,
 } from "@/data/store";
+import { isOnline } from "@/modules/rural/offline/online";
 import { countPendingSync } from "@/modules/rural/offline/storage";
-import { isOnline } from "@/modules/rural/offline/sync-engine";
 import type {
   AssignedPatient,
   RuralDashboardStats,

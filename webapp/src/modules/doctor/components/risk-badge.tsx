@@ -12,7 +12,7 @@ const variantMap: Record<
 };
 
 export function RiskBadge({ level }: { level?: RiskLevel | null }) {
-  if (!level) return <Badge variant="outline">Unknown</Badge>;
+  if (!level) return <Badge variant="outline">NA</Badge>;
   return (
     <Badge variant={variantMap[level]} className="capitalize">
       {level}

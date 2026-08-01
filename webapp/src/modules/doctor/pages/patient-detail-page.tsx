@@ -89,6 +89,8 @@ export function PatientDetailPage() {
     InvestigationDraftInput[]
   >([]);
   const [storeTick, setStoreTick] = useState(0);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [historyDraft, setHistoryDraft] = useState("");
 
   useEffect(() => subscribeStore(() => setStoreTick((t) => t + 1)), []);
 
@@ -202,7 +204,9 @@ export function PatientDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RiskBadge level={data.risk_level} />
-          <Badge variant="outline">Recovery {data.recovery_score ?? "—"}</Badge>
+          <Badge variant="outline">
+            Recovery {data.recovery_score != null ? data.recovery_score : "NA"}
+          </Badge>
           <Badge variant="secondary">{data.status}</Badge>
         </div>
       </div>
@@ -241,16 +245,66 @@ export function PatientDetailPage() {
           <CardHeader>
             <CardTitle>Medical history</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-4 text-sm">
             <p className="whitespace-pre-wrap text-muted-foreground">
-              {data.medical_history || "No medical history recorded."}
+              {data.medical_history?.trim() || "NA — no medical history yet."}
             </p>
             <div>
               <p className="font-medium">Allergies</p>
               <p className="text-muted-foreground">
-                {(data.allergies || []).join(", ") || "None recorded"}
+                {(data.allergies || []).length
+                  ? (data.allergies || []).join(", ")
+                  : "NA"}
               </p>
             </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="font-medium">Add history entry</p>
+              <textarea
+                className="flex min-h-[88px] w-full rounded-xl border border-input bg-card px-3 py-2 text-sm"
+                value={historyDraft}
+                onChange={(e) => setHistoryDraft(e.target.value)}
+                placeholder="e.g. Prior hospitalization for uncontrolled diabetes (2024)"
+              />
+              <Button
+                size="sm"
+                disabled={
+                  !historyDraft.trim() || mutations.addMedicalHistory.isPending
+                }
+                onClick={() => {
+                  if (!patientId || !historyDraft.trim()) return;
+                  mutations.addMedicalHistory.mutate(
+                    { patientId, body: historyDraft },
+                    { onSuccess: () => setHistoryDraft("") },
+                  );
+                }}
+              >
+                Save with date &amp; time
+              </Button>
+            </div>
+            {patientId ? (
+              <div className="space-y-2">
+                <p className="font-medium">Timeline history updates</p>
+                {getStore()
+                  .healthRecords.filter(
+                    (r) =>
+                      r.patient_id === patientId &&
+                      r.category === "chronic_disease",
+                  )
+                  .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))
+                  .slice(0, 12)
+                  .map((r) => (
+                    <div
+                      key={r.id}
+                      className="rounded-xl border border-border px-3 py-2"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(r.recorded_at).toLocaleString()}
+                      </p>
+                      <p className="mt-0.5">{r.summary}</p>
+                    </div>
+                  ))}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
@@ -429,12 +483,64 @@ export function PatientDetailPage() {
           <CardHeader>
             <CardTitle>Doctor notes</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-4 text-sm">
+            <div className="space-y-2 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+              <p className="font-medium">Add note</p>
+              <textarea
+                className="flex min-h-[96px] w-full rounded-xl border border-input bg-card px-3 py-2 text-sm"
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                placeholder="Clinical observation, counseling, follow-up plan…"
+              />
+              <Button
+                size="sm"
+                disabled={!noteDraft.trim() || mutations.addDoctorNote.isPending}
+                onClick={() => {
+                  if (!patientId || !noteDraft.trim()) return;
+                  mutations.addDoctorNote.mutate(
+                    { patientId, body: noteDraft },
+                    { onSuccess: () => setNoteDraft("") },
+                  );
+                }}
+              >
+                Save note with date &amp; time
+              </Button>
+            </div>
+
+            {patientId
+              ? getStore()
+                  .healthRecords.filter(
+                    (r) =>
+                      r.patient_id === patientId &&
+                      r.category === "doctor_note",
+                  )
+                  .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))
+                  .map((r) => (
+                    <div
+                      key={r.id}
+                      className="rounded-xl border border-border p-3"
+                    >
+                      <p className="font-medium">{r.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(r.recorded_at).toLocaleString()}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">{r.summary}</p>
+                    </div>
+                  ))
+              : null}
+
             {(discharges.data || []).map((d) => (
               <div key={d.id} className="rounded-xl border border-border p-3">
                 <p className="font-medium capitalize">{d.status} discharge</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {d.updated_at
+                    ? new Date(d.updated_at).toLocaleString()
+                    : d.created_at
+                      ? new Date(d.created_at).toLocaleString()
+                      : "NA"}
+                </p>
                 <p className="mt-1 text-muted-foreground">
-                  {d.doctor_notes || "No clinician notes on this discharge."}
+                  {d.doctor_notes || "NA — no clinician notes on this discharge."}
                 </p>
                 {d.special_instructions ? (
                   <p className="mt-2">{d.special_instructions}</p>
@@ -447,13 +553,10 @@ export function PatientDetailPage() {
                 <p className="mt-1 text-muted-foreground">
                   {c.doctor_review_notes ||
                     c.caregiver_instructions ||
-                    "No review notes yet."}
+                    "NA — no review notes yet."}
                 </p>
               </div>
             ))}
-            {!discharges.data?.length && !carePlans.data?.length ? (
-              <p className="text-muted-foreground">No doctor notes yet.</p>
-            ) : null}
           </CardContent>
         </Card>
       ) : null}

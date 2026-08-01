@@ -35,7 +35,7 @@ def get_care_companion_service() -> CareCompanionService:
 
 @lru_cache
 def get_patient_summary_service() -> PatientSummaryService:
-    return PatientSummaryService()
+    return PatientSummaryService(get_openrouter_llm())
 
 
 @lru_cache

@@ -395,17 +395,7 @@ export const doctorRepository = {
         current_medicines: [],
         blood_group: (body.blood_group as string) || null,
       });
-      draft.recoveryScores.push({
-        patient_id: patientId,
-        score: 75,
-        computed_at: now,
-      });
-      draft.risks.push({
-        patient_id: patientId,
-        score: 25,
-        level: "low",
-        computed_at: now,
-      });
+      // Recovery/risk stay unset (NA in UI) until first check-in / score sync.
     });
 
     if (body.caregiver_name && body.caregiver_phone) {
@@ -442,6 +432,62 @@ export const doctorRepository = {
       if (body.blood_group != null) patient.blood_group = String(body.blood_group);
       if (body.medical_history != null)
         patient.medical_history = String(body.medical_history);
+    });
+    return this.getPatient(userId, patientId);
+  },
+
+  /** Timestamped clinician note on the care timeline. */
+  addDoctorNote(userId: string, patientId: string, body: string) {
+    ensureDoctor(userId);
+    const text = body.trim();
+    if (!text) throw new Error("Note cannot be empty");
+    const now = new Date().toISOString();
+    const doctor = ensureDoctor(userId);
+    const doctorName =
+      getStore().profiles.find((p) => p.id === doctor.user_id)?.full_name ||
+      "Doctor";
+    updateStore((draft) => {
+      draft.healthRecords.unshift({
+        id: newId(),
+        patient_id: patientId,
+        category: "doctor_note",
+        title: `Doctor note · ${doctorName}`,
+        summary: text,
+        recorded_at: now,
+        source: "manual",
+        metadata: { doctor_id: doctor.id },
+      });
+    });
+    return { id: `note-${now}`, recorded_at: now, body: text };
+  },
+
+  /** Append dated medical-history entry (also on timeline). */
+  addMedicalHistoryEntry(userId: string, patientId: string, body: string) {
+    ensureDoctor(userId);
+    const text = body.trim();
+    if (!text) throw new Error("History entry cannot be empty");
+    const now = new Date().toISOString();
+    const stamp = new Date(now).toLocaleString();
+    updateStore((draft) => {
+      const patient = draft.patients.find((p) => p.id === patientId);
+      if (!patient) throw new Error("Patient not found");
+      const line = `[${stamp}] ${text}`;
+      patient.medical_history = patient.medical_history
+        ? `${patient.medical_history}\n${line}`
+        : line;
+      const passport = draft.passports.find((p) => p.patient_id === patientId);
+      if (passport) {
+        passport.medical_history = patient.medical_history;
+      }
+      draft.healthRecords.unshift({
+        id: newId(),
+        patient_id: patientId,
+        category: "chronic_disease",
+        title: "Medical history update",
+        summary: text,
+        recorded_at: now,
+        source: "manual",
+      });
     });
     return this.getPatient(userId, patientId);
   },

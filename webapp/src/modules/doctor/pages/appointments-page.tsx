@@ -1,6 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
@@ -24,6 +26,20 @@ import {
   type AppointmentFormSchema,
 } from "@/modules/doctor/schemas";
 import type { AppointmentItem } from "@/modules/doctor/types";
+import {
+  frequencyFromSlots,
+  MEAL_SLOTS,
+  slotsForTimesPerDay,
+} from "@/modules/medicines/repository";
+import { cn } from "@/lib/utils";
+
+type RxLine = {
+  id: string;
+  name: string;
+  dose: string;
+  times_per_day: number;
+  time_slots: string[];
+};
 
 const TABS = [
   { id: "upcoming", label: "Upcoming" },
@@ -43,7 +59,7 @@ export function AppointmentsPage() {
   const [tab, setTab] = useState("upcoming");
   const [editing, setEditing] = useState<AppointmentItem | null>(null);
   const [postVisitFor, setPostVisitFor] = useState<AppointmentItem | null>(null);
-  const [rx, setRx] = useState("");
+  const [rxLines, setRxLines] = useState<RxLine[]>([]);
   const [visitNotes, setVisitNotes] = useState("");
   const appointments = useDoctorAppointments();
   const patients = useDoctorPatients({});
@@ -200,32 +216,190 @@ export function AppointmentsPage() {
               Post-appointment form · {postVisitFor.patient_name}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>New prescription / medicines</Label>
-              <Textarea
-                value={rx}
-                onChange={(e) => setRx(e.target.value)}
-                placeholder="Metformin 500mg BID after food&#10;Amlodipine 5mg OD morning"
-                rows={4}
-              />
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label>New prescription / medicines</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    setRxLines((rows) => [
+                      ...rows,
+                      {
+                        id: newId(),
+                        name: "",
+                        dose: "",
+                        times_per_day: 1,
+                        time_slots: slotsForTimesPerDay(1),
+                      },
+                    ])
+                  }
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Add medicine
+                </Button>
+              </div>
+              {!rxLines.length ? (
+                <p className="rounded-xl border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                  No medicines yet — add one and choose how many times a day.
+                </p>
+              ) : null}
+              {rxLines.map((line) => (
+                <div
+                  key={line.id}
+                  className="space-y-2 rounded-2xl border border-border p-3"
+                >
+                  <div className="grid gap-2 sm:grid-cols-[1.2fr_1fr_auto]">
+                    <Input
+                      placeholder="Medicine name"
+                      value={line.name}
+                      onChange={(e) =>
+                        setRxLines((rows) =>
+                          rows.map((r) =>
+                            r.id === line.id
+                              ? { ...r, name: e.target.value }
+                              : r,
+                          ),
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Dose (e.g. 500 mg)"
+                      value={line.dose}
+                      onChange={(e) =>
+                        setRxLines((rows) =>
+                          rows.map((r) =>
+                            r.id === line.id
+                              ? { ...r, dose: e.target.value }
+                              : r,
+                          ),
+                        )
+                      }
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() =>
+                        setRxLines((rows) =>
+                          rows.filter((r) => r.id !== line.id),
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Times per day</Label>
+                      <Select
+                        value={String(line.times_per_day)}
+                        onChange={(e) => {
+                          const n = Number(e.target.value) || 1;
+                          setRxLines((rows) =>
+                            rows.map((r) =>
+                              r.id === line.id
+                                ? {
+                                    ...r,
+                                    times_per_day: n,
+                                    time_slots: slotsForTimesPerDay(n),
+                                  }
+                                : r,
+                            ),
+                          );
+                        }}
+                      >
+                        <option value="1">1× / day (Morning)</option>
+                        <option value="2">2× / day (Morning + Night)</option>
+                        <option value="3">
+                          3× / day (Morning + Lunch + Dinner)
+                        </option>
+                        <option value="4">
+                          4× / day (Morning + Lunch + Dinner + Night)
+                        </option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Meal slots (adjust)</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {MEAL_SLOTS.map((slot) => {
+                          const on = line.time_slots.includes(slot);
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              className={cn(
+                                "rounded-full border px-2.5 py-1 text-xs",
+                                on
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-card",
+                              )}
+                              onClick={() =>
+                                setRxLines((rows) =>
+                                  rows.map((r) => {
+                                    if (r.id !== line.id) return r;
+                                    const time_slots = on
+                                      ? r.time_slots.filter((s) => s !== slot)
+                                      : [...r.time_slots, slot];
+                                    return {
+                                      ...r,
+                                      time_slots,
+                                      times_per_day: Math.max(
+                                        1,
+                                        time_slots.length,
+                                      ),
+                                    };
+                                  }),
+                                )
+                              }
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {frequencyFromSlots(line.time_slots)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="space-y-1.5">
               <Label>Visit notes for patient</Label>
               <Textarea
                 value={visitNotes}
                 onChange={(e) => setVisitNotes(e.target.value)}
+                placeholder="Advice, follow-up, warning signs…"
                 rows={3}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Saved with date &amp; time stamp on the patient record.
+              </p>
             </div>
             <div className="flex gap-2">
               <Button
                 onClick={() => {
                   const now = new Date().toISOString();
+                  const stamp = new Date(now).toLocaleString();
                   const store = getStore();
                   const patient = store.patients.find(
                     (p) => p.id === postVisitFor.patient_id,
                   );
+                  const validRx = rxLines.filter((l) => l.name.trim());
+                  if (validRx.some((l) => !l.time_slots.length)) {
+                    toast.error("Each medicine needs at least one time slot");
+                    return;
+                  }
+                  const rxSummary = validRx
+                    .map(
+                      (l) =>
+                        `${l.name.trim()}${l.dose ? ` ${l.dose}` : ""} · ${frequencyFromSlots(l.time_slots)} (${l.time_slots.join(", ")})`,
+                    )
+                    .join("\n");
                   updateStore((draft) => {
                     const appt = draft.appointments.find(
                       (a) => a.id === postVisitFor.id,
@@ -234,26 +408,39 @@ export function AppointmentsPage() {
                       appt.status = "completed";
                       appt.notes = [
                         appt.notes,
-                        visitNotes ? `Visit notes: ${visitNotes}` : null,
-                        rx ? `Rx: ${rx}` : null,
+                        visitNotes
+                          ? `[${stamp}] Visit notes: ${visitNotes}`
+                          : null,
+                        rxSummary ? `[${stamp}] Rx:\n${rxSummary}` : null,
                       ]
                         .filter(Boolean)
                         .join("\n");
                     }
-                    // Reflect medicines into patient list when lines look like "Name Dose"
-                    for (const line of rx.split("\n").map((l) => l.trim()).filter(Boolean)) {
-                      const [name, ...rest] = line.split(/\s+/);
-                      if (!name) continue;
+                    for (const line of validRx) {
+                      const slots = line.time_slots.length
+                        ? line.time_slots
+                        : slotsForTimesPerDay(line.times_per_day);
                       draft.medicines.unshift({
                         id: newId(),
                         patient_id: postVisitFor.patient_id,
                         care_plan_id: null,
-                        name,
-                        dose: rest.join(" ") || null,
-                        frequency: "As directed",
-                        time_slots: ["08:00"],
-                        instructions: "Prescribed after clinic visit",
+                        name: line.name.trim(),
+                        dose: line.dose.trim() || null,
+                        frequency: frequencyFromSlots(slots),
+                        time_slots: slots,
+                        instructions: `Prescribed after clinic visit · ${stamp}`,
                         active: true,
+                      });
+                    }
+                    if (visitNotes.trim()) {
+                      draft.healthRecords.unshift({
+                        id: newId(),
+                        patient_id: postVisitFor.patient_id,
+                        category: "doctor_note",
+                        title: "Post-appointment visit note",
+                        summary: visitNotes.trim(),
+                        recorded_at: now,
+                        source: "manual",
                       });
                     }
                     if (patient) {
@@ -268,13 +455,13 @@ export function AppointmentsPage() {
                         read: false,
                         created_at: now,
                       });
-                      if (rx.trim()) {
+                      if (validRx.length) {
                         draft.notifications.unshift({
                           id: newId(),
                           user_id: patient.user_id,
                           type: "medicine",
                           title: "New medicines prescribed",
-                          body: rx.trim().slice(0, 160),
+                          body: rxSummary.slice(0, 160),
                           read: false,
                           created_at: now,
                         });
@@ -285,8 +472,9 @@ export function AppointmentsPage() {
                     id: postVisitFor.id,
                     body: { status: "completed" },
                   });
+                  toast.success("Visit completed — medicines & notes saved");
                   setPostVisitFor(null);
-                  setRx("");
+                  setRxLines([]);
                   setVisitNotes("");
                 }}
               >
@@ -296,7 +484,7 @@ export function AppointmentsPage() {
                 variant="outline"
                 onClick={() => {
                   setPostVisitFor(null);
-                  setRx("");
+                  setRxLines([]);
                   setVisitNotes("");
                 }}
               >

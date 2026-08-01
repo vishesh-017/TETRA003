@@ -45,6 +45,38 @@ const empty: RuralScreeningInput = {
   notes: null,
 };
 
+/** Clamp impossible readings so they don't freeze lifestyle risk bars at 100. */
+function sanitizeCampVitals(form: RuralScreeningInput): {
+  values: Partial<RuralScreeningInput>;
+  warning?: string;
+} {
+  const clampOrNull = (
+    v: number | null,
+    min: number,
+    max: number,
+  ): number | null => {
+    if (v == null || !Number.isFinite(v)) return null;
+    return Math.min(max, Math.max(min, v));
+  };
+  const values = {
+    bp_systolic: clampOrNull(form.bp_systolic, 70, 260),
+    bp_diastolic: clampOrNull(form.bp_diastolic, 40, 160),
+    blood_sugar: clampOrNull(form.blood_sugar, 40, 500),
+    oxygen: clampOrNull(form.oxygen, 50, 100),
+  };
+  const changed =
+    values.bp_systolic !== form.bp_systolic ||
+    values.bp_diastolic !== form.bp_diastolic ||
+    values.blood_sugar !== form.blood_sugar ||
+    values.oxygen !== form.oxygen;
+  return {
+    values,
+    warning: changed
+      ? "Some vitals were outside realistic ranges and were adjusted before save"
+      : undefined,
+  };
+}
+
 type Mode = "camp" | "verify";
 
 export function RuralScreeningPage() {
@@ -95,7 +127,9 @@ export function RuralScreeningPage() {
       toast.error("Scan passport or enter username before screening");
       return;
     }
-    const result = await save.mutateAsync(form);
+    const vitals = sanitizeCampVitals(form);
+    if (vitals.warning) toast.message(vitals.warning);
+    const result = await save.mutateAsync({ ...form, ...vitals.values });
     setDoneId(result.id);
     toast.success(t("savedLocally"));
     if (result.emergency) toast.error(t("emergencyDetected"));
@@ -108,12 +142,15 @@ export function RuralScreeningPage() {
       toast.error("Add people to the camp queue first");
       return;
     }
+    const vitals = sanitizeCampVitals(form);
+    if (vitals.warning) toast.message(vitals.warning);
     let saved = 0;
     const errors: string[] = [];
     for (const name of campQueue) {
       try {
         await save.mutateAsync({
           ...form,
+          ...vitals.values,
           patient_id: null,
           patient_name: name,
           notes: `Camp: ${campName}`,
@@ -127,13 +164,16 @@ export function RuralScreeningPage() {
     }
     if (saved > 0) {
       toast.success(
-        `Camp batch saved offline (${saved}/${campQueue.length}) — open Sync to upload later`,
+        `Saved ${saved} person(s) in this browser — see Patients & map or Sync`,
       );
       setCampQueue([]);
       setDoneId("camp-batch");
     }
     if (errors.length) {
       toast.error(errors[0] || "Some camp rows failed to save");
+    }
+    if (saved === 0 && !errors.length) {
+      toast.error("Nothing was saved — try again");
     }
   };
 
@@ -253,8 +293,9 @@ export function RuralScreeningPage() {
             onChange={(e) => setCampName(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Add names as people arrive — one batch save for the whole camp
-            (works offline).
+            Add names as people arrive — one batch save for the whole camp.
+            Saves in this browser (IndexedDB / localStorage) — no cookies or
+            downloads needed. Works offline; open Sync to confirm.
           </p>
           <div className="flex gap-2">
             <Input

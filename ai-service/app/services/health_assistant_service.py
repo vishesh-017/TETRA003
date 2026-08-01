@@ -79,40 +79,68 @@ class HealthAssistantService:
                 ),
             )
 
-        query = (
-            f"patient recovery education: {q}. "
-            "trusted medical guidance lifestyle diet medicine adherence warning signs"
-        )
-        if payload.patient_context:
-            query += f" Context: {payload.patient_context[:800]}"
-
-        provider_name = self._knowledge.name
-        try:
-            bundle = await self._knowledge.search(
-                query,
-                num_results=5,
-                include_domains=TRUSTED_MEDICAL_DOMAINS,
+        # Casual / short chat: skip Exa — talk via OpenRouter with patient context.
+        needs_web = any(
+            k in lowered
+            for k in (
+                "diet",
+                "exercise",
+                "sleep",
+                "side effect",
+                "warning",
+                "symptom",
+                "recover",
+                "lifestyle",
+                "salt",
+                "sugar",
+                "blood pressure",
+                "diabetes",
+                "heart",
+                "educat",
             )
-        except ProviderUnavailableError:
-            logger.warning("Primary knowledge provider failed; using fallback")
-            bundle = await self._fallback.search(query, num_results=3)
-            provider_name = bundle.provider
+        )
+        sources: list[SourceRef] = []
+        provider_name = "openrouter" if self._llm.configured else "extractive"
 
-        if not bundle.hits:
-            bundle = await self._fallback.search(query, num_results=3)
-            provider_name = bundle.provider
+        if needs_web:
+            query = (
+                f"patient recovery education: {q}. "
+                "trusted medical guidance lifestyle diet medicine adherence warning signs"
+            )
+            if payload.patient_context:
+                query += f" Context: {payload.patient_context[:800]}"
 
-        sources = [
-            SourceRef(title=h.title, url=h.url, snippet=h.snippet)
-            for h in bundle.hits
-            if h.url or h.snippet
-        ]
+            provider_name = self._knowledge.name
+            try:
+                bundle = await self._knowledge.search(
+                    query,
+                    num_results=5,
+                    include_domains=TRUSTED_MEDICAL_DOMAINS,
+                )
+            except ProviderUnavailableError:
+                logger.warning("Primary knowledge provider failed; using fallback")
+                bundle = await self._fallback.search(query, num_results=3)
+                provider_name = bundle.provider
+
+            if not bundle.hits:
+                bundle = await self._fallback.search(query, num_results=3)
+                provider_name = bundle.provider
+
+            sources = [
+                SourceRef(title=h.title, url=h.url, snippet=h.snippet)
+                for h in bundle.hits
+                if h.url or h.snippet
+            ]
 
         summary, points, model_hint = await self._synthesize(
             q, sources, payload.patient_context
         )
         if self._llm.configured and "openrouter" in model_hint:
-            provider_name = f"{provider_name}+openrouter"
+            provider_name = (
+                f"{provider_name}+openrouter"
+                if provider_name != "openrouter"
+                else model_hint
+            )
 
         return HealthAssistantResponse(
             summary=summary,
@@ -140,7 +168,9 @@ class HealthAssistantService:
         if not patient_context:
             return None
         lowered = question.lower()
-        factual = any(
+        # Only short-circuit for factual DB topics. Casual chat ("i am happy")
+        # must fall through to OpenRouter — do NOT dump the patient record.
+        wants_hospitals = any(
             k in lowered
             for k in (
                 "hospital",
@@ -149,13 +179,27 @@ class HealthAssistantService:
                 "ayushman",
                 "opd",
                 "empanel",
+                "cashless",
+            )
+        )
+        wants_record = any(
+            k in lowered
+            for k in (
                 "medicine",
+                "pill",
+                "dose",
+                "tablet",
+                "my record",
+                "my risk",
+                "recovery score",
                 "appointment",
                 "lab",
                 "investig",
+                "what am i taking",
+                "my medicines",
             )
         )
-        if not factual and "healnexus-database" not in patient_context:
+        if not wants_hospitals and not wants_record:
             return None
         try:
             data = json.loads(patient_context)
@@ -169,7 +213,7 @@ class HealthAssistantService:
         pmjay = data.get("pmjay")
         points: list[str] = []
 
-        if any(k in lowered for k in ("hospital", "opd", "pm-jay", "pmjay", "ayushman", "empanel")):
+        if wants_hospitals:
             if not hospitals:
                 return None
             want_opd = "opd" in lowered
@@ -215,7 +259,7 @@ class HealthAssistantService:
             ]
             return summary, points[:6], sources
 
-        if patient:
+        if wants_record and patient:
             name = patient.get("name") or "Patient"
             summary = (
                 f"{name}: recovery {patient.get('recovery_score')}, "
@@ -273,12 +317,16 @@ class HealthAssistantService:
         db_block = (patient_context or "")[:1200]
 
         prompt = (
-            "Answer the patient's recovery education question.\n"
-            "If HealNexus database context is provided, prefer those hospitals/"
-            "medicines/labs over web sources — never invent hospitals outside it.\n"
-            "Return ONLY valid JSON with keys: summary (string), key_points (array of 3-5 short strings).\n"
+            "You are a warm HealNexus care companion for post-discharge support.\n"
+            "Reply conversationally to the patient's message. If they greet or share "
+            "feelings (e.g. happy, tired), acknowledge that first — do not dump their "
+            "full medical record unless they ask about medicines, labs, hospitals, or risk.\n"
+            "If HealNexus database context is provided, use it only when relevant; "
+            "never invent hospitals outside it.\n"
+            "Return ONLY valid JSON with keys: summary (string), "
+            "key_points (array of 0-5 short strings; can be empty for casual chat).\n"
             "Do not diagnose or prescribe.\n\n"
-            f"Question: {question}\n\n"
+            f"Message: {question}\n\n"
             f"HealNexus database context:\n{db_block or '(none)'}\n\n"
             f"Sources:\n{source_block}"
         )
@@ -304,8 +352,8 @@ class HealthAssistantService:
                 for p in (data.get("key_points") or [])
                 if str(p).strip()
             ]
-            if summary and points:
-                if "not a diagnosis" not in summary.lower():
+            if summary:
+                if points and "not a diagnosis" not in summary.lower():
                     summary += " This is general education — not a diagnosis."
                 return summary, points[:5]
         except json.JSONDecodeError:

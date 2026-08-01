@@ -246,6 +246,9 @@ export function usePatientMutations() {
       patientRepository.submitCheckIn(userId, input),
     onSuccess: async (result) => {
       await invalidateAll();
+      await invalidateCareGraph(qc);
+      void qc.invalidateQueries({ queryKey: ["doctor"] });
+      void qc.invalidateQueries({ queryKey: ["patients"] });
       const pipeline = result.pipeline;
       if (pipeline?.escalated) {
         toast.warning("Check-in saved — care team alerted", {
@@ -260,6 +263,8 @@ export function usePatientMutations() {
         });
       }
     },
+    onError: (e: Error) =>
+      toast.error(e.message || "Check-in could not be saved"),
   });
 
   const markNotificationRead = useMutation({

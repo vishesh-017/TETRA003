@@ -22,8 +22,9 @@ export interface TodayDashboard {
   full_name: string;
   greeting_name: string;
   progress_percent: number;
-  recovery_score: number;
-  risk_level: RiskLevel;
+  /** null = no scored check-ins yet (show NA). */
+  recovery_score: number | null;
+  risk_level: RiskLevel | null;
   tasks: TodayTask[];
   next_appointment: AppointmentView | null;
   days_until_appointment: number | null;

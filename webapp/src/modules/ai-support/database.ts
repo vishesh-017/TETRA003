@@ -255,6 +255,8 @@ export function queryAiDatabase(
 
 /** Whether this question should be answered strictly from DB (skip web hallucination). */
 export function shouldPreferDatabase(topic: AiDbTopic): boolean {
+  // Only hard-lock topics that must never be hallucinated.
+  // General chat + education go to OpenRouter (with patient_context).
   return (
     topic === "hospitals" ||
     topic === "pmjay" ||
@@ -262,8 +264,7 @@ export function shouldPreferDatabase(topic: AiDbTopic): boolean {
     topic === "investigations" ||
     topic === "appointments" ||
     topic === "doctors" ||
-    topic === "benefits" ||
-    topic === "patient"
+    topic === "benefits"
   );
 }
 

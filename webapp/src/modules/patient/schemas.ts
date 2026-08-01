@@ -1,17 +1,26 @@
 import { z } from "zod";
 
+/** Empty inputs → null; reject out-of-range vitals with clear messages. */
+function optionalVital(min: number, max: number, label: string) {
+  return z.preprocess((val) => {
+    if (val === "" || val === undefined || val === null) return null;
+    const n = typeof val === "number" ? val : Number(val);
+    return Number.isFinite(n) ? n : null;
+  }, z.number().min(min, `${label} must be ≥ ${min}`).max(max, `${label} must be ≤ ${max}`).nullable());
+}
+
 export const checkInSchema = z.object({
-  bp_systolic: z.coerce.number().min(70).max(250).optional().nullable(),
-  bp_diastolic: z.coerce.number().min(40).max(150).optional().nullable(),
-  blood_sugar: z.coerce.number().min(40).max(600).optional().nullable(),
-  temperature: z.coerce.number().min(90).max(110).optional().nullable(),
-  weight: z.coerce.number().min(20).max(300).optional().nullable(),
-  oxygen: z.coerce.number().min(70).max(100).optional().nullable(),
+  bp_systolic: optionalVital(70, 250, "Systolic BP"),
+  bp_diastolic: optionalVital(40, 150, "Diastolic BP"),
+  blood_sugar: optionalVital(40, 600, "Blood sugar"),
+  temperature: optionalVital(90, 110, "Temperature"),
+  weight: optionalVital(20, 300, "Weight"),
+  oxygen: optionalVital(70, 100, "Oxygen"),
   symptoms: z.array(z.string()).optional().default([]),
-  pain_score: z.coerce.number().min(0).max(10).optional().nullable(),
+  pain_score: optionalVital(0, 10, "Pain score"),
   mood: z.string().optional().nullable(),
-  sleep_hours: z.coerce.number().min(0).max(24).optional().nullable(),
-  water_intake: z.coerce.number().min(0).max(20).optional().nullable(),
+  sleep_hours: optionalVital(0, 24, "Sleep hours"),
+  water_intake: optionalVital(0, 20, "Water intake"),
   exercise: z.string().optional().nullable(),
   medicine_taken: z.boolean().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),

@@ -128,6 +128,28 @@ export function useDoctorMutations() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const addDoctorNote = useMutation({
+    mutationFn: ({ patientId, body }: { patientId: string; body: string }) =>
+      doctorApi.addDoctorNote(token, patientId, body),
+    onSuccess: async (_data, vars) => {
+      toast.success("Note saved with timestamp");
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
+      void qc.invalidateQueries({ queryKey: ["doctor"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const addMedicalHistory = useMutation({
+    mutationFn: ({ patientId, body }: { patientId: string; body: string }) =>
+      doctorApi.addMedicalHistoryEntry(token, patientId, body),
+    onSuccess: async (_data, vars) => {
+      toast.success("Medical history updated");
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
+      void qc.invalidateQueries({ queryKey: queryKeys.patients.detail(vars.patientId) });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const archivePatient = useMutation({
     mutationFn: (id: string) => doctorApi.archivePatient(token, id),
     onSuccess: async (_data, id) => {
@@ -274,6 +296,8 @@ export function useDoctorMutations() {
   return {
     createPatient,
     updatePatient,
+    addDoctorNote,
+    addMedicalHistory,
     archivePatient,
     deletePatient,
     saveDischarge,

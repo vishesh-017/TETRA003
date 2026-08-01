@@ -152,6 +152,10 @@ function diseaseScoreCompare(
   });
 }
 
+/**
+ * Soft risk curves — stay responsive in the demo range so salt/sugar/sleep/
+ * exercise changes move the before→after bars (hard linear formulas capped at 100).
+ */
 function scoreCondition(
   key: "diabetes" | "hypertension" | "ckd" | "heart_disease" | "stroke",
   obs: PatientObservationBundle,
@@ -168,29 +172,55 @@ function scoreCondition(
     return series[series.length - 1]!.value - series[0]!.value;
   })();
 
+  const sugarRisk = clamp((sugar - 90) * 0.55);
+  const sysRisk = clamp((sys - 110) * 1.15);
+  const diaRisk = clamp((dia - 70) * 0.95);
+  const adherenceRisk = clamp((100 - adherence) * 0.4);
+  const sleepRisk = sleep < 5.5 ? 20 : sleep < 6.5 ? 12 : sleep < 7.5 ? 6 : 2;
+  const exerciseRisk =
+    exercise < 10 ? 18 : exercise < 20 ? 12 : exercise < 30 ? 6 : 2;
+  const weightRisk = weightDelta > 1 ? 10 : weightDelta < -1 ? -4 : 0;
+
   let score = 40;
   if (key === "diabetes") {
-    score = clamp(sugar * 0.45 + (100 - adherence) * 0.35 + (sugar > 160 ? 15 : 0));
+    score =
+      22 +
+      sugarRisk * 0.85 +
+      adherenceRisk * 0.55 +
+      (sugar > 160 ? 8 : 0) +
+      exerciseRisk * 0.25;
   } else if (key === "hypertension") {
-    score = clamp(sys * 0.42 + dia * 0.15 + (100 - adherence) * 0.2);
+    score =
+      18 +
+      sysRisk * 0.7 +
+      diaRisk * 0.45 +
+      adherenceRisk * 0.4 +
+      sleepRisk * 0.35;
   } else if (key === "ckd") {
-    score = clamp(
-      sugar * 0.2 + sys * 0.25 + (weightDelta > 0 ? 12 : 0) + (100 - adherence) * 0.25,
-    );
+    score =
+      20 +
+      sugarRisk * 0.45 +
+      sysRisk * 0.4 +
+      adherenceRisk * 0.45 +
+      weightRisk;
   } else if (key === "heart_disease") {
-    score = clamp(
-      sys * 0.28 +
-        (100 - adherence) * 0.25 +
-        (exercise < 20 ? 12 : 0) +
-        (sleep < 6 ? 10 : 0) +
-        sugar * 0.12,
-    );
+    score =
+      18 +
+      sysRisk * 0.5 +
+      sugarRisk * 0.3 +
+      adherenceRisk * 0.4 +
+      exerciseRisk * 0.55 +
+      sleepRisk * 0.4;
   } else {
-    score = clamp(
-      sys * 0.3 + sugar * 0.15 + (100 - adherence) * 0.2 + (sleep < 6 ? 12 : 8),
-    );
+    score =
+      18 +
+      sysRisk * 0.55 +
+      sugarRisk * 0.35 +
+      adherenceRisk * 0.35 +
+      sleepRisk * 0.45 +
+      exerciseRisk * 0.25;
   }
-  return Math.round(score);
+  return Math.round(clamp(score));
 }
 
 function interpret(deltas: Record<string, number>, peakDrop: number): string {

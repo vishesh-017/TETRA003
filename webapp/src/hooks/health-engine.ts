@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { subscribeStore } from "@/data/store";
@@ -99,11 +99,19 @@ export function useLifestyleSimulation(
   const [habits, setHabitsState] = useState<HabitControls>(() =>
     patientId ? getLifestyleHabits(patientId) : { ...getLifestyleHabits("") },
   );
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!patientId) return;
     setHabitsState(getLifestyleHabits(patientId));
   }, [patientId, tick]);
+
+  useEffect(
+    () => () => {
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+    },
+    [],
+  );
 
   const result = useMemo(() => {
     if (!rawBaseline) return null;
@@ -115,7 +123,11 @@ export function useLifestyleSimulation(
     setHabitsState(next);
     if (!patientId) return;
     saveLifestyleHabits(patientId, next);
-    syncScoresFromEngine(patientId);
+    // Instant local UI; debounce store score sync and skip remote ML while dragging.
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => {
+      syncScoresFromEngine(patientId, { refineMl: false });
+    }, 400);
   };
 
   return {

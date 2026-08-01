@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,15 +58,57 @@ export function CheckInPage() {
     if (!patient) return [];
     return store.checkins
       .filter((c) => c.patient_id === patient.id)
+      .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))
       .slice(0, 12);
   }, [user?.id, tick]);
 
   const symptoms = form.watch("symptoms") || [];
+  const fieldErrors = form.formState.errors;
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    await submitCheckIn.mutateAsync(values);
-    setDone(true);
-  });
+  const goNext = async () => {
+    if (step === 0) {
+      const ok = await form.trigger([
+        "bp_systolic",
+        "bp_diastolic",
+        "blood_sugar",
+        "temperature",
+        "weight",
+        "oxygen",
+      ]);
+      if (!ok) {
+        const msg =
+          form.formState.errors.bp_diastolic?.message ||
+          form.formState.errors.bp_systolic?.message ||
+          form.formState.errors.blood_sugar?.message ||
+          "Fix invalid vitals before continuing";
+        toast.error(String(msg));
+        return;
+      }
+    }
+    setStep((s) => s + 1);
+  };
+
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      try {
+        await submitCheckIn.mutateAsync(values);
+        setDone(true);
+      } catch (e) {
+        toast.error(
+          e instanceof Error ? e.message : "Could not save check-in",
+        );
+      }
+    },
+    (errors) => {
+      const first = Object.values(errors)[0];
+      toast.error(
+        typeof first?.message === "string"
+          ? first.message
+          : "Diastolic BP must be 40–150. Fix vitals and try again.",
+      );
+      setStep(0);
+    },
+  );
 
   if (done) {
     return (
@@ -137,24 +180,52 @@ export function CheckInPage() {
               >
                 {step === 0 ? (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Blood pressure (systolic)" id="bp_s">
+                    <Field
+                      label="Blood pressure (systolic)"
+                      id="bp_s"
+                      error={fieldErrors.bp_systolic?.message}
+                    >
                       <Input type="number" {...form.register("bp_systolic")} />
                     </Field>
-                    <Field label="Blood pressure (diastolic)" id="bp_d">
+                    <Field
+                      label="Blood pressure (diastolic)"
+                      id="bp_d"
+                      error={fieldErrors.bp_diastolic?.message}
+                    >
                       <Input type="number" {...form.register("bp_diastolic")} />
                     </Field>
-                    <Field label="Blood sugar" id="sugar">
+                    <Field
+                      label="Blood sugar"
+                      id="sugar"
+                      error={fieldErrors.blood_sugar?.message}
+                    >
                       <Input type="number" {...form.register("blood_sugar")} />
                     </Field>
-                    <Field label="Temperature (°F)" id="temp">
+                    <Field
+                      label="Temperature (°F)"
+                      id="temp"
+                      error={fieldErrors.temperature?.message}
+                    >
                       <Input type="number" step="0.1" {...form.register("temperature")} />
                     </Field>
-                    <Field label="Weight (kg)" id="weight">
+                    <Field
+                      label="Weight (kg)"
+                      id="weight"
+                      error={fieldErrors.weight?.message}
+                    >
                       <Input type="number" step="0.1" {...form.register("weight")} />
                     </Field>
-                    <Field label="Oxygen level (%)" id="o2">
+                    <Field
+                      label="Oxygen level (%)"
+                      id="o2"
+                      error={fieldErrors.oxygen?.message}
+                    >
                       <Input type="number" {...form.register("oxygen")} />
                     </Field>
+                    <p className="sm:col-span-2 text-xs text-muted-foreground">
+                      Typical ranges: systolic 70–250 · diastolic 40–150 · sugar
+                      40–600. Leave blank if not measured.
+                    </p>
                   </div>
                 ) : null}
 
@@ -258,7 +329,7 @@ export function CheckInPage() {
                 Back
               </Button>
               {step < STEPS.length - 1 ? (
-                <Button type="button" onClick={() => setStep((s) => s + 1)}>
+                <Button type="button" onClick={() => void goNext()}>
                   Continue
                 </Button>
               ) : (
@@ -322,15 +393,18 @@ function Field({
   label,
   id,
   children,
+  error,
 }: {
   label: string;
   id: string;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

@@ -220,29 +220,42 @@ export async function askGroundedAssistant(
     return { ...local, provider: "healnexus-db" };
   }
 
-  if (!isAiServiceConfigured()) return local;
+  if (!isAiServiceConfigured()) {
+    return {
+      ...local,
+      summary: `${local.summary} (AI service URL not set — local answer only.)`,
+    };
+  }
 
   try {
     const remote = await askRemote(messages, {
       patient_context: db.context_json,
       local_summary: local.summary,
     });
-    if (remote.provider === "stub" || remote.provider === "error") return local;
+    if (remote.provider === "stub" || remote.provider === "error") {
+      return {
+        ...local,
+        summary: `${remote.summary || local.summary}`,
+        provider: `local-fallback (${remote.provider})`,
+      };
+    }
     return {
       summary: remote.summary,
-      key_points: [
-        ...(remote.key_points || []),
-        ...local.key_points.slice(0, 2),
-      ].slice(0, 8),
+      key_points: (remote.key_points || []).slice(0, 8),
       when_to_contact_doctor: [
         ...(remote.when_to_contact_doctor || []),
         ...local.when_to_contact_doctor.slice(0, 2),
       ].slice(0, 6),
       disclaimer: DISCLAIMER,
-      provider: `healnexus-db+${remote.provider}`,
+      provider: remote.provider.includes("openrouter")
+        ? remote.provider
+        : `openrouter+${remote.provider}`,
     };
   } catch {
-    return local;
+    return {
+      ...local,
+      provider: "local-fallback (AI request failed)",
+    };
   }
 }
 
