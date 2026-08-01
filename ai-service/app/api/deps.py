@@ -13,6 +13,7 @@ from app.providers.openrouter_provider import OpenRouterLLM
 from app.services.care_companion_service import CareCompanionService
 from app.services.education_service import EducationService
 from app.services.government_guidance_service import GovernmentGuidanceService
+from app.services.emergency_checkup_service import EmergencyCheckupService
 from app.services.health_assistant_service import HealthAssistantService
 from app.services.patient_summary_service import PatientSummaryService
 
@@ -40,6 +41,11 @@ def get_patient_summary_service() -> PatientSummaryService:
 @lru_cache
 def get_health_assistant_service() -> HealthAssistantService:
     return HealthAssistantService(get_knowledge_provider(), get_openrouter_llm())
+
+
+@lru_cache
+def get_emergency_checkup_service() -> EmergencyCheckupService:
+    return EmergencyCheckupService(get_openrouter_llm())
 
 
 @lru_cache

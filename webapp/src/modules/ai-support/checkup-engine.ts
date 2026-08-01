@@ -4,11 +4,11 @@ import {
   buildLivePatientSnapshot,
   type LivePatientSnapshot,
 } from "@/modules/ai-support/patient-snapshot";
+import { recommendMissingInvestigations } from "@/modules/ai-support/clinical-outcomes";
 import type {
   AiCheckupResult,
   DiseaseRiskScore,
   ReferralAdvice,
-  ScreeningRecommendation,
 } from "@/modules/ai-support/types";
 
 const DISCLAIMER =
@@ -282,7 +282,7 @@ export function runAiCheckup(userOrPatientId: string): AiCheckupResult | null {
     crit.level,
   );
 
-  const emptyScreening: ScreeningRecommendation[] = [];
+  const screening = recommendMissingInvestigations(snap.patient_id);
 
   const next_actions: string[] = [];
   if (!snap.latest_checkin) {
@@ -333,8 +333,8 @@ export function runAiCheckup(userOrPatientId: string): AiCheckupResult | null {
     disease_scores,
     warning_signs: [...suffering, ...warning_signs],
     progression_signals: crit.drivers,
-    missing_investigations: emptyScreening,
-    screening_recommendations: emptyScreening,
+    missing_investigations: screening,
+    screening_recommendations: screening,
     referral,
     medicines_summary: snap.medicines.map(
       (m) =>

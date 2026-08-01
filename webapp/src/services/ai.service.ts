@@ -189,3 +189,53 @@ export async function fetchGovernmentGuidance(payload: {
     body: payload,
   });
 }
+
+export interface EmergencyCheckupApiResult {
+  title: string;
+  summary: string;
+  criticality: string;
+  criticality_score: number;
+  is_emergency: boolean;
+  warning_signals: string[];
+  next_actions: string[];
+  when_to_call_108: string[];
+  early_warnings: string[];
+  disease_risks: Array<{
+    key: string;
+    label: string;
+    score: number;
+    band: string;
+  }>;
+  missing_investigations: Array<{
+    test_name: string;
+    priority: string;
+    reason: string;
+    evidence_basis?: string;
+  }>;
+  referral: {
+    recommended?: boolean;
+    urgency?: string;
+    specialty?: string;
+    message?: string;
+  };
+  provider: string;
+  disclaimer: string;
+}
+
+/** Sudden-symptom triage via OpenRouter on ai-service. */
+export async function askEmergencyCheckup(input: {
+  symptoms: string;
+  patient_context?: string;
+}): Promise<EmergencyCheckupApiResult> {
+  if (!isAiServiceConfigured()) {
+    throw new ApiError("AI API base URL is not configured", 503);
+  }
+  return aiRequest<EmergencyCheckupApiResult>("/ai/emergency-checkup", {
+    method: "POST",
+    body: {
+      symptoms: input.symptoms,
+      patient_context: input.patient_context,
+      locale: "en",
+    },
+  });
+}
