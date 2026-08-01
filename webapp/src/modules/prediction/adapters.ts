@@ -1,4 +1,5 @@
 import { getStore, IDS, todayKey } from "@/data/store";
+import { applyStoredHabits, getLifestyleHabits } from "@/modules/patient/lifestyle-habits";
 import { patientRepository } from "@/modules/patient/repository";
 import type { PatientObservationBundle, TimedValue } from "@/modules/prediction/types";
 
@@ -26,6 +27,17 @@ function resolvePatientRecord(userOrPatientId: string) {
   return store.patients.find((p) => p.user_id === userOrPatientId) ?? null;
 }
 
+function ageFromDob(dob: string | null | undefined): number | null {
+  if (!dob) return null;
+  const born = new Date(dob);
+  if (Number.isNaN(born.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - born.getFullYear();
+  const m = now.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < born.getDate())) age -= 1;
+  return age;
+}
+
 function missedCheckinDays(patientId: string): number {
   const today = todayKey();
   const checkins = getStore()
@@ -40,8 +52,8 @@ function missedCheckinDays(patientId: string): number {
   return Math.max(0, Math.floor(ms / 86_400_000));
 }
 
-/** Build observation payload from the dynamic local store (patient or user id). */
-export function buildObservationsFromLocal(
+/** Raw vitals/adherence — live store only (no fabricated demo series). */
+export function buildRawObservationsFromLocal(
   userOrPatientId: string,
 ): PatientObservationBundle {
   const store = getStore();
@@ -66,26 +78,18 @@ export function buildObservationsFromLocal(
     .filter((c) => c.patient_id === patientId)
     .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
 
-  // Prefer real check-in series. Fallback demos stay flat-stable so charts
-  // never contradict labels when a patient has no longitudinal vitals yet.
-  const sugar = checkins.length
-    ? seriesFrom(
-        checkins.map((c) => c.blood_sugar),
-        checkins.map((c) => c.recorded_at),
-      )
-    : seriesFrom([138, 140, 139, 141, 140]);
-  const bpSys = checkins.length
-    ? seriesFrom(
-        checkins.map((c) => c.bp_systolic),
-        checkins.map((c) => c.recorded_at),
-      )
-    : seriesFrom([128, 130, 129, 131, 130]);
-  const bpDia = checkins.length
-    ? seriesFrom(
-        checkins.map((c) => c.bp_diastolic),
-        checkins.map((c) => c.recorded_at),
-      )
-    : seriesFrom([82, 84, 83, 84, 82]);
+  const sugar = seriesFrom(
+    checkins.map((c) => c.blood_sugar),
+    checkins.map((c) => c.recorded_at),
+  );
+  const bpSys = seriesFrom(
+    checkins.map((c) => c.bp_systolic),
+    checkins.map((c) => c.recorded_at),
+  );
+  const bpDia = seriesFrom(
+    checkins.map((c) => c.bp_diastolic),
+    checkins.map((c) => c.recorded_at),
+  );
 
   const conditions: PatientObservationBundle["conditions"] = [];
   for (const c of patient?.chronic_diseases || []) {
@@ -98,62 +102,96 @@ export function buildObservationsFromLocal(
     else if (lower.includes("ckd") || lower.includes("kidney"))
       conditions.push("ckd");
   }
-  if (!conditions.length) conditions.push("diabetes", "hypertension");
+  const discharge = store.discharges
+    .filter((d) => d.patient_id === patientId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  if (!conditions.length && discharge?.diagnosis_text) {
+    const d = discharge.diagnosis_text.toLowerCase();
+    if (d.includes("diabet")) conditions.push("diabetes");
+    if (d.includes("hyper") || d.includes("blood pressure"))
+      conditions.push("hypertension");
+    if (d.includes("heart") || d.includes("cardiac"))
+      conditions.push("heart_disease");
+    if (d.includes("ckd") || d.includes("kidney")) conditions.push("ckd");
+  }
 
   const dash = patientRepository.getTodayDashboard(userId);
   const appts = patientRepository.listAppointments(userId);
   const missedAppts = appts.filter((a) => a.status === "missed").length;
 
+  const habits = patientId ? getLifestyleHabits(patientId) : null;
+  const hasHabitRow = patientId
+    ? store.lifestyleHabits.some((h) => h.patient_id === patientId)
+    : false;
+
+  const sleepFromCheckins = seriesFrom(
+    checkins.map((c) => c.sleep_hours),
+    checkins.map((c) => c.recorded_at),
+  );
+  const waterFromCheckins = seriesFrom(
+    checkins.map((c) => c.water_intake),
+    checkins.map((c) => c.recorded_at),
+  );
+  const weightFromCheckins = seriesFrom(
+    checkins.map((c) => c.weight),
+    checkins.map((c) => c.recorded_at),
+  );
+  const tempFromCheckins = seriesFrom(
+    checkins.map((c) => c.temperature),
+    checkins.map((c) => c.recorded_at),
+  );
+
+  // Exercise: only from saved lifestyle habit (live), never invented series.
+  const exercise_minutes =
+    hasHabitRow && habits
+      ? [{ value: habits.exercise_minutes_week / 7, recorded_at: todayKey() }]
+      : [];
+
   return {
     patient_id: patientId || IDS.patient,
     patient_name: profile?.full_name || "Patient",
+    age: ageFromDob(patient?.date_of_birth),
+    sex: patient?.sex ?? null,
     conditions,
     medicine_adherence_percent: adherence || recovery.factors.medicine_adherence,
-    missed_medicine_doses_7d: Math.max(missedMeds, adherence < 80 ? 2 : 0),
+    missed_medicine_doses_7d: missedMeds,
     missed_checkin_days: missedCheckinDays(patientId),
-    appointment_adherence_percent: missedAppts ? 70 : 95,
+    appointment_adherence_percent: appts.length
+      ? Math.round(((appts.length - missedAppts) / appts.length) * 100)
+      : 100,
     missed_appointments_30d: missedAppts,
     checkin_completion_percent: dash.progress_percent,
     blood_pressure_systolic: bpSys,
     blood_pressure_diastolic: bpDia,
     blood_sugar: sugar,
-    sleep_hours: seriesFrom(
-      checkins.map((c) => c.sleep_hours).filter((v): v is number => v != null)
-        .length
-        ? checkins.map((c) => c.sleep_hours)
-        : [6, 6.5, 7, 6, 5.5],
-    ),
-    water_intake_glasses: seriesFrom(
-      checkins.map((c) => c.water_intake).filter((v): v is number => v != null)
-        .length
-        ? checkins.map((c) => c.water_intake)
-        : [4, 5, 5, 6, 5],
-    ),
-    exercise_minutes: seriesFrom([10, 15, 12, 20, 18]),
-    temperature_f: seriesFrom(
-      checkins.map((c) => c.temperature).filter((v): v is number => v != null)
-        .length
-        ? checkins.map((c) => c.temperature)
-        : [98.4, 98.6, 98.8],
-    ),
-    weight_kg: seriesFrom(
-      checkins.map((c) => c.weight).filter((v): v is number => v != null).length
-        ? checkins.map((c) => c.weight)
-        : [72, 72.2, 72.4, 72.8, 73.1],
-    ),
-    symptom_log: checkins.length
-      ? checkins.map((c) => ({
-          recorded_at: c.recorded_at,
-          symptoms: c.symptoms,
-          pain_score: c.pain_score,
-          severity: c.symptoms.length * 2,
-        }))
-      : [
-          { symptoms: ["Fatigue"], pain_score: 3, severity: 3 },
-          { symptoms: ["Fatigue", "Headache"], pain_score: 4, severity: 5 },
-        ],
-    current_pain_score: checkins.at(-1)?.pain_score ?? 3,
+    sleep_hours: sleepFromCheckins.length
+      ? sleepFromCheckins
+      : hasHabitRow && habits
+        ? [{ value: habits.sleep_hours, recorded_at: todayKey() }]
+        : [],
+    water_intake_glasses: waterFromCheckins,
+    exercise_minutes,
+    temperature_f: tempFromCheckins,
+    weight_kg: weightFromCheckins,
+    symptom_log: checkins.map((c) => ({
+      recorded_at: c.recorded_at,
+      symptoms: c.symptoms,
+      pain_score: c.pain_score,
+      severity: c.symptoms.length * 2,
+    })),
+    current_pain_score: checkins.at(-1)?.pain_score ?? null,
   };
+}
+
+/** Live observations with persisted lifestyle habits applied (AI scores). */
+export function buildObservationsFromLocal(
+  userOrPatientId: string,
+): PatientObservationBundle {
+  const raw = buildRawObservationsFromLocal(userOrPatientId);
+  const patient = resolvePatientRecord(userOrPatientId);
+  const patientId =
+    patient?.id || patientRepository.resolvePatientId(userOrPatientId);
+  return patientId ? applyStoredHabits(patientId, raw) : raw;
 }
 
 /** Doctor-facing helper: observations for a patient row id. */

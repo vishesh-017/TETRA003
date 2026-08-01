@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FileUp, FlaskConical } from "lucide-react";
 
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -12,18 +12,27 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/auth-context";
+import { openAttachment } from "@/lib/open-attachment";
 import {
   usePatientReports,
   useReportMutations,
 } from "@/modules/reports/hooks";
+import { listDoctorsForPatient } from "@/modules/reports/repository";
 
-export function PatientReportsPage() {
+export function PatientReportsPage({ embedded = false }: { embedded?: boolean }) {
+  const { user } = useAuth();
   const query = usePatientReports();
   const { upload } = useReportMutations();
+  const doctors = useMemo(
+    () => (user?.id ? listDoctorsForPatient(user.id) : []),
+    [user?.id, query.dataUpdatedAt],
+  );
   const [title, setTitle] = useState("");
   const [reportType, setReportType] = useState("blood");
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [doctorId, setDoctorId] = useState("");
 
   if (query.isLoading) return <LoadingScreen fullScreen={false} />;
   if (query.isError) {
@@ -36,13 +45,24 @@ export function PatientReportsPage() {
     );
   }
 
+  const selectedDoctor = doctorId || doctors[0]?.id || "";
+
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-10">
-      <PageHeader
-        eyebrow="Records"
-        title="My reports"
-        description="Upload blood reports or other documents. Your doctor can review and send feedback here."
-      />
+    <div className={embedded ? "space-y-5" : "mx-auto flex max-w-3xl flex-col gap-6 pb-10"}>
+      {!embedded ? (
+        <PageHeader
+          eyebrow="Records"
+          title="My reports"
+          description="Upload a PDF/image and choose which doctor receives it. Files open from secure local storage."
+        />
+      ) : (
+        <div>
+          <h2 className="font-display text-xl font-semibold">Uploaded reports</h2>
+          <p className="text-sm text-muted-foreground">
+            Select a doctor, attach the file, then upload — it appears for that doctor immediately.
+          </p>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -59,6 +79,24 @@ export function PatientReportsPage() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="HbA1c / Lipid profile / CBC"
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Send to doctor</Label>
+            <Select
+              value={selectedDoctor}
+              onChange={(e) => setDoctorId(e.target.value)}
+            >
+              {doctors.length === 0 ? (
+                <option value="">No linked doctor</option>
+              ) : (
+                doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                    {d.specialty ? ` · ${d.specialty}` : ""}
+                  </option>
+                ))
+              )}
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Type</Label>
@@ -80,7 +118,7 @@ export function PatientReportsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>File (PDF / image)</Label>
+            <Label>File (PDF / image) — required</Label>
             <Input
               type="file"
               accept=".pdf,image/*"
@@ -88,42 +126,35 @@ export function PatientReportsPage() {
             />
           </div>
           <Button
-            disabled={upload.isPending || !title.trim()}
+            disabled={
+              upload.isPending || !title.trim() || !file || !selectedDoctor
+            }
             onClick={() => {
-              const reader = new FileReader();
-              const finish = (fileUrl?: string) => {
-                upload.mutate(
-                  {
-                    title,
-                    report_type: reportType,
-                    notes,
-                    fileName: file?.name,
-                    fileUrl,
-                    mime: file?.type,
+              upload.mutate(
+                {
+                  title,
+                  report_type: reportType,
+                  notes,
+                  file,
+                  doctorId: selectedDoctor,
+                },
+                {
+                  onSuccess: () => {
+                    setTitle("");
+                    setNotes("");
+                    setFile(null);
                   },
-                  {
-                    onSuccess: () => {
-                      setTitle("");
-                      setNotes("");
-                      setFile(null);
-                    },
-                  },
-                );
-              };
-              if (file) {
-                reader.onload = () => finish(String(reader.result || ""));
-                reader.readAsDataURL(file);
-              } else {
-                finish();
-              }
+                },
+              );
             }}
           >
-            {upload.isPending ? "Uploading…" : "Upload"}
+            {upload.isPending ? "Uploading…" : "Upload to doctor"}
           </Button>
         </CardContent>
       </Card>
 
       <div className="space-y-3">
+        <h3 className="font-medium">Your uploads</h3>
         {(query.data || []).length === 0 ? (
           <EmptyState
             icon={FlaskConical}
@@ -142,17 +173,26 @@ export function PatientReportsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {new Date(r.created_at).toLocaleString()} · {r.report_type}
+                  {r.doctor_name ? ` · to ${r.doctor_name}` : ""}
                 </p>
-                {r.attachment_name ? (
-                  <a
-                    href={r.attachment_url || "#"}
-                    className="text-sm text-primary underline"
-                    target="_blank"
-                    rel="noreferrer"
+                {r.attachment_url ? (
+                  <button
+                    type="button"
+                    className="text-left text-sm text-primary underline"
+                    onClick={() =>
+                      void openAttachment(
+                        r.attachment_url!,
+                        r.attachment_name || "report.pdf",
+                      ).catch((e) =>
+                        alert(e instanceof Error ? e.message : "Could not open"),
+                      )
+                    }
                   >
-                    {r.attachment_name}
-                  </a>
-                ) : null}
+                    {r.attachment_name || "Open attachment"}
+                  </button>
+                ) : (
+                  <p className="text-xs text-destructive">No file attached</p>
+                )}
                 {r.doctor_feedback ? (
                   <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
                     <p className="font-medium">Doctor feedback</p>

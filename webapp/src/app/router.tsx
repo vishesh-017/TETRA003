@@ -134,9 +134,19 @@ const AiAssistantPage = lazy(() =>
     default: m.AiAssistantPage,
   })),
 );
+const AiCheckupPage = lazy(() =>
+  import("@/modules/ai-support/pages/ai-checkup-page").then((m) => ({
+    default: m.AiCheckupPage,
+  })),
+);
 const RecoveryPage = lazy(() =>
   import("@/modules/patient/pages/recovery-page").then((m) => ({
     default: m.RecoveryPage,
+  })),
+);
+const AdminPage = lazy(() =>
+  import("@/modules/admin/pages/admin-page").then((m) => ({
+    default: m.AdminPage,
   })),
 );
 const LifestyleSimulatorPage = lazy(() =>
@@ -346,6 +356,19 @@ export function AppRouter() {
           }
         />
 
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route element={<AppLayout />}>
+            <Route
+              path="/admin"
+              element={
+                <Lazy>
+                  <AdminPage />
+                </Lazy>
+              }
+            />
+          </Route>
+        </Route>
+
         <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
           <Route element={<AppLayout />}>
             <Route
@@ -460,9 +483,7 @@ export function AppRouter() {
             <Route
               path="/patient/reports"
               element={
-                <Lazy>
-                  <PatientReportsPage />
-                </Lazy>
+                <Navigate to="/patient/investigations" replace />
               }
             />
             <Route
@@ -510,6 +531,14 @@ export function AppRouter() {
               element={
                 <Lazy>
                   <AiAssistantPage />
+                </Lazy>
+              }
+            />
+            <Route
+              path="/patient/ai-checkup"
+              element={
+                <Lazy>
+                  <AiCheckupPage />
                 </Lazy>
               }
             />
@@ -668,11 +697,7 @@ export function AppRouter() {
               />
               <Route
                 path="/rural/visits"
-                element={
-                  <Lazy>
-                    <RuralVisitsPage />
-                  </Lazy>
-                }
+                element={<Navigate to="/rural/screening" replace />}
               />
               <Route
                 path="/rural/education"
@@ -715,9 +740,7 @@ export function AppRouter() {
             <Route
               path="/government/pmjay"
               element={
-                <Lazy>
-                  <PmjayPage />
-                </Lazy>
+                <Navigate to="/government/benefits?tab=pmjay" replace />
               }
             />
             <Route

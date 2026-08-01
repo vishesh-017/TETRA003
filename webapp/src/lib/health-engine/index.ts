@@ -35,6 +35,7 @@ export { computeReadmissionRisk, riskCategory } from "./risk";
 export { computeDiseaseProgression } from "./disease";
 export { computeTrendAnalysis } from "./trends";
 export { simulateLifestyle, applyAdjustments } from "./simulator";
+export { DEFAULT_HABITS, habitsToAdjustments } from "./habits";
 export { computeAlertDecision } from "./alerts";
 export { explainPrediction } from "./explain";
 export {

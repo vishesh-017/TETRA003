@@ -1,5 +1,6 @@
 import { getStore, IDS, newId, updateStore } from "@/data/store";
 import type { ClinicalReportRow } from "@/data/store/types";
+import { saveAttachmentFromFile } from "@/lib/attachment-store";
 
 function doctorForUser(userId: string) {
   const store = getStore();
@@ -22,10 +23,36 @@ function toView(row: ClinicalReportRow) {
   const profile = patient
     ? store.profiles.find((p) => p.id === patient.user_id)
     : undefined;
+  const doctor = row.doctor_id
+    ? store.doctors.find((d) => d.id === row.doctor_id)
+    : null;
+  const doctorProfile = doctor
+    ? store.profiles.find((p) => p.id === doctor.user_id)
+    : null;
   return {
     ...row,
     patient_name: profile?.full_name ?? "Patient",
+    doctor_name: doctorProfile?.full_name ?? null,
   };
+}
+
+export function listDoctorsForPatient(userId: string) {
+  const patientId = patientIdForUser(userId);
+  const store = getStore();
+  return store.relationships
+    .filter((r) => r.patient_id === patientId && r.status === "active")
+    .map((r) => {
+      const doctor = store.doctors.find((d) => d.id === r.doctor_id);
+      const profile = doctor
+        ? store.profiles.find((p) => p.id === doctor.user_id)
+        : null;
+      return {
+        id: r.doctor_id,
+        name: profile?.full_name || "Doctor",
+        specialty: doctor?.specialty || "",
+        hospital: doctor?.hospital_affiliation || "",
+      };
+    });
 }
 
 export const reportsRepository = {
@@ -47,40 +74,54 @@ export const reportsRepository = {
         .map((r) => r.patient_id),
     );
     return getStore()
-      .clinicalReports.filter((r) => patientIds.has(r.patient_id))
+      .clinicalReports.filter(
+        (r) => r.doctor_id === doctor.id || patientIds.has(r.patient_id),
+      )
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .map(toView);
   },
 
-  upload(
+  async upload(
     userId: string,
     input: {
       title: string;
       report_type: string;
       notes?: string;
-      fileName?: string;
-      fileUrl?: string;
-      mime?: string;
+      file?: File | null;
+      doctorId?: string | null;
     },
   ) {
+    if (!input.file) throw new Error("Please choose a PDF or image file");
     const patientId = patientIdForUser(userId);
     const store = getStore();
-    const rel = store.relationships.find(
-      (r) => r.patient_id === patientId && r.status === "active",
+    const doctors = listDoctorsForPatient(userId);
+    const doctorId =
+      input.doctorId ||
+      doctors[0]?.id ||
+      store.relationships.find(
+        (r) => r.patient_id === patientId && r.status === "active",
+      )?.doctor_id ||
+      null;
+    if (!doctorId) throw new Error("Select a doctor to send this report to");
+
+    const id = newId();
+    const attachmentRef = await saveAttachmentFromFile(
+      `report-${id}`,
+      input.file,
     );
     const now = new Date().toISOString();
-    const id = newId();
+
     updateStore((draft) => {
       draft.clinicalReports.unshift({
         id,
         patient_id: patientId,
-        doctor_id: rel?.doctor_id ?? null,
+        doctor_id: doctorId,
         title: input.title.trim() || "Clinical report",
         report_type: input.report_type || "lab",
         notes: input.notes?.trim() || null,
-        attachment_name: input.fileName || null,
-        attachment_url: input.fileUrl || null,
-        attachment_mime: input.mime || null,
+        attachment_name: input.file!.name,
+        attachment_url: attachmentRef,
+        attachment_mime: input.file!.type || "application/pdf",
         doctor_feedback: null,
         feedback_at: null,
         status: "uploaded",
@@ -98,19 +139,17 @@ export const reportsRepository = {
         facility: null,
         metadata: { clinical_report_id: id },
       });
-      if (rel) {
-        const doctor = draft.doctors.find((d) => d.id === rel.doctor_id);
-        if (doctor) {
-          draft.notifications.unshift({
-            id: newId(),
-            user_id: doctor.user_id,
-            type: "investigation",
-            title: "New patient report uploaded",
-            body: `${draft.profiles.find((p) => p.id === userId)?.full_name || "Patient"} uploaded: ${input.title}`,
-            read: false,
-            created_at: now,
-          });
-        }
+      const doctor = draft.doctors.find((d) => d.id === doctorId);
+      if (doctor) {
+        draft.notifications.unshift({
+          id: newId(),
+          user_id: doctor.user_id,
+          type: "investigation",
+          title: "New patient report uploaded",
+          body: `${draft.profiles.find((p) => p.id === userId)?.full_name || "Patient"} uploaded: ${input.title}`,
+          read: false,
+          created_at: now,
+        });
       }
     });
     return toView(getStore().clinicalReports.find((r) => r.id === id)!);

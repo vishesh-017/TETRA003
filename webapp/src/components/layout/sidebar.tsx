@@ -2,19 +2,20 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
   Bell,
+  Bot,
   CalendarDays,
   ChartColumn,
-  ChevronsLeft,
   ClipboardList,
+  FlaskConical,
   HeartHandshake,
   HeartPulse,
-  Hospital,
   LayoutDashboard,
   LogOut,
   MapPinned,
   Pill,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   Stethoscope,
   UserRound,
@@ -49,6 +50,15 @@ type NavGroup = {
 };
 
 const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
+  admin: [
+    {
+      id: "ops",
+      label: "Operations",
+      items: [
+        { label: "Admin", href: "/admin", icon: Settings },
+      ],
+    },
+  ],
   doctor: [
     {
       id: "command",
@@ -87,7 +97,8 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
           icon: CalendarDays,
         },
         { label: "Recovery", href: "/patient/recovery-score", icon: ChartColumn },
-        { label: "Reports", href: "/patient/reports", icon: ClipboardList },
+        { label: "AI Checkup", href: "/patient/ai-checkup", icon: FlaskConical },
+        { label: "AI Assistant", href: "/patient/ai-assistant", icon: Bot },
       ],
     },
     {
@@ -95,8 +106,11 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       label: "Identity",
       items: [
         { label: "Passport", href: "/patient/passport", icon: Stethoscope },
-        { label: "Benefits", href: "/government/benefits", icon: Sparkles },
-        { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
+        {
+          label: "Benefits",
+          href: "/government/benefits",
+          icon: ShieldCheck,
+        },
         { label: "Hospitals", href: "/maps", icon: MapPinned },
         {
           label: "Caregivers",
@@ -143,9 +157,8 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       label: "Field",
       items: [
         { label: "Home", href: "/rural", icon: LayoutDashboard },
-        { label: "Screening", href: "/rural/screening", icon: HeartPulse },
-        { label: "Patients", href: "/rural/patients", icon: Users },
-        { label: "Visits", href: "/rural/visits", icon: CalendarDays },
+        { label: "Field work", href: "/rural/screening", icon: HeartPulse },
+        { label: "Patients & map", href: "/rural/patients", icon: Users },
         { label: "Sync", href: "/rural/sync", icon: WifiOff },
         { label: "Education", href: "/rural/education", icon: Stethoscope },
         { label: "Alerts", href: "/rural/notifications", icon: Bell },
@@ -158,8 +171,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useAppLocale();
-  const { sidebarCollapsed, mobileOpen, setMobileOpen, toggleCollapsed } =
-    useShell();
+  const { sidebarCollapsed, mobileOpen, setMobileOpen } = useShell();
   const role = user?.role ?? "patient";
   const groups = NAV_GROUPS[role];
   const collapsed = sidebarCollapsed;
@@ -215,32 +227,15 @@ export function Sidebar() {
           <div className={cn("hidden", collapsed && "md:block")}>
             <HealNexusMark size={32} />
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden md:inline-flex"
-              onClick={toggleCollapsed}
-              aria-label={t("toggle_sidebar")}
-              title={t("toggle_sidebar")}
-            >
-              <ChevronsLeft
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  collapsed && "rotate-180",
-                )}
-              />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileOpen(false)}
-              aria-label="Close navigation"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-3">

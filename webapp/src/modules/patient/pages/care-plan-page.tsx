@@ -8,11 +8,17 @@ import {
   Sunset,
 } from "lucide-react";
 
+import { Link } from "react-router-dom";
+
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import { LifestyleSimulator } from "@/components/health-engine";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLifestyleSimulation } from "@/hooks/health-engine";
+import { cn } from "@/lib/utils";
 import { TaskRow } from "@/modules/patient/components/task-row";
 import {
   useActiveCarePlan,
@@ -38,6 +44,7 @@ export function CarePlanPage() {
   const dash = useTodayDashboard();
   const activePlan = useActiveCarePlan();
   const { setTaskStatus } = usePatientMutations();
+  const lifestyle = useLifestyleSimulation();
 
   if (timeline.isLoading) return <LoadingScreen label="Loading care plan…" />;
   if (timeline.isError || !timeline.data)
@@ -97,6 +104,13 @@ export function CarePlanPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <div>
+        <h2 className="font-display text-2xl font-semibold">Today&apos;s plan</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Complete these live tasks from your approved care plan first.
+        </p>
+      </div>
 
       {timeline.data.map((block, index) => {
         const meta = PERIOD_META[block.period];
@@ -164,6 +178,33 @@ export function CarePlanPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <section className="space-y-3 border-t border-border pt-6">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              After today&apos;s plan
+            </p>
+            <h2 className="font-display text-2xl font-semibold">
+              Lifestyle simulator
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Explore habit changes — scores update live from your record.
+            </p>
+          </div>
+          <Link
+            to="/patient/lifestyle-simulator"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Open full simulator
+          </Link>
+        </div>
+        <LifestyleSimulator
+          habits={lifestyle.habits}
+          onChange={lifestyle.setHabits}
+          result={lifestyle.result}
+        />
+      </section>
     </div>
   );
 }

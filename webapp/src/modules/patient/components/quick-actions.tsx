@@ -16,10 +16,16 @@ const ACTIONS = [
     tone: "from-primary/15 to-primary/5",
   },
   {
+    label: "AI Checkup",
+    href: "/patient/ai-checkup",
+    icon: Bot,
+    tone: "from-secondary/15 to-secondary/5",
+  },
+  {
     label: "AI Health Assistant",
     href: "/patient/ai-assistant",
     icon: Bot,
-    tone: "from-secondary/15 to-secondary/5",
+    tone: "from-teal-500/15 to-teal-500/5",
   },
   {
     label: "Patient Passport",

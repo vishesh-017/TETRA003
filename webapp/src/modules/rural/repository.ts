@@ -118,6 +118,42 @@ export const ruralRepository = {
     return this.listVisits(IDS.healthWorkerUser);
   },
 
+  findPatientByPassportOrUsername(token: string) {
+    const raw = token.trim();
+    if (!raw) return null;
+    const store = getStore();
+    const lower = raw.toLowerCase();
+    const byPassport = store.passports.find(
+      (p) => p.qr_token.toLowerCase() === lower,
+    );
+    let patient = byPassport
+      ? store.patients.find((p) => p.id === byPassport.patient_id)
+      : null;
+    if (!patient) {
+      const profile = store.profiles.find(
+        (p) => p.username?.toLowerCase() === lower && p.role === "patient",
+      );
+      if (profile) {
+        patient = store.patients.find((p) => p.user_id === profile.id) ?? null;
+      }
+    }
+    if (!patient) return null;
+    const profile = store.profiles.find((p) => p.id === patient!.user_id);
+    return {
+      id: patient.id,
+      full_name: profile?.full_name ?? "Patient",
+      village:
+        (patient.address?.village as string | undefined) ||
+        (patient.address?.city as string | undefined) ||
+        null,
+      phone: profile?.phone ?? null,
+      username: profile?.username ?? null,
+      qr_token:
+        store.passports.find((p) => p.patient_id === patient!.id)?.qr_token ??
+        null,
+    };
+  },
+
   registerOfflinePatient(input: {
     full_name: string;
     phone?: string;

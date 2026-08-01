@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
-import { getStore, IDS } from "@/data/store";
+import { getStore, IDS, subscribeStore } from "@/data/store";
 import { InvestigationPicker } from "@/modules/investigations/components/investigation-picker";
 import { PendingInvestigationsPanel } from "@/modules/investigations/components/pending-investigations";
 import { investigationRepository } from "@/modules/investigations/repository";
@@ -37,7 +37,10 @@ import { usePatientInvestigations } from "@/modules/investigations/hooks";
 import { buildObservationsForPatient } from "@/modules/prediction/adapters";
 import { CarePlanReview } from "@/modules/doctor/components/care-plan-review";
 import { DischargeForm } from "@/modules/doctor/components/discharge-form";
+import { PatientRecordOverview } from "@/modules/doctor/components/patient-record-overview";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
+import { AddInvestigationForm } from "@/modules/investigations/components/add-investigation-form";
+import { MedicinesEditor } from "@/modules/medicines/medicines-editor";
 import { RecoveryTimeline } from "@/modules/doctor/intelligence/components/recovery-timeline";
 import { useAiPatientSummary } from "@/modules/doctor/intelligence/hooks";
 import {
@@ -85,6 +88,9 @@ export function PatientDetailPage() {
   const [investigationDrafts, setInvestigationDrafts] = useState<
     InvestigationDraftInput[]
   >([]);
+  const [storeTick, setStoreTick] = useState(0);
+
+  useEffect(() => subscribeStore(() => setStoreTick((t) => t + 1)), []);
 
   useEffect(() => {
     const fromUrl = searchParams.get("tab");
@@ -141,7 +147,7 @@ export function PatientDetailPage() {
     () =>
       patientId ? evaluateHealth(buildObservationsForPatient(patientId)) : null,
     // Recompute when underlying store-backed lists refresh
-    [patientId, checkins.data, medicines.data, investigations.data],
+    [patientId, checkins.data, medicines.data, investigations.data, storeTick],
   );
 
   if (patient.isLoading) return <LoadingScreen fullScreen={false} />;
@@ -204,36 +210,29 @@ export function PatientDetailPage() {
       <Tabs tabs={TABS} value={tab} onChange={changeTab} />
 
       {tab === "overview" ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <InfoCard title="ABHA (Live)" value={data.abha_id_demo || "—"} />
-          <InfoCard title="Adherence" value={`${data.adherence_percent ?? 100}%`} />
-          <InfoCard title="Missed medicines" value={data.missed_medicines} />
-          <InfoCard title="Missed check-ins" value={data.missed_checkins} />
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg">Chronic diseases</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {(data.chronic_diseases || []).length ? (
-                data.chronic_diseases?.map((item) => (
-                  <Badge key={item} variant="outline">
-                    {item}
-                  </Badge>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">None listed</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg">Care team contacts</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-2">
-              <ContactBlock title="Emergency" contact={data.emergency_contact} />
-              <ContactBlock title="Caregiver" contact={data.caregiver_info} />
-            </CardContent>
-          </Card>
+        <div className="space-y-5">
+          <PatientRecordOverview data={data} health={health} />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <InfoCard title="ABHA (Live)" value={data.abha_id_demo || "—"} />
+            <InfoCard
+              title="Adherence"
+              value={`${data.adherence_percent ?? 100}%`}
+            />
+            <InfoCard title="Missed medicines" value={data.missed_medicines} />
+            <InfoCard title="Missed check-ins" value={data.missed_checkins} />
+          </div>
+          {patientId ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AddInvestigationForm
+                patientId={patientId}
+                requestedBy="doctor"
+              />
+              <PendingInvestigationsPanel
+                patientId={patientId}
+                mode="doctor"
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -257,27 +256,11 @@ export function PatientDetailPage() {
       ) : null}
 
       {tab === "medicines" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current medicines</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {(medicines.data || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No active medicine schedule. Finalize a discharge to generate a Care Companion draft.
-              </p>
-            ) : (
-              medicines.data?.map((med) => (
-                <div key={med.id} className="rounded-xl border border-border p-3">
-                  <p className="font-medium">{med.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {[med.dose, med.frequency].filter(Boolean).join(" · ")}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          {patientId ? (
+            <MedicinesEditor patientId={patientId} actor="doctor" />
+          ) : null}
+        </div>
       ) : null}
 
       {tab === "appointments" ? (

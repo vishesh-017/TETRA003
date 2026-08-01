@@ -1,4 +1,9 @@
-export type Role = "doctor" | "patient" | "caregiver" | "health_worker";
+export type Role =
+  | "doctor"
+  | "patient"
+  | "caregiver"
+  | "health_worker"
+  | "admin";
 export type RiskLevel = "low" | "moderate" | "high" | "critical";
 export type TaskStatus = "pending" | "completed" | "skipped";
 export type Period = "morning" | "afternoon" | "evening" | "night";
@@ -385,6 +390,35 @@ export interface HomeVisitRow {
   village: string | null;
 }
 
+/** Persisted AI Checkup assessments (live snapshot results). */
+export interface AiCheckupRow {
+  id: string;
+  patient_id: string;
+  assessed_at: string;
+  overall_risk: RiskLevel;
+  recovery_score: number;
+  readmission_probability_percent: number;
+  summary: string;
+  warning_signs: string[];
+  missing_tests: string[];
+  referral_specialty: string | null;
+  payload: Record<string, unknown>;
+}
+
+/** Patient lifestyle habit targets — feed Health Engine + AI scores. */
+export interface LifestyleHabitRow {
+  patient_id: string;
+  /** Weekly exercise target in minutes. */
+  exercise_minutes_week: number;
+  /** Typical nightly sleep hours. */
+  sleep_hours: number;
+  /** Planned weight change vs current (kg). Negative = loss. */
+  weight_kg_delta: number;
+  salt_level: "low" | "medium" | "high";
+  sugar_control: "good" | "average" | "poor";
+  updated_at: string;
+}
+
 /** Shared clinical reports (patient upload ↔ doctor feedback). */
 export interface ClinicalReportRow {
   id: string;
@@ -426,13 +460,15 @@ export interface HealNexusStore {
   alerts: AlertRow[];
   healthRecords: HealthRecordRow[];
   clinicalReports: ClinicalReportRow[];
+  lifestyleHabits: LifestyleHabitRow[];
+  aiCheckups: AiCheckupRow[];
   governmentProfiles: GovernmentProfileRow[];
   healthWorkers: HealthWorkerRow[];
   healthWorkerAssignments: HealthWorkerAssignmentRow[];
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 13;
+export const STORE_VERSION = 16;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {
@@ -448,6 +484,7 @@ export const IDS = {
   carePlan: "00000000-0000-4000-8000-000000000301",
   healthWorkerUser: "00000000-0000-4000-8000-000000000004",
   healthWorker: "00000000-0000-4000-8000-000000000040",
+  adminUser: "00000000-0000-4000-8000-000000000099",
 } as const;
 
 export const DEFAULT_CAREGIVER_PERMISSIONS: CaregiverPermissions = {

@@ -227,6 +227,20 @@ export function usePatientMutations() {
     },
   });
 
+  const requestAppointment = useMutation({
+    mutationFn: (input: {
+      doctorId?: string;
+      scheduledAt: string;
+      location?: string;
+      reason?: string;
+    }) => patientRepository.requestNewAppointment(userId, input),
+    onSuccess: async () => {
+      await invalidateAll();
+      toast.success("Appointment booked — your doctor was notified");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const submitCheckIn = useMutation({
     mutationFn: (input: CheckInInput) =>
       patientRepository.submitCheckIn(userId, input),
@@ -271,6 +285,7 @@ export function usePatientMutations() {
     setTaskStatus,
     markMedicine,
     appointmentAction,
+    requestAppointment,
     submitCheckIn,
     markNotificationRead,
     markAllRead,

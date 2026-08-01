@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 import type { EducationTip, TipLocale } from "@/modules/caregiver/types";
 
 const LOCALES: { id: TipLocale; label: string }[] = [
-  { id: "en", label: "English" },
-  { id: "hi", label: "Hindi" },
-  { id: "gu", label: "Gujarati" },
+  { id: "en", label: "EN" },
+  { id: "hi", label: "HI" },
+  { id: "gu", label: "GU" },
+  { id: "mr", label: "MR" },
 ];
 
 export function EducationCarousel({ tips }: { tips: EducationTip[] }) {

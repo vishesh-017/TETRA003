@@ -521,6 +521,43 @@ function buildActivity(patientId: string): ActivityItem[] {
   return items.slice(0, 8);
 }
 
+function localizeBundle(en: string): Record<"en" | "hi" | "gu" | "mr", string> {
+  const map: Record<string, { hi: string; gu: string; mr: string }> = {
+    "Today's care focus": {
+      hi: "आज की देखभाल प्राथमिकता",
+      gu: "આજની કાળજી ફોકસ",
+      mr: "आजची काळजी प्राधान्य",
+    },
+    "Diet guidance": {
+      hi: "आहार मार्गदर्शन",
+      gu: "આહાર માર્ગદર્શન",
+      mr: "आहार मार्गदर्शन",
+    },
+    "Exercise guidance": {
+      hi: "व्यायाम मार्गदर्शन",
+      gu: "કસરત માર્ગદર્શન",
+      mr: "व्यायाम मार्गदर्शन",
+    },
+    "Warning signs": {
+      hi: "चेतावनी संकेत",
+      gu: "ચેતવણી સંકેતો",
+      mr: "इशारे लक्ष द्या",
+    },
+    "Medicine support": {
+      hi: "दवा सहायता",
+      gu: "દવા સહાય",
+      mr: "औषध सहाय्य",
+    },
+  };
+  const hit = map[en];
+  return {
+    en,
+    hi: hit?.hi ?? en,
+    gu: hit?.gu ?? en,
+    mr: hit?.mr ?? en,
+  };
+}
+
 function tip(
   id: string,
   category: EducationTip["category"],
@@ -532,8 +569,8 @@ function tip(
     id,
     category,
     categoryLabel,
-    title: { en: title, hi: title, gu: title },
-    body: { en: body, hi: body, gu: body },
+    title: localizeBundle(title),
+    body: { en: body, hi: body, gu: body, mr: body },
   };
 }
 

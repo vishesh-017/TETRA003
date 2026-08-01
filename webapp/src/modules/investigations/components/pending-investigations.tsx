@@ -117,22 +117,21 @@ export function PendingInvestigationsPanel({
                       <p className="mb-1 font-medium text-foreground">
                         Uploaded report
                       </p>
-                      {item.attachment_mime?.startsWith("image/") ? (
-                        <img
-                          src={item.attachment_url}
-                          alt={item.attachment_name || "Report"}
-                          className="max-h-48 rounded-lg border"
-                        />
-                      ) : (
-                        <a
-                          href={item.attachment_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary underline"
-                        >
-                          {item.attachment_name || "Open report"}
-                        </a>
-                      )}
+                      <button
+                        type="button"
+                        className="text-sm text-primary underline"
+                        onClick={() => {
+                          void import("@/lib/open-attachment").then(
+                            ({ openAttachment }) =>
+                              openAttachment(
+                                item.attachment_url!,
+                                item.attachment_name || "report.pdf",
+                              ),
+                          );
+                        }}
+                      >
+                        {item.attachment_name || "Open report"}
+                      </button>
                     </div>
                   ) : null}
                   <p className="text-xs">

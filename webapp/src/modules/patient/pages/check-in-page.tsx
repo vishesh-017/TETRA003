@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/auth-context";
+import { getStore, subscribeStore } from "@/data/store";
 import { cn } from "@/lib/utils";
 import { usePatientMutations } from "@/modules/patient/hooks";
 import {
@@ -28,8 +30,10 @@ const SYMPTOM_OPTIONS = [
 ];
 
 export function CheckInPage() {
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
+  const [tick, setTick] = useState(0);
   const { submitCheckIn } = usePatientMutations();
   const form = useForm<CheckInSchema>({
     resolver: zodResolver(checkInSchema) as never,
@@ -42,6 +46,19 @@ export function CheckInPage() {
       water_intake: 6,
     },
   });
+
+  useEffect(() => subscribeStore(() => setTick((n) => n + 1)), []);
+
+  const timeline = useMemo(() => {
+    void tick;
+    if (!user?.id) return [];
+    const store = getStore();
+    const patient = store.patients.find((p) => p.user_id === user.id);
+    if (!patient) return [];
+    return store.checkins
+      .filter((c) => c.patient_id === patient.id)
+      .slice(0, 12);
+  }, [user?.id, tick]);
 
   const symptoms = form.watch("symptoms") || [];
 
@@ -64,9 +81,19 @@ export function CheckInPage() {
           <p className="mt-3 text-sm text-muted-foreground">
             Your Recovery Score will reflect today's check-in.
           </p>
+          <Button
+            className="mt-4"
+            variant="outline"
+            onClick={() => {
+              setDone(false);
+              setStep(0);
+            }}
+          >
+            View timeline
+          </Button>
           <Link
             to="/patient"
-            className={cn(buttonVariants(), "mt-6 inline-flex")}
+            className={cn(buttonVariants(), "mt-3 inline-flex")}
           >
             Back to Today
           </Link>
@@ -243,6 +270,50 @@ export function CheckInPage() {
           </form>
         </CardContent>
       </Card>
+
+      <section className="mt-8 space-y-3">
+        <h2 className="font-display text-xl font-semibold">Check-in timeline</h2>
+        <p className="text-sm text-muted-foreground">
+          Recent logs that feed Recovery Score and doctor alerts.
+        </p>
+        {!timeline.length ? (
+          <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
+            No check-ins yet — submit one above.
+          </p>
+        ) : (
+          <ol className="relative space-y-3 border-l border-border pl-4">
+            {timeline.map((c) => (
+              <li key={c.id} className="relative">
+                <span className="absolute -left-[1.3rem] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                <div className="rounded-2xl border border-border bg-card px-3 py-2.5 text-sm">
+                  <p className="font-medium">
+                    {new Date(c.recorded_at).toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    {[
+                      c.bp_systolic != null && c.bp_diastolic != null
+                        ? `BP ${c.bp_systolic}/${c.bp_diastolic}`
+                        : null,
+                      c.blood_sugar != null ? `Sugar ${c.blood_sugar}` : null,
+                      c.mood ? `Mood ${c.mood}` : null,
+                      c.medicine_taken === true
+                        ? "Meds taken"
+                        : c.medicine_taken === false
+                          ? "Meds missed"
+                          : null,
+                      c.symptoms?.length
+                        ? c.symptoms.slice(0, 3).join(", ")
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "Logged"}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </div>
   );
 }

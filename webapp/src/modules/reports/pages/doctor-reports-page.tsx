@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Textarea } from "@/components/ui/textarea";
+import { openAttachment } from "@/lib/open-attachment";
 import {
   useDoctorReports,
   useReportMutations,
@@ -66,14 +67,18 @@ export function DoctorReportsPage() {
                   <p className="text-sm text-muted-foreground">{r.notes}</p>
                 ) : null}
                 {r.attachment_url ? (
-                  <a
-                    href={r.attachment_url}
-                    className="text-sm text-primary underline"
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    className="text-left text-sm text-primary underline"
+                    onClick={() =>
+                      void openAttachment(
+                        r.attachment_url!,
+                        r.attachment_name || "report.pdf",
+                      )
+                    }
                   >
                     {r.attachment_name || "Open attachment"}
-                  </a>
+                  </button>
                 ) : null}
                 {r.doctor_feedback ? (
                   <div className="rounded-xl bg-muted/50 px-3 py-2 text-sm">

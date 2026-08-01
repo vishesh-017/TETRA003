@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 
-import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import {
   AlertBanner,
   InsightsPanel,
@@ -18,11 +17,10 @@ export function RecoveryPage() {
   if (!intel) {
     return (
       <div className="mx-auto max-w-xl space-y-4 pb-10">
-        <h1 className="font-display text-3xl font-semibold">
-          Health Intelligence
-        </h1>
+        <h1 className="font-display text-3xl font-semibold">Recovery</h1>
         <p className="text-sm text-muted-foreground">
-          Sign in as a patient to evaluate recovery signals.
+          Sign in as a patient. Score updates from check-ins, medicines, and
+          vitals in the live store.
         </p>
       </div>
     );
@@ -32,23 +30,25 @@ export function RecoveryPage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-5 pb-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-semibold">
-            Health Intelligence
-          </h1>
+          <h1 className="font-display text-3xl font-semibold">Recovery</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Continuous post-discharge monitoring in the app — assistive only.
-            Doctors decide.
+            Live score from your check-ins, adherence, and risk engine — not a
+            static card.
           </p>
         </div>
-        <Link
-          to="/patient/lifestyle-simulator"
-          className={cn(buttonVariants({ variant: "outline" }))}
-        >
-          Open Lifestyle Simulator
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/patient/ai-checkup" className={cn(buttonVariants())}>
+            Run AI Checkup
+          </Link>
+          <Link
+            to="/patient/care-plan"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            Care plan & simulator
+          </Link>
+        </div>
       </div>
 
-      <AiDisclaimer />
       <AlertBanner alert={intel.alerts} />
       <RecoveryCard recovery={intel.recovery} />
       <RiskCard

@@ -111,6 +111,8 @@ export async function fetchCurrentUser(token: string): Promise<MeResponse> {
 
 export function roleHomePath(role: UserRole): string {
   switch (role) {
+    case "admin":
+      return "/admin";
     case "doctor":
       return "/doctor";
     case "patient":

@@ -3,13 +3,24 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { subscribeStore } from "@/data/store";
 import {
-  ZERO_ADJUSTMENTS,
   evaluateHealth,
   runLifestyleSimulation,
-  type LifestyleAdjustments,
   type PatientObservationBundle,
 } from "@/lib/health-engine";
-import { buildObservationsFromLocal } from "@/modules/prediction/adapters";
+import { habitsToAdjustments } from "@/lib/health-engine/habits";
+import {
+  getLifestyleHabits,
+  saveLifestyleHabits,
+  type HabitControls,
+} from "@/modules/patient/lifestyle-habits";
+import {
+  buildObservationsFromLocal,
+  buildRawObservationsFromLocal,
+} from "@/modules/prediction/adapters";
+import { syncScoresFromEngine } from "@/modules/health-pipeline/process-checkin";
+import { patientRepository } from "@/modules/patient/repository";
+
+export type { HabitControls };
 
 /** Recompute when local store changes (check-ins, meds, scores). */
 function useStoreTick() {
@@ -24,7 +35,7 @@ export function useObservationBundle(userId?: string | null) {
   const tick = useStoreTick();
   return useMemo(
     () => (id ? buildObservationsFromLocal(id) : null),
-    // tick forces refresh after check-in / escalation writes
+    // tick forces refresh after check-in / escalation / habit writes
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [id, tick],
   );
@@ -66,32 +77,58 @@ export function useTrendAnalysis(userId?: string | null) {
 }
 
 /**
- * Lifestyle simulator — recalculates instantly on every slider change.
- * No network. No FastAPI.
+ * Lifestyle simulator — recalculates instantly; persists habits so AI scores
+ * update across Care Plan, Recovery, Escalation, and doctor Risk Panel.
  */
 export function useLifestyleSimulation(
   observations?: PatientObservationBundle | null,
 ) {
-  const local = useObservationBundle();
-  const baseline = observations ?? local;
-  const [adjustments, setAdjustments] =
-    useState<LifestyleAdjustments>({ ...ZERO_ADJUSTMENTS });
+  const { user } = useAuth();
+  const tick = useStoreTick();
+  const patientId = user
+    ? patientRepository.resolvePatientId(user.id)
+    : null;
 
-  const result = useMemo(
-    () =>
-      baseline ? runLifestyleSimulation(baseline, adjustments) : null,
-    [baseline, adjustments],
+  const rawBaseline = useMemo(() => {
+    if (observations) return observations;
+    if (!user?.id) return null;
+    return buildRawObservationsFromLocal(user.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [observations, user?.id, tick]);
+
+  const [habits, setHabitsState] = useState<HabitControls>(() =>
+    patientId ? getLifestyleHabits(patientId) : { ...getLifestyleHabits("") },
   );
 
+  useEffect(() => {
+    if (!patientId) return;
+    setHabitsState(getLifestyleHabits(patientId));
+  }, [patientId, tick]);
+
+  const result = useMemo(() => {
+    if (!rawBaseline) return null;
+    const adj = habitsToAdjustments(habits, rawBaseline);
+    return runLifestyleSimulation(rawBaseline, adj);
+  }, [rawBaseline, habits]);
+
+  const setHabits = (next: HabitControls) => {
+    setHabitsState(next);
+    if (!patientId) return;
+    saveLifestyleHabits(patientId, next);
+    syncScoresFromEngine(patientId);
+  };
+
   return {
-    observations: baseline,
-    adjustments,
-    setAdjustments,
+    observations: rawBaseline,
+    habits,
+    setHabits,
+    /** @deprecated use habits / setHabits */
+    adjustments: habits,
+    setAdjustments: setHabits,
     result,
-    /** Instant path — kept for API compatibility with older UI. */
     run: () => undefined,
     isPending: false,
-    configured: Boolean(baseline),
+    configured: Boolean(rawBaseline),
   };
 }
 

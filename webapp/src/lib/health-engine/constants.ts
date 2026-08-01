@@ -64,4 +64,6 @@ export const ZERO_ADJUSTMENTS = {
   water_intake_delta: 0,
   medicine_adherence_delta: 0,
   weight_kg_delta: 0,
+  salt_bp_delta: 0,
+  sugar_mg_delta: 0,
 } as const;

@@ -1,42 +1,73 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Bot, FlaskConical } from "lucide-react";
 
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/auth-context";
+import { subscribeStore } from "@/data/store";
+import { cn } from "@/lib/utils";
 import {
-  askHealthAssistant,
-  isAiServiceConfigured,
-} from "@/services/ai.service";
+  askGroundedAssistant,
+  greetingFromLive,
+} from "@/modules/ai-support/chat-engine";
+import { runAiCheckup } from "@/modules/ai-support/checkup-engine";
 
 interface ChatItem {
   role: "user" | "assistant";
   content: string;
 }
 
+const PROMPTS = [
+  "What is my current risk?",
+  "Which labs am I missing?",
+  "Any warning signs?",
+  "Should I see a specialist?",
+  "Explain my medicines",
+];
+
 export function AiAssistantPage() {
+  const { user } = useAuth();
+  const [tick, setTick] = useState(0);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [messages, setMessages] = useState<ChatItem[]>([
-    {
-      role: "assistant",
-      content:
-        "Hi — I'm your AI Health Assistant. I can explain recovery tips from your care plan. I never diagnose or prescribe.",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatItem[]>([]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || busy) return;
+  useEffect(() => subscribeStore(() => setTick((t) => t + 1)), []);
+
+  const checkup = useMemo(
+    () => (user?.id ? runAiCheckup(user.id) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.id, tick],
+  );
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setMessages([
+      {
+        role: "assistant",
+        content: greetingFromLive(user.id),
+      },
+    ]);
+  }, [user?.id]);
+
+  const send = async (textIn?: string) => {
+    const text = (textIn ?? input).trim();
+    if (!text || busy || !user?.id) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", content: text }]);
     setBusy(true);
     try {
-      const result = await askHealthAssistant([
-        ...messages.map((m) => ({ role: m.role, content: m.content })),
-        { role: "user", content: text },
-      ]);
+      const result = await askGroundedAssistant(
+        [
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+          { role: "user", content: text },
+        ],
+        user.id,
+      );
       const points = result.key_points?.length
         ? `\n\nKey points:\n- ${result.key_points.join("\n- ")}`
         : "";
@@ -47,7 +78,7 @@ export function AiAssistantPage() {
         ...m,
         {
           role: "assistant",
-          content: `${result.summary}${points}${contact}\n\n_${result.disclaimer}_`,
+          content: `${result.summary}${points}${contact}\n\n_${result.disclaimer}_\n(${result.provider})`,
         },
       ]);
     } finally {
@@ -58,14 +89,46 @@ export function AiAssistantPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5 pb-10">
       <div>
-        <h1 className="font-display text-3xl font-semibold">AI Health Assistant</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isAiServiceConfigured()
-            ? "Connected to HealNexus AI service (Exa stays server-side)."
-            : "Set VITE_AI_API_BASE_URL to http://127.0.0.1:8001 and run ai-service."}
+        <p className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+          <Bot className="h-4 w-4" />
+          Grounded support assistant
         </p>
+        <h1 className="mt-1 font-display text-3xl font-semibold">
+          AI Health Assistant
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Answers from your live vitals, medicines, labs, care plan, and risk
+          scores — for early lifestyle-disease risk support, not diagnosis.
+        </p>
+        {checkup ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Live: risk {checkup.overall_risk} · recovery {checkup.recovery_score} ·{" "}
+            {checkup.missing_investigations.length} missing lab suggestion(s)
+          </p>
+        ) : null}
       </div>
       <AiDisclaimer />
+
+      <div className="flex flex-wrap gap-2">
+        <Link
+          to="/patient/ai-checkup"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          <FlaskConical className="mr-1 h-3.5 w-3.5" />
+          Open AI Checkup
+        </Link>
+        {PROMPTS.map((p) => (
+          <Button
+            key={p}
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void send(p)}
+          >
+            {p}
+          </Button>
+        ))}
+      </div>
 
       <Card className="min-h-[420px]">
         <CardHeader>
@@ -90,11 +153,17 @@ export function AiAssistantPage() {
           </div>
           <Textarea
             rows={3}
-            placeholder="Ask about hydration, walking, or your care plan…"
+            placeholder="Ask about risk, missing labs, medicines, warning signs…"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
           />
-          <Button onClick={send} disabled={busy || !input.trim()}>
+          <Button onClick={() => void send()} disabled={busy || !input.trim()}>
             {busy ? "Thinking…" : "Send"}
           </Button>
         </CardContent>

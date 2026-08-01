@@ -37,6 +37,7 @@ const DEMO_ROLES: Array<{ role: UserRole; label: string }> = [
   { role: "patient", label: "Asha · Patient" },
   { role: "caregiver", label: "Priya · Caregiver" },
   { role: "health_worker", label: "Health Worker" },
+  { role: "admin", label: "Admin" },
 ];
 
 function redirectTarget(
@@ -176,7 +177,8 @@ export function LoginPage() {
           </p>
           <p className="text-sm text-muted-foreground">
             Patients can add you from Profile → My caregivers. Enter the invite
-            code they shared (live seed: <span className="font-mono">PRIYA-ASHA</span>).
+            unique code they shared (seed example:{" "}
+            <span className="font-mono">CG-A7F3C91B-2E4D</span>).
           </p>
           <div className="flex gap-2">
             <Input

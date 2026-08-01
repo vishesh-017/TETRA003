@@ -10,7 +10,10 @@ export function RuralEducationPage() {
   return (
     <div className="space-y-3">
       <h2 className="font-display text-xl font-semibold">{t("education")}</h2>
-      <p className="text-sm text-muted-foreground">{t("tips")}</p>
+      <p className="text-sm text-muted-foreground">
+        {t("tips")} Switch language above (EN/HI/GU). Caregivers also get
+        localized tips (EN/HI/GU/MR) on their home screen.
+      </p>
       {cards.map((card, i) => (
         <motion.article
           key={card.id}

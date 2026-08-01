@@ -331,6 +331,66 @@ export const patientRepository = {
       }));
   },
 
+  requestNewAppointment(
+    userId: string,
+    input: {
+      doctorId?: string;
+      scheduledAt: string;
+      location?: string;
+      reason?: string;
+      appointmentType?: string;
+    },
+  ) {
+    const patientId = resolvePatientId(userId);
+    const store = getStore();
+    const doctorId =
+      input.doctorId ||
+      store.relationships.find(
+        (r) => r.patient_id === patientId && r.status === "active",
+      )?.doctor_id;
+    if (!doctorId) throw new Error("No doctor linked — ask your clinic to add you");
+    const doctor = store.doctors.find((d) => d.id === doctorId);
+    const doctorProfile = doctor
+      ? store.profiles.find((p) => p.id === doctor.user_id)
+      : null;
+    const id = newId();
+    const now = new Date().toISOString();
+    updateStore((draft) => {
+      draft.appointments.unshift({
+        id,
+        patient_id: patientId,
+        doctor_id: doctorId,
+        doctor_name: doctorProfile?.full_name || "Doctor",
+        scheduled_at: new Date(input.scheduledAt).toISOString(),
+        location: input.location?.trim() || "Clinic OPD",
+        status: "scheduled",
+        appointment_type: input.appointmentType || "follow_up",
+        notes: input.reason?.trim() || "Requested by patient",
+      });
+      draft.notifications.unshift({
+        id: newId(),
+        user_id: userId,
+        type: "appointment",
+        title: "Appointment requested",
+        body: `Scheduled ${new Date(input.scheduledAt).toLocaleString()} with ${doctorProfile?.full_name || "your doctor"}`,
+        read: false,
+        created_at: now,
+      });
+      if (doctor) {
+        draft.notifications.unshift({
+          id: newId(),
+          user_id: doctor.user_id,
+          type: "appointment",
+          title: "New appointment request",
+          body: `${store.profiles.find((p) => p.id === userId)?.full_name || "Patient"} requested a visit`,
+          read: false,
+          created_at: now,
+        });
+      }
+    });
+    return this.listAppointments(userId);
+  },
+
   async requestAppointmentAction(
     userId: string,
     appointmentId: string,

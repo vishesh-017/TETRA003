@@ -9,7 +9,7 @@ export type TipCategory =
   | "exercise"
   | "emergency"
   | "medicine";
-export type TipLocale = "en" | "hi" | "gu";
+export type TipLocale = "en" | "hi" | "gu" | "mr";
 
 export interface CareVitalChip {
   label: string;

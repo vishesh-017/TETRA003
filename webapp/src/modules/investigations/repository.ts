@@ -121,14 +121,17 @@ async function uploadAttachmentBlob(
     }
   }
 
-  // Demo fallback: data URL preview (no OCR).
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Could not read file"));
-    reader.readAsDataURL(file);
-  });
-  return { url: dataUrl, name: file.name, mime: file.type || "application/octet-stream" };
+  // Local durable store (IndexedDB) — data: URLs break PDF viewers / localStorage.
+  const { saveAttachmentFromFile } = await import("@/lib/attachment-store");
+  const ref = await saveAttachmentFromFile(
+    `inv-${investigationId}-${Date.now()}`,
+    file,
+  );
+  return {
+    url: ref,
+    name: file.name,
+    mime: file.type || "application/octet-stream",
+  };
 }
 
 function notifyCaregivers(patientId: string, title: string, body: string) {
@@ -522,6 +525,23 @@ export const investigationRepository = {
           attachment_url: uploaded.url,
         },
       });
+      // Mirror into clinical reports so Doctor → Reports sees it.
+      draft.clinicalReports.unshift({
+        id: newId(),
+        patient_id: row.patient_id,
+        doctor_id: row.doctor_id,
+        title: `${row.name} report`,
+        report_type: "lab",
+        notes: `From investigation ${row.name}`,
+        attachment_name: uploaded.name,
+        attachment_url: uploaded.url,
+        attachment_mime: uploaded.mime,
+        doctor_feedback: null,
+        feedback_at: null,
+        status: "uploaded",
+        created_at: now,
+        updated_at: now,
+      });
     });
 
     const row = getStore().investigations.find((i) => i.id === investigationId)!;
@@ -637,5 +657,87 @@ export const investigationRepository = {
       notes: input.notes ?? null,
       preparation: input.preparation ?? null,
     };
+  },
+
+  /** Doctor or patient can add an investigation dynamically. */
+  createForPatient(input: {
+    patientId: string;
+    doctorId: string;
+    name: string;
+    purpose?: string | null;
+    due_date: string;
+    priority?: InvestigationPriority;
+    notes?: string | null;
+    preparation?: string | null;
+    requestedBy: "doctor" | "patient";
+  }): InvestigationView {
+    const now = new Date().toISOString();
+    const name = input.name.trim();
+    if (!name) throw new Error("Investigation name is required");
+    if (!input.due_date) throw new Error("Due date is required");
+
+    let id = "";
+    updateStore((draft) => {
+      id = newId();
+      draft.investigations.unshift({
+        id,
+        patient_id: input.patientId,
+        doctor_id: input.doctorId,
+        discharge_id: null,
+        name,
+        purpose: input.purpose?.trim() || null,
+        due_date: input.due_date.slice(0, 10),
+        priority: input.priority || "routine",
+        notes: [
+          input.notes?.trim(),
+          input.requestedBy === "patient"
+            ? "Requested by patient"
+            : "Ordered by doctor",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        status: "pending",
+        preparation: input.preparation?.trim() || null,
+        completed_at: null,
+        reviewed_at: null,
+        reviewed_by: null,
+        attachment_url: null,
+        attachment_name: null,
+        attachment_mime: null,
+        reminder_sent_at: null,
+        created_at: now,
+        updated_at: now,
+      });
+
+      draft.healthRecords.unshift({
+        id: newId(),
+        patient_id: input.patientId,
+        category: "lab_report",
+        title: `Investigation added: ${name}`,
+        summary: `Due ${input.due_date.slice(0, 10)} · ${input.priority || "routine"}`,
+        recorded_at: now,
+        source: "manual",
+        metadata: {
+          investigation_id: id,
+          requested_by: input.requestedBy,
+        },
+      });
+
+      const patient = draft.patients.find((p) => p.id === input.patientId);
+      if (patient) {
+        draft.notifications.unshift({
+          id: newId(),
+          user_id: patient.user_id,
+          type: "investigation",
+          title: "New investigation",
+          body: `${name} due ${input.due_date.slice(0, 10)}`,
+          read: false,
+          created_at: now,
+        });
+      }
+    });
+
+    const row = getStore().investigations.find((i) => i.id === id)!;
+    return mapView({ ...row, status: effectiveStatus(row) });
   },
 };

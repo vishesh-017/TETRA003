@@ -37,14 +37,20 @@ function resolvePatientId(userId: string): string {
   return patient.id;
 }
 
-function makeInviteCode(name: string): string {
-  const token = name
-    .replace(/[^a-zA-Z]/g, "")
-    .slice(0, 4)
-    .toUpperCase()
-    .padEnd(4, "X");
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `${token}-${suffix}`;
+/** Cryptographically unique invite — not guessable from names. */
+function makeInviteCode(): string {
+  const part = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()
+      : Math.random().toString(36).slice(2, 10).toUpperCase();
+  let code = `CG-${part()}-${part().slice(0, 4)}`;
+  const existing = new Set(
+    getStore().caregiverArrangements.map((a) => a.invite_code),
+  );
+  while (existing.has(code)) {
+    code = `CG-${part()}-${part().slice(0, 4)}`;
+  }
+  return code;
 }
 
 function emailFromName(name: string, phone: string): string {
@@ -90,7 +96,7 @@ export const patientCaregiverService = {
     }
 
     const email = (input.email?.trim() || emailFromName(name, phone)).toLowerCase();
-    const inviteCode = makeInviteCode(name);
+    const inviteCode = makeInviteCode();
     const permissions: CaregiverPermissions = {
       ...DEFAULT_CAREGIVER_PERMISSIONS,
       ...input.permissions,

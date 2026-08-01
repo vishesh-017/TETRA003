@@ -144,6 +144,17 @@ export interface LifestyleAdjustments {
   water_intake_delta: number;
   medicine_adherence_delta: number;
   weight_kg_delta: number;
+  /** Systolic BP shift from salt habit (mmHg). */
+  salt_bp_delta?: number;
+  /** Blood sugar shift from sugar control (mg/dL). */
+  sugar_mg_delta?: number;
+}
+
+export interface DiseaseScoreSnapshot {
+  label: string;
+  before: number;
+  after: number;
+  delta: number;
 }
 
 export interface ScenarioSnapshot {
@@ -160,6 +171,8 @@ export interface LifestyleSimulationResult {
   deltas: Record<string, number>;
   interpretation: string;
   chart_series: Array<{ metric: string; before: number; after: number }>;
+  disease_scores: DiseaseScoreSnapshot[];
+  peak_risk_drop: number;
   meta: EngineMeta;
 }
 

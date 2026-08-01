@@ -45,12 +45,11 @@ export function useReportMutations() {
       title: string;
       report_type: string;
       notes?: string;
-      fileName?: string;
-      fileUrl?: string;
-      mime?: string;
-    }) => Promise.resolve(reportsRepository.upload(userId, input)),
+      file?: File | null;
+      doctorId?: string | null;
+    }) => reportsRepository.upload(userId, input),
     onSuccess: async () => {
-      toast.success("Report uploaded");
+      toast.success("Report uploaded to selected doctor");
       await qc.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: (e: Error) => toast.error(e.message),

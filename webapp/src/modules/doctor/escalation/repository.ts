@@ -2,6 +2,10 @@ import { addDays, format } from "date-fns";
 
 import { getStore, IDS, newId, updateStore } from "@/data/store";
 import { evaluateHealth, type RiskCategory } from "@/lib/health-engine";
+import {
+  matchInvestigation,
+  SCREENING_RULES,
+} from "@/modules/ai-support/screening-knowledge";
 import type { RiskLevel } from "@/modules/doctor/types";
 import { doctorRepository } from "@/modules/doctor/repository";
 import { buildObservationsForPatient } from "@/modules/prediction/adapters";
@@ -42,7 +46,7 @@ function districtFor(patientId: string): string {
     addr?.city ||
     addr?.village ||
     addr?.state ||
-    "Ahmedabad"
+    "—"
   );
 }
 
@@ -208,26 +212,13 @@ export const escalationRepository = {
         .map((i) => i.name.toLowerCase()),
     );
 
-    const investigation_options = [
-      { id: "hba1c", name: "HbA1c", ordered: existingInv.has("hba1c") },
-      {
-        id: "lipid",
-        name: "Lipid Profile",
-        ordered: [...existingInv].some((n) => n.includes("lipid")),
-      },
-      {
-        id: "rft",
-        name: "Renal Function Test",
-        ordered: [...existingInv].some(
-          (n) => n.includes("renal") || n.includes("rft") || n.includes("kidney"),
-        ),
-      },
-      {
-        id: "ecg",
-        name: "ECG",
-        ordered: [...existingInv].some((n) => n.includes("ecg")),
-      },
-    ];
+    const investigation_options = SCREENING_RULES.map((rule) => ({
+      id: rule.id,
+      name: rule.test_name,
+      ordered: [...existingInv].some((n) =>
+        matchInvestigation(n, rule.name_matchers),
+      ),
+    }));
 
     const referralRecommended =
       card.risk_level === "critical" ||

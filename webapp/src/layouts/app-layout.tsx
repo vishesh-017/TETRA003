@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { PageTransition } from "@/components/motion/page-transition";
 import { ShellProvider } from "@/contexts/shell-context";
 import { useCareGraphSync } from "@/hooks/use-care-graph-sync";
+import { FloatingAiChat } from "@/modules/ai-support/components/floating-chat";
 
 function CareGraphSync() {
   useCareGraphSync();
@@ -25,6 +26,7 @@ export function AppLayout() {
             </PageTransition>
           </main>
         </div>
+        <FloatingAiChat />
       </div>
     </ShellProvider>
   );

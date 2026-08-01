@@ -54,6 +54,7 @@ export function isAiServiceConfigured(): boolean {
 
 export async function askHealthAssistant(
   messages: AiChatMessage[],
+  extras?: { patient_context?: string; local_summary?: string },
 ): Promise<AiAssistantResult> {
   const last = [...messages].reverse().find((m) => m.role === "user");
   if (!last?.content) {
@@ -68,8 +69,8 @@ export async function askHealthAssistant(
 
   if (!isAiServiceConfigured()) {
     return {
-      summary:
-        "AI service is not configured. Set VITE_AI_API_BASE_URL to your ai-service (e.g. http://127.0.0.1:8001).",
+      summary: extras?.local_summary ||
+        "AI service is not configured. Local grounded assistant is still available.",
       key_points: [
         "Follow your approved care plan",
         "Contact your doctor for clinical decisions",
@@ -91,7 +92,12 @@ export async function askHealthAssistant(
       meta: { provider: string };
     }>("/ai/health-assistant", {
       method: "POST",
-      body: { question: last.content, locale: "en" },
+      body: {
+        question: last.content,
+        locale: "en",
+        patient_context: extras?.patient_context,
+        conversation: messages.slice(-8),
+      },
     });
     return {
       summary: data.summary,
@@ -106,7 +112,7 @@ export async function askHealthAssistant(
         ? err.message
         : "AI service unavailable. Try again later.";
     return {
-      summary: detail,
+      summary: extras?.local_summary || detail,
       key_points: ["Use your care plan meanwhile", "Contact your clinician if urgent"],
       when_to_contact_doctor: [
         "Chest pain, severe breathlessness, confusion, or fainting",

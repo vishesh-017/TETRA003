@@ -1,31 +1,52 @@
 import { format } from "date-fns";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/auth-context";
 import {
   usePatientAppointments,
   usePatientMutations,
 } from "@/modules/patient/hooks";
 import type { AppointmentView } from "@/modules/patient/types";
+import { listDoctorsForPatient } from "@/modules/reports/repository";
 
 function group(items: AppointmentView[]) {
   return {
-    upcoming: items.filter((a) => a.status === "scheduled"),
+    upcoming: items.filter(
+      (a) => a.status === "scheduled" || a.status === "approved",
+    ),
     requests: items.filter(
       (a) =>
         a.status === "reschedule_requested" || a.status === "cancel_requested",
     ),
     completed: items.filter((a) => a.status === "completed"),
-    missed: items.filter((a) => a.status === "missed" || a.status === "cancelled"),
+    missed: items.filter(
+      (a) => a.status === "missed" || a.status === "cancelled",
+    ),
   };
 }
 
 export function AppointmentsPage() {
+  const { user } = useAuth();
   const query = usePatientAppointments();
-  const { appointmentAction } = usePatientMutations();
+  const { appointmentAction, requestAppointment } = usePatientMutations();
+  const doctors = useMemo(
+    () => (user?.id ? listDoctorsForPatient(user.id) : []),
+    [user?.id, query.dataUpdatedAt],
+  );
+  const [doctorId, setDoctorId] = useState("");
+  const [when, setWhen] = useState("");
+  const [location, setLocation] = useState("Clinic OPD");
+  const [reason, setReason] = useState("");
 
   if (query.isLoading)
     return <LoadingScreen label="Loading appointments…" fullScreen={false} />;
@@ -38,17 +59,99 @@ export function AppointmentsPage() {
     );
 
   const groups = group(query.data);
+  const selectedDoctor = doctorId || doctors[0]?.id || "";
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5 pb-10">
       <div>
         <h1 className="font-display text-3xl font-semibold">Appointments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Countdown, reminders, and reschedule / cancel requests.
+          Book a visit, or request reschedule / cancel on existing ones.
         </p>
       </div>
 
-      <Section title="Upcoming" items={groups.upcoming} action={appointmentAction} />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Request appointment</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Doctor</Label>
+            <Select
+              value={selectedDoctor}
+              onChange={(e) => setDoctorId(e.target.value)}
+            >
+              {doctors.length === 0 ? (
+                <option value="">No linked doctor</option>
+              ) : (
+                doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                    {d.specialty ? ` · ${d.specialty}` : ""}
+                  </option>
+                ))
+              )}
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Date & time</Label>
+            <Input
+              type="datetime-local"
+              value={when}
+              onChange={(e) => setWhen(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Location</Label>
+            <Input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Reason</Label>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+              placeholder="Follow-up / worsening symptoms / lab review"
+            />
+          </div>
+          <Button
+            disabled={
+              requestAppointment.isPending || !when || !selectedDoctor
+            }
+            onClick={() => {
+              requestAppointment.mutate(
+                {
+                  doctorId: selectedDoctor,
+                  scheduledAt: when,
+                  location,
+                  reason,
+                },
+                {
+                  onSuccess: () => {
+                    setReason("");
+                    setWhen("");
+                  },
+                  onError: (e) =>
+                    toast.error(
+                      e instanceof Error ? e.message : "Could not book",
+                    ),
+                },
+              );
+            }}
+          >
+            {requestAppointment.isPending ? "Booking…" : "Book appointment"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Section
+        title="Upcoming"
+        items={groups.upcoming}
+        action={appointmentAction}
+      />
       <Section title="Pending requests" items={groups.requests} />
       <Section title="Completed" items={groups.completed} />
       <Section title="Missed / Cancelled" items={groups.missed} />
@@ -79,31 +182,20 @@ function Section({
               key={appt.id}
               className="rounded-2xl border border-border bg-card p-4 shadow-soft"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="font-medium">{appt.doctor_name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(appt.scheduled_at), "EEE, d MMM yyyy · h:mm a")}
+                    {format(new Date(appt.scheduled_at), "PPp")} ·{" "}
+                    {appt.location}
                   </p>
-                  {appt.location ? (
-                    <p className="text-xs text-muted-foreground">{appt.location}</p>
-                  ) : null}
                 </div>
-                <div className="text-right">
-                  <Badge variant="outline" className="capitalize">
-                    {appt.status.replaceAll("_", " ")}
-                  </Badge>
-                  {appt.days_left != null ? (
-                    <p className="mt-2 text-sm font-semibold text-primary">
-                      {appt.days_left === 0
-                        ? "Today"
-                        : `${appt.days_left} day${appt.days_left === 1 ? "" : "s"} left`}
-                    </p>
-                  ) : null}
-                </div>
+                <Badge variant="outline" className="capitalize">
+                  {appt.status.replaceAll("_", " ")}
+                </Badge>
               </div>
-              {appt.status === "scheduled" && action ? (
-                <div className="mt-3 flex gap-2">
+              {action && appt.status === "scheduled" ? (
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -115,7 +207,7 @@ function Section({
                       })
                     }
                   >
-                    Reschedule request
+                    Reschedule
                   </Button>
                   <Button
                     size="sm"
@@ -128,7 +220,7 @@ function Section({
                       })
                     }
                   >
-                    Cancel request
+                    Cancel
                   </Button>
                 </div>
               ) : null}
