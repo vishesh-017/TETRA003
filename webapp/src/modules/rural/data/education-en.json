@@ -1,0 +1,68 @@
+[
+  {
+    "id": "medicine",
+    "topic": "medicine",
+    "title": "How to take medicines",
+    "body": "Give medicines at the same time every day. Do not skip doses.",
+    "bullets": [
+      "Take after food if the doctor said so",
+      "Keep medicines in a cool dry place",
+      "If a dose is missed, ask the doctor — do not double dose"
+    ]
+  },
+  {
+    "id": "diet",
+    "topic": "diet",
+    "title": "Simple diet tips",
+    "body": "Eat home-cooked food. Reduce sugar, salt, and fried snacks.",
+    "bullets": [
+      "Drink clean water through the day",
+      "Prefer vegetables, dal, and whole grains",
+      "Limit sweets and packaged drinks"
+    ]
+  },
+  {
+    "id": "exercise",
+    "topic": "exercise",
+    "title": "Gentle exercise",
+    "body": "A short daily walk helps recovery. Rest if chest pain or dizziness starts.",
+    "bullets": [
+      "Walk 20–30 minutes if the doctor allows",
+      "Avoid heavy lifting until cleared",
+      "Stop and sit if breathing becomes hard"
+    ]
+  },
+  {
+    "id": "warning",
+    "topic": "warning_signs",
+    "title": "Warning signs to watch",
+    "body": "Contact the health worker or doctor early if problems grow.",
+    "bullets": [
+      "Sugar or BP readings staying very high",
+      "Fever that does not improve",
+      "Wound swelling, redness, or pus"
+    ]
+  },
+  {
+    "id": "followup",
+    "topic": "follow_up",
+    "title": "Why follow-up matters",
+    "body": "Follow-up visits catch problems early and keep recovery on track.",
+    "bullets": [
+      "Bring medicine list and recent readings",
+      "Do not stop medicines without advice",
+      "Tell the doctor about new symptoms"
+    ]
+  },
+  {
+    "id": "emergency",
+    "topic": "emergency",
+    "title": "Emergency symptoms",
+    "body": "Go to the nearest hospital or call 108 for these signs.",
+    "bullets": [
+      "Chest pain or severe breathlessness",
+      "Fainting, confusion, or seizure",
+      "Very high fever with stiffness or bleeding"
+    ]
+  }
+]

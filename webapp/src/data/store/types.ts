@@ -268,6 +268,31 @@ export interface GovernmentProfileRow {
   linked_record_count: number;
 }
 
+export type HomeVisitStatus = "due" | "completed" | "missed" | "upcoming";
+
+export interface HealthWorkerRow {
+  id: string;
+  user_id: string;
+  area: string;
+  phone: string | null;
+}
+
+export interface HealthWorkerAssignmentRow {
+  health_worker_id: string;
+  patient_id: string;
+}
+
+export interface HomeVisitRow {
+  id: string;
+  patient_id: string;
+  health_worker_id: string;
+  scheduled_for: string;
+  status: HomeVisitStatus;
+  completed_at: string | null;
+  notes: string | null;
+  village: string | null;
+}
+
 export interface HealNexusStore {
   version: number;
   profiles: ProfileRow[];
@@ -289,9 +314,12 @@ export interface HealNexusStore {
   alerts: AlertRow[];
   healthRecords: HealthRecordRow[];
   governmentProfiles: GovernmentProfileRow[];
+  healthWorkers: HealthWorkerRow[];
+  healthWorkerAssignments: HealthWorkerAssignmentRow[];
+  homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 3;
+export const STORE_VERSION = 4;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {
@@ -304,4 +332,6 @@ export const IDS = {
   patient3User: "00000000-0000-4000-8000-000000000103",
   patient3: "00000000-0000-4000-8000-000000000203",
   carePlan: "00000000-0000-4000-8000-000000000301",
+  healthWorkerUser: "00000000-0000-4000-8000-000000000004",
+  healthWorker: "00000000-0000-4000-8000-000000000040",
 } as const;

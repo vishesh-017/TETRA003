@@ -66,9 +66,13 @@ const NAV_BY_ROLE: Record<
     { label: "Hospitals", href: "/maps", icon: MapPinned },
   ],
   health_worker: [
-    { label: "Screening", href: "/rural", icon: HeartPulse },
-    { label: "Offline Mode", href: "/rural/offline", icon: WifiOff },
+    { label: "Home", href: "/rural", icon: LayoutDashboard },
+    { label: "Screening", href: "/rural/screening", icon: HeartPulse },
+    { label: "Patients", href: "/rural/patients", icon: Users },
+    { label: "Visits", href: "/rural/visits", icon: CalendarDays },
+    { label: "Sync", href: "/rural/sync", icon: WifiOff },
     { label: "Education", href: "/rural/education", icon: Stethoscope },
+    { label: "Alerts", href: "/rural/notifications", icon: Bell },
   ],
 };
 

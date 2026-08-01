@@ -73,13 +73,18 @@ export interface DemoHospital {
   phone?: string;
 }
 
+export type OfflineSyncState = "pending" | "syncing" | "synced" | "failed";
+
 export interface OfflineRecord {
   id: string;
   entity_type: string;
   payload: Record<string, unknown>;
-  sync_state: "pending" | "synced";
+  sync_state: OfflineSyncState;
   captured_at: string;
+  updated_at?: string;
   role?: UserRole;
+  error?: string | null;
+  client_version?: number;
 }
 
 export const AI_CARE_COMPANION_LABEL = "AI Care Companion" as const;

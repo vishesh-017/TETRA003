@@ -13,6 +13,14 @@ import { BenefitsPage } from "@/modules/identity/pages/benefits-page";
 import { EmergencyProfilePage } from "@/modules/identity/pages/emergency-profile-page";
 import { HospitalMapPage } from "@/modules/identity/pages/hospital-map-page";
 import { PmjayPage } from "@/modules/identity/pages/pmjay-page";
+import { RuralShell } from "@/modules/rural/components/rural-shell";
+import { RuralDashboardPage } from "@/modules/rural/pages/dashboard-page";
+import { RuralEducationPage } from "@/modules/rural/pages/education-page";
+import { RuralNotificationsPage } from "@/modules/rural/pages/notifications-page";
+import { RuralPatientsPage } from "@/modules/rural/pages/patients-page";
+import { RuralScreeningPage } from "@/modules/rural/pages/screening-page";
+import { RuralSyncPage } from "@/modules/rural/pages/sync-page";
+import { RuralVisitsPage } from "@/modules/rural/pages/visits-page";
 import { AiAssistantPage } from "@/modules/patient/pages/ai-assistant-page";
 import { AppointmentsPage as PatientAppointmentsPage } from "@/modules/patient/pages/appointments-page";
 import { CarePlanPage } from "@/modules/patient/pages/care-plan-page";
@@ -98,38 +106,19 @@ export function AppRouter() {
 
         <Route element={<ProtectedRoute allowedRoles={["health_worker"]} />}>
           <Route element={<AppLayout />}>
-            <Route
-              path="/rural"
-              element={
-                <ModulePlaceholder
-                  title="Rural Screening"
-                  description="Health worker screening with local offline capture."
-                />
-              }
-            />
-            <Route
-              path="/rural/offline"
-              element={
-                <ModulePlaceholder
-                  title="Offline Mode"
-                  description="IndexedDB / localStorage capture with simulated sync."
-                />
-              }
-            />
-            <Route
-              path="/rural/sync"
-              element={<Navigate to="/rural/offline" replace />}
-            />
-            <Route
-              path="/rural/education"
-              element={
-                <ModulePlaceholder
-                  title="Caregiver Education"
-                  description="Localized educational guidance via AI Care Companion (assistive only)."
-                  showAiDisclaimer
-                />
-              }
-            />
+            <Route element={<RuralShell />}>
+              <Route path="/rural" element={<RuralDashboardPage />} />
+              <Route path="/rural/screening" element={<RuralScreeningPage />} />
+              <Route path="/rural/patients" element={<RuralPatientsPage />} />
+              <Route path="/rural/visits" element={<RuralVisitsPage />} />
+              <Route path="/rural/education" element={<RuralEducationPage />} />
+              <Route path="/rural/sync" element={<RuralSyncPage />} />
+              <Route path="/rural/offline" element={<RuralSyncPage />} />
+              <Route
+                path="/rural/notifications"
+                element={<RuralNotificationsPage />}
+              />
+            </Route>
           </Route>
         </Route>
 
