@@ -54,6 +54,8 @@ export interface PatientObservationBundle {
   conditions?: Condition[];
   medicine_adherence_percent?: number | null;
   missed_medicine_doses_7d?: number;
+  /** Consecutive calendar days without a check-in before today (0 if checked in today). */
+  missed_checkin_days?: number;
   appointment_adherence_percent?: number | null;
   missed_appointments_30d?: number;
   checkin_completion_percent?: number | null;

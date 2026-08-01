@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
+import { subscribeStore } from "@/data/store";
 import {
   ZERO_ADJUSTMENTS,
   evaluateHealth,
@@ -10,12 +11,22 @@ import {
 } from "@/lib/health-engine";
 import { buildObservationsFromLocal } from "@/modules/prediction/adapters";
 
+/** Recompute when local store changes (check-ins, meds, scores). */
+function useStoreTick() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => subscribeStore(() => setTick((t) => t + 1)), []);
+  return tick;
+}
+
 export function useObservationBundle(userId?: string | null) {
   const { user } = useAuth();
   const id = userId ?? user?.id;
+  const tick = useStoreTick();
   return useMemo(
     () => (id ? buildObservationsFromLocal(id) : null),
-    [id],
+    // tick forces refresh after check-in / escalation writes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [id, tick],
   );
 }
 

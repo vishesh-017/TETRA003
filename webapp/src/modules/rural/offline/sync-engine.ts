@@ -106,7 +106,11 @@ function applyScreeningToStore(screening: RuralScreeningRecord) {
           severity,
           title: "Rural emergency screening",
           body: `${screening.patient_name}: ${screening.emergency_reasons.join("; ")} (${screening.id})`,
+          reason: screening.emergency_reasons.join("; "),
           status: "open",
+          assigned_doctor_id: IDS.doctor,
+          checkin_id: null,
+          resolved_at: null,
           created_at: new Date().toISOString(),
         });
       }

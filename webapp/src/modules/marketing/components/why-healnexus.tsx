@@ -6,7 +6,7 @@ import { WHY_ROWS } from "@/modules/marketing/data";
 export function WhyHealNexusSection() {
   return (
     <Section
-      id="solutions"
+      id="why"
       eyebrow="Why HealNexus"
       title="Traditional follow-up vs continuous care"
       description="Replace guesswork with visibility — without taking judgement away from clinicians."

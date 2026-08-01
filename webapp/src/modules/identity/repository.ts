@@ -82,11 +82,13 @@ function resolvePatientId(userOrPatientId: string): string {
 export const identityRepository = {
   resolvePatientId,
 
-  getDigitalPassport(userOrPatientId: string): DigitalPassport {
+  getDigitalPassport(userOrPatientId: string): DigitalPassport | null {
     const store = getStore();
     const patientId = resolvePatientId(userOrPatientId);
-    const patient = store.patients.find((p) => p.id === patientId)!;
-    const profile = store.profiles.find((p) => p.id === patient.user_id)!;
+    const patient = store.patients.find((p) => p.id === patientId);
+    if (!patient) return null;
+    const profile = store.profiles.find((p) => p.id === patient.user_id);
+    if (!profile) return null;
     const passport = store.passports.find((p) => p.patient_id === patientId);
     const rel = store.relationships.find(
       (r) => r.patient_id === patientId && r.status === "active",
@@ -199,6 +201,19 @@ export const identityRepository = {
 
   getEmergencyProfileByPatient(patientId: string): EmergencyProfile {
     const passport = this.getDigitalPassport(patientId);
+    if (!passport) {
+      return {
+        token: "",
+        full_name: "Unknown patient",
+        blood_group: null,
+        allergies: [],
+        medicines: [],
+        emergency_contact: null,
+        doctor: null,
+        disclaimer:
+          "Emergency Medical Profile — assistive information only. Not a diagnosis. Seek urgent care for red-flag symptoms.",
+      };
+    }
     return {
       token: passport.qr_token,
       full_name: passport.full_name,

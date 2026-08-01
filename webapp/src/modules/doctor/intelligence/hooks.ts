@@ -63,7 +63,7 @@ export function useDoctorRealtimeInvalidation() {
       .channel("doctor-intelligence")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "checkins" },
+        { event: "*", schema: "public", table: "health_checkins" },
         () => {
           void qc.invalidateQueries({ queryKey: ["doctor"] });
         },
@@ -71,6 +71,20 @@ export function useDoctorRealtimeInvalidation() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "alerts" },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["doctor"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["doctor"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recovery_scores" },
         () => {
           void qc.invalidateQueries({ queryKey: ["doctor"] });
         },

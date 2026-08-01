@@ -115,14 +115,14 @@ export const PRICING = [
   {
     id: "starter",
     name: "Starter",
-    price: "₹0",
-    period: "demo",
-    blurb: "Explore the product with sample cohorts.",
+    price: "Free",
+    period: "",
+    blurb: "Explore the platform with sample cohorts.",
     featured: false,
     features: [
       "Doctor Intelligence Center",
       "Patient check-ins",
-      "Recovery Score (demo)",
+      "Recovery Score",
       "Ahmedabad hospital map",
     ],
   },
@@ -186,7 +186,7 @@ export const TESTIMONIALS = [
 export const FAQS = [
   {
     q: "Is my data secure?",
-    a: "HealNexus is designed with role-based access and privacy-first defaults. Demo mode stores data locally in your browser; production deployments use Supabase with secure authentication.",
+    a: "HealNexus is designed with role-based access and privacy-first defaults. Production deployments use Supabase with secure authentication and encrypted data at rest.",
   },
   {
     q: "Does AI replace doctors?",
@@ -198,7 +198,7 @@ export const FAQS = [
   },
   {
     q: "Is PM-JAY supported?",
-    a: "HealNexus includes conversational PM-JAY guidance and an Ahmedabad hospital map highlighting empanelled centres for demo exploration.",
+    a: "HealNexus includes conversational PM-JAY guidance and an Ahmedabad hospital map highlighting empanelled centres for easy exploration.",
   },
   {
     q: "What is the Patient Passport?",
@@ -210,7 +210,7 @@ export const TRUSTED = [
   "Civil Hospital",
   "SVP Network",
   "LG Clinics",
-  "Rural PHC Demo",
+  "Rural PHC Network",
   "CareBridge Trust",
   "Arogya Partners",
 ];

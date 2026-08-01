@@ -45,7 +45,16 @@ export function AlertBanner({
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={
+        alert.action === "emergency" || alert.action === "immediate_attention"
+          ? { opacity: 1, y: 0, scale: [1, 1.01, 1] }
+          : { opacity: 1, y: 0 }
+      }
+      transition={
+        alert.action === "emergency" || alert.action === "immediate_attention"
+          ? { scale: { duration: 1.5, repeat: Infinity } }
+          : undefined
+      }
       className={cn(
         "flex flex-col gap-2 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between",
         tone.className,

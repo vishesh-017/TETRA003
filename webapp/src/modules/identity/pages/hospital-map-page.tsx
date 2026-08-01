@@ -1,7 +1,8 @@
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import { Link } from "react-router-dom";
 
+import { SafeMapContainer } from "@/components/maps/safe-map";
 import { AHMEDABAD_DEMO_HOSPITALS } from "@/data/ahmedabad-hospitals";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,7 @@ export function HospitalMapPage() {
       </div>
 
       <div className="map-shell h-[420px] rounded-3xl border border-border shadow-soft">
-        <MapContainer
+        <SafeMapContainer
           center={center}
           zoom={12}
           scrollWheelZoom={false}
@@ -66,7 +67,7 @@ export function HospitalMapPage() {
               </Popup>
             </Marker>
           ))}
-        </MapContainer>
+        </SafeMapContainer>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

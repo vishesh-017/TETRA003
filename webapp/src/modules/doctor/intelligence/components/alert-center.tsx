@@ -27,8 +27,8 @@ export function AlertCenter({
       patient_id: null,
       patient_name: null,
       created_at: new Date().toISOString(),
-      action_label: "Open rural sync",
-      action_href: "/rural/sync",
+      action_label: "View intelligence",
+      action_href: "/doctor",
     });
   }
 
@@ -48,11 +48,27 @@ export function AlertCenter({
               transition={{ delay: i * 0.03 }}
               className={cn(
                 "rounded-2xl border p-3",
-                alert.category === "emergency"
-                  ? "border-destructive/40 bg-destructive/5"
-                  : "border-border/70 bg-background/50",
+                alert.category === "emergency" || alert.severity === "critical"
+                  ? "border-destructive/50 bg-destructive/10 shadow-[0_0_0_1px_rgba(239,68,68,0.12)]"
+                  : alert.severity === "high"
+                    ? "border-orange-300/60 bg-orange-50/80"
+                    : "border-border/70 bg-background/50",
               )}
             >
+              {(alert.category === "emergency" ||
+                alert.severity === "critical") && (
+                <motion.div
+                  className="mb-2 h-1 overflow-hidden rounded-full bg-destructive/20"
+                  initial={false}
+                >
+                  <motion.div
+                    className="h-full bg-destructive"
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+                    style={{ width: "40%" }}
+                  />
+                </motion.div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium">{alert.title}</p>
                 <Badge variant="outline" className="capitalize">

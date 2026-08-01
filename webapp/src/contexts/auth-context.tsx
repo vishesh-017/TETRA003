@@ -4,12 +4,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
 import { env } from "@/config/env";
 import { getSupabaseClient } from "@/lib/supabase";
+import { patientCaregiverService } from "@/modules/patient/caregiver-arrangements";
 import {
   fetchCurrentUser,
   loginWithPassword,
@@ -26,6 +28,7 @@ interface AuthContextValue {
   isDemoMode: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   loginDemo: (role: UserRole) => void;
+  loginCaregiverInvite: (inviteCode: string) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -56,8 +59,8 @@ const DEMO_USERS: Record<UserRole, User> = {
   caregiver: {
     id: "00000000-0000-4000-8000-000000000003",
     email: "caregiver@healnexus.demo",
-    full_name: "Demo Caregiver",
-    phone: null,
+    full_name: "Priya Patel",
+    phone: "+91-9876588888",
     role: "caregiver",
     locale: "en",
     avatar_url: null,
@@ -80,6 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const isDemoModeRef = useRef(false);
+
+  useEffect(() => {
+    isDemoModeRef.current = isDemoMode;
+  }, [isDemoMode]);
 
   const refreshUser = useCallback(async () => {
     if (!accessToken || isDemoMode) return;
@@ -136,11 +144,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAccessToken(session?.access_token ?? null);
+      // Don't wipe an active demo session when Supabase reports no auth session.
       if (!session) {
+        if (isDemoModeRef.current) return;
+        setAccessToken(null);
         setUser(null);
         setIsDemoMode(false);
+        return;
       }
+      setAccessToken(session.access_token);
     });
 
     return () => {
@@ -163,12 +175,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const me = await fetchCurrentUser(token);
         setUser(me.user);
       } catch {
+        const metaRole =
+          (data.user?.app_metadata?.role ||
+            data.user?.user_metadata?.role) as UserRole | undefined;
         setUser({
           id: data.user?.id ?? "unknown",
           email: credentials.email,
-          full_name: credentials.email,
+          full_name:
+            (data.user?.user_metadata?.full_name as string | undefined) ||
+            credentials.email,
           phone: null,
-          role: "patient",
+          role: metaRole || "patient",
           locale: "en",
           avatar_url: null,
           is_active: true,
@@ -183,6 +200,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsDemoMode(true);
     setAccessToken(`demo-token-${role}`);
     setUser(DEMO_USERS[role]);
+    setIsLoading(false);
+  }, []);
+
+  const loginCaregiverInvite = useCallback((inviteCode: string) => {
+    const profile = patientCaregiverService.acceptInvite(inviteCode);
+    setIsDemoMode(true);
+    setAccessToken(`demo-token-caregiver-${profile.id}`);
+    setUser({
+      id: profile.id,
+      email: profile.email,
+      full_name: profile.full_name,
+      phone: profile.phone,
+      role: "caregiver",
+      locale: profile.locale || "en",
+      avatar_url: null,
+      is_active: true,
+    });
     setIsLoading(false);
   }, []);
 
@@ -204,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isDemoMode,
       login,
       loginDemo,
+      loginCaregiverInvite,
       logout,
       refreshUser,
     }),
@@ -214,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isDemoMode,
       login,
       loginDemo,
+      loginCaregiverInvite,
       logout,
       refreshUser,
     ],

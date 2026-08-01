@@ -86,6 +86,31 @@ export interface CareRelationshipRow {
   status: "active" | "ended";
 }
 
+export interface CaregiverPermissions {
+  view_medicines: boolean;
+  view_vitals: boolean;
+  view_appointments: boolean;
+  receive_alerts: boolean;
+  emergency_access: boolean;
+}
+
+/** Patient ↔ caregiver link created when a patient invites family support. */
+export interface CaregiverArrangementRow {
+  id: string;
+  patient_id: string;
+  caregiver_user_id: string;
+  caregiver_name: string;
+  caregiver_phone: string;
+  caregiver_email: string | null;
+  relationship: string;
+  permissions: CaregiverPermissions;
+  status: "invited" | "active" | "revoked";
+  invite_code: string;
+  is_primary: boolean;
+  created_at: string;
+  accepted_at: string | null;
+}
+
 export interface RecoveryScoreRow {
   patient_id: string;
   score: number;
@@ -224,7 +249,12 @@ export interface AlertRow {
   severity: RiskLevel;
   title: string;
   body: string;
-  status: string;
+  /** Clinician-facing escalation reason (threshold / vitals / adherence). */
+  reason: string;
+  status: "open" | "acknowledged" | "resolved" | string;
+  assigned_doctor_id: string | null;
+  checkin_id: string | null;
+  resolved_at: string | null;
   created_at: string;
 }
 
@@ -300,6 +330,7 @@ export interface HealNexusStore {
   patients: PatientRow[];
   passports: PassportRow[];
   relationships: CareRelationshipRow[];
+  caregiverArrangements: CaregiverArrangementRow[];
   recoveryScores: RecoveryScoreRow[];
   risks: RiskRow[];
   carePlans: CarePlanRow[];
@@ -319,7 +350,7 @@ export interface HealNexusStore {
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 4;
+export const STORE_VERSION = 6;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {
@@ -331,7 +362,16 @@ export const IDS = {
   patient2: "00000000-0000-4000-8000-000000000202",
   patient3User: "00000000-0000-4000-8000-000000000103",
   patient3: "00000000-0000-4000-8000-000000000203",
+  caregiverUser: "00000000-0000-4000-8000-000000000003",
   carePlan: "00000000-0000-4000-8000-000000000301",
   healthWorkerUser: "00000000-0000-4000-8000-000000000004",
   healthWorker: "00000000-0000-4000-8000-000000000040",
 } as const;
+
+export const DEFAULT_CAREGIVER_PERMISSIONS: CaregiverPermissions = {
+  view_medicines: true,
+  view_vitals: true,
+  view_appointments: true,
+  receive_alerts: true,
+  emergency_access: true,
+};

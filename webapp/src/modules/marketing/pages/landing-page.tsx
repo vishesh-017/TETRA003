@@ -9,6 +9,7 @@ import { FeaturesSection } from "@/modules/marketing/components/features";
 import { HeroSection } from "@/modules/marketing/components/hero";
 import { HowItWorksSection } from "@/modules/marketing/components/how-it-works";
 import { PricingSection } from "@/modules/marketing/components/pricing";
+import { StorytellingScroll } from "@/modules/marketing/components/storytelling-scroll";
 import { TestimonialsSection } from "@/modules/marketing/components/testimonials";
 import { TrustedBySection } from "@/modules/marketing/components/trusted-by";
 import { WhyHealNexusSection } from "@/modules/marketing/components/why-healnexus";
@@ -32,7 +33,7 @@ export function LandingPage() {
       <HeroSection />
       <TrustedBySection />
       <FeaturesSection limit={6} />
-      <div className="mx-auto max-w-6xl px-4 pb-4 text-center sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 pb-2 text-center sm:px-6">
         <Link
           to="/features"
           className={cn(buttonVariants({ variant: "outline" }))}
@@ -40,6 +41,7 @@ export function LandingPage() {
           Explore all features
         </Link>
       </div>
+      <StorytellingScroll />
       <HowItWorksSection />
       <WhyHealNexusSection />
       <PricingSection />

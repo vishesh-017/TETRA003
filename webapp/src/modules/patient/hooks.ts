@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/auth-context";
-import type { TaskStatus } from "@/data/store";
+import { subscribeStore, type TaskStatus } from "@/data/store";
 
+import {
+  patientCaregiverService,
+  type CaregiverInviteInput,
+} from "./caregiver-arrangements";
 import { patientRepository } from "./repository";
 import type { CheckInInput } from "./types";
 
@@ -16,6 +21,7 @@ const keys = {
   notifications: (uid: string) => ["patient", "notifications", uid] as const,
   profile: (uid: string) => ["patient", "profile", uid] as const,
   recovery: (uid: string) => ["patient", "recovery", uid] as const,
+  caregivers: (uid: string) => ["patient", "caregivers", uid] as const,
 };
 
 function usePatientUserId() {
@@ -23,8 +29,18 @@ function usePatientUserId() {
   return user?.id ?? "";
 }
 
+function useInvalidatePatientOnStore() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    return subscribeStore(() => {
+      void qc.invalidateQueries({ queryKey: ["patient"] });
+    });
+  }, [qc]);
+}
+
 export function useTodayDashboard() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.today(userId),
     queryFn: () => patientRepository.getTodayDashboard(userId),
@@ -75,6 +91,46 @@ export function usePatientNotifications() {
     queryFn: () => patientRepository.listNotifications(userId),
     enabled: Boolean(userId),
   });
+}
+
+export function usePatientCaregivers() {
+  const userId = usePatientUserId();
+  return useQuery({
+    queryKey: keys.caregivers(userId),
+    queryFn: () => patientCaregiverService.list(userId),
+    enabled: Boolean(userId),
+  });
+}
+
+export function usePatientCaregiverMutations() {
+  const userId = usePatientUserId();
+  const qc = useQueryClient();
+  const invalidate = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: keys.caregivers(userId) }),
+      qc.invalidateQueries({ queryKey: keys.profile(userId) }),
+      qc.invalidateQueries({ queryKey: keys.notifications(userId) }),
+    ]);
+
+  const addCaregiver = useMutation({
+    mutationFn: async (input: CaregiverInviteInput) =>
+      patientCaregiverService.add(userId, input),
+    onSuccess: () => void invalidate(),
+  });
+
+  const revokeCaregiver = useMutation({
+    mutationFn: async (arrangementId: string) =>
+      patientCaregiverService.revoke(userId, arrangementId),
+    onSuccess: () => void invalidate(),
+  });
+
+  const setPrimaryCaregiver = useMutation({
+    mutationFn: async (arrangementId: string) =>
+      patientCaregiverService.setPrimary(userId, arrangementId),
+    onSuccess: () => void invalidate(),
+  });
+
+  return { addCaregiver, revokeCaregiver, setPrimaryCaregiver };
 }
 
 export function usePatientProfile() {
@@ -155,9 +211,23 @@ export function usePatientMutations() {
   const submitCheckIn = useMutation({
     mutationFn: (input: CheckInInput) =>
       patientRepository.submitCheckIn(userId, input),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await invalidateAll();
-      toast.success("Great! Your health log has been recorded.");
+      void qc.invalidateQueries({ queryKey: ["doctor"] });
+      void qc.invalidateQueries({ queryKey: ["patients"] });
+      const pipeline = result.pipeline;
+      if (pipeline?.escalated) {
+        toast.warning("Check-in saved — care team alerted", {
+          description: `Recovery ${pipeline.recovery_score}/100 · ${pipeline.alert?.reason ?? "Escalation created"}`,
+          duration: 7000,
+        });
+      } else {
+        toast.success("Check-in saved", {
+          description: pipeline
+            ? `Recovery updated to ${pipeline.recovery_score}/100`
+            : "Your health log has been recorded.",
+        });
+      }
     },
   });
 

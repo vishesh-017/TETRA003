@@ -10,7 +10,6 @@ import { LoginPage } from "@/pages/auth/login-page";
 import { SignupPage } from "@/pages/auth/signup-page";
 import { AnalyticsRedirect } from "@/pages/analytics-redirect";
 import { HomeRedirect } from "@/pages/home-redirect";
-import { ModulePlaceholder } from "@/pages/module-placeholder";
 import { NotFoundPage } from "@/pages/not-found-page";
 
 const LandingPage = lazy(() =>
@@ -149,6 +148,67 @@ const EmergencyProfilePage = lazy(() =>
 const HospitalMapPage = lazy(() =>
   import("@/modules/identity/pages/hospital-map-page").then((m) => ({
     default: m.HospitalMapPage,
+  })),
+);
+
+const CaregiverLayout = lazy(() =>
+  import("@/modules/caregiver/layout").then((m) => ({
+    default: m.CaregiverLayout,
+  })),
+);
+const CaregiverHomePage = lazy(() =>
+  import("@/modules/caregiver/pages/home-page").then((m) => ({
+    default: m.CaregiverHomePage,
+  })),
+);
+const CaregiverFamilyPage = lazy(() =>
+  import("@/modules/caregiver/pages/family-page").then((m) => ({
+    default: m.CaregiverFamilyPage,
+  })),
+);
+const CaregiverTodayPage = lazy(() =>
+  import("@/modules/caregiver/pages/today-page").then((m) => ({
+    default: m.CaregiverTodayPage,
+  })),
+);
+const CaregiverMedicinesPage = lazy(() =>
+  import("@/modules/caregiver/pages/medicines-page").then((m) => ({
+    default: m.CaregiverMedicinesPage,
+  })),
+);
+const CaregiverTrendsPage = lazy(() =>
+  import("@/modules/caregiver/pages/trends-page").then((m) => ({
+    default: m.CaregiverTrendsPage,
+  })),
+);
+const CaregiverAppointmentsPage = lazy(() =>
+  import("@/modules/caregiver/pages/appointments-page").then((m) => ({
+    default: m.CaregiverAppointmentsPage,
+  })),
+);
+const CaregiverPassportPage = lazy(() =>
+  import("@/modules/caregiver/pages/passport-page").then((m) => ({
+    default: m.CaregiverPassportPage,
+  })),
+);
+const CaregiverHospitalsPage = lazy(() =>
+  import("@/modules/caregiver/pages/hospitals-page").then((m) => ({
+    default: m.CaregiverHospitalsPage,
+  })),
+);
+const CaregiverEmergencyPage = lazy(() =>
+  import("@/modules/caregiver/pages/emergency-page").then((m) => ({
+    default: m.CaregiverEmergencyPage,
+  })),
+);
+const CaregiverAlertsPage = lazy(() =>
+  import("@/modules/caregiver/pages/alerts-page").then((m) => ({
+    default: m.CaregiverAlertsPage,
+  })),
+);
+const CaregiverSettingsPage = lazy(() =>
+  import("@/modules/caregiver/pages/settings-page").then((m) => ({
+    default: m.CaregiverSettingsPage,
   })),
 );
 const PmjayPage = lazy(() =>
@@ -428,23 +488,101 @@ export function AppRouter() {
         <Route element={<ProtectedRoute allowedRoles={["caregiver"]} />}>
           <Route element={<AppLayout />}>
             <Route
-              path="/caregiver"
               element={
-                <ModulePlaceholder
-                  title="Caregiver Status"
-                  description="Patient status, adherence, Recovery Score visibility, and appointments."
-                />
+                <Lazy>
+                  <CaregiverLayout />
+                </Lazy>
               }
-            />
-            <Route
-              path="/caregiver/alerts"
-              element={
-                <ModulePlaceholder
-                  title="Caregiver Alerts"
-                  description="Escalation notifications for the patients you support."
-                />
-              }
-            />
+            >
+              <Route
+                path="/caregiver"
+                element={
+                  <Lazy>
+                    <CaregiverHomePage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/family"
+                element={
+                  <Lazy>
+                    <CaregiverFamilyPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/today"
+                element={
+                  <Lazy>
+                    <CaregiverTodayPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/medicines"
+                element={
+                  <Lazy>
+                    <CaregiverMedicinesPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/trends"
+                element={
+                  <Lazy>
+                    <CaregiverTrendsPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/appointments"
+                element={
+                  <Lazy>
+                    <CaregiverAppointmentsPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/passport"
+                element={
+                  <Lazy>
+                    <CaregiverPassportPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/hospitals"
+                element={
+                  <Lazy>
+                    <CaregiverHospitalsPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/emergency"
+                element={
+                  <Lazy>
+                    <CaregiverEmergencyPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/alerts"
+                element={
+                  <Lazy>
+                    <CaregiverAlertsPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/settings"
+                element={
+                  <Lazy>
+                    <CaregiverSettingsPage />
+                  </Lazy>
+                }
+              />
+            </Route>
           </Route>
         </Route>
 

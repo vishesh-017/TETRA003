@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 
+import { SafeMapContainer } from "@/components/maps/safe-map";
 import { AHMEDABAD_MAP_CENTER } from "@/data/ahmedabad-hospitals";
 import { Badge } from "@/components/ui/badge";
 import type { HospitalMapItem } from "@/modules/analytics/types";
@@ -82,7 +83,7 @@ export function HospitalMapPanel({ hospitals }: { hospitals: HospitalMapItem[] }
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="map-shell h-[380px] rounded-3xl border border-border">
-          <MapContainer
+          <SafeMapContainer
             center={[AHMEDABAD_MAP_CENTER.lat, AHMEDABAD_MAP_CENTER.lng]}
             zoom={12}
             scrollWheelZoom={false}
@@ -107,7 +108,7 @@ export function HospitalMapPanel({ hospitals }: { hospitals: HospitalMapItem[] }
                 </Popup>
               </Marker>
             ))}
-          </MapContainer>
+          </SafeMapContainer>
         </div>
 
         <div className="space-y-3">

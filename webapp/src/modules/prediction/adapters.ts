@@ -1,4 +1,4 @@
-import { getStore, IDS } from "@/data/store";
+import { getStore, IDS, todayKey } from "@/data/store";
 import { patientRepository } from "@/modules/patient/repository";
 import type { PatientObservationBundle, TimedValue } from "@/modules/prediction/types";
 
@@ -26,13 +26,28 @@ function resolvePatientRecord(userOrPatientId: string) {
   return store.patients.find((p) => p.user_id === userOrPatientId) ?? null;
 }
 
+function missedCheckinDays(patientId: string): number {
+  const today = todayKey();
+  const checkins = getStore()
+    .checkins.filter((c) => c.patient_id === patientId)
+    .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at));
+  if (!checkins.length) return 3;
+  const lastDay = checkins[0]!.recorded_at.slice(0, 10);
+  if (lastDay >= today) return 0;
+  const ms =
+    new Date(`${today}T12:00:00`).getTime() -
+    new Date(`${lastDay}T12:00:00`).getTime();
+  return Math.max(0, Math.floor(ms / 86_400_000));
+}
+
 /** Build observation payload from the dynamic local store (patient or user id). */
 export function buildObservationsFromLocal(
   userOrPatientId: string,
 ): PatientObservationBundle {
   const store = getStore();
   const patient = resolvePatientRecord(userOrPatientId);
-  const patientId = patient?.id || patientRepository.resolvePatientId(userOrPatientId);
+  const patientId =
+    patient?.id || patientRepository.resolvePatientId(userOrPatientId);
   const userId = patient?.user_id || userOrPatientId;
   const profile = store.profiles.find((p) => p.id === patient?.user_id);
   const recovery = patientRepository.getRecovery(userId);
@@ -47,23 +62,27 @@ export function buildObservationsFromLocal(
     .filter((c) => c.patient_id === patientId)
     .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
 
-  // Seed a clinically meaningful demo series when check-ins are sparse
+  // Prefer real check-in series whenever available (needed for escalation accuracy)
   const sugarDemo = [132, 140, 148, 155, 168];
   const bpDemo = [128, 132, 136, 142, 148];
-  const sugar =
-    checkins.length >= 2
-      ? seriesFrom(
-          checkins.map((c) => c.blood_sugar),
-          checkins.map((c) => c.recorded_at),
-        )
-      : seriesFrom(sugarDemo);
-  const bpSys =
-    checkins.length >= 2
-      ? seriesFrom(
-          checkins.map((c) => c.bp_systolic),
-          checkins.map((c) => c.recorded_at),
-        )
-      : seriesFrom(bpDemo);
+  const sugar = checkins.length
+    ? seriesFrom(
+        checkins.map((c) => c.blood_sugar),
+        checkins.map((c) => c.recorded_at),
+      )
+    : seriesFrom(sugarDemo);
+  const bpSys = checkins.length
+    ? seriesFrom(
+        checkins.map((c) => c.bp_systolic),
+        checkins.map((c) => c.recorded_at),
+      )
+    : seriesFrom(bpDemo);
+  const bpDia = checkins.length
+    ? seriesFrom(
+        checkins.map((c) => c.bp_diastolic),
+        checkins.map((c) => c.recorded_at),
+      )
+    : seriesFrom([82, 84, 86, 88, 90]);
 
   const conditions: PatientObservationBundle["conditions"] = [];
   for (const c of patient?.chronic_diseases || []) {
@@ -88,11 +107,12 @@ export function buildObservationsFromLocal(
     conditions,
     medicine_adherence_percent: adherence || recovery.factors.medicine_adherence,
     missed_medicine_doses_7d: Math.max(missedMeds, adherence < 80 ? 2 : 0),
+    missed_checkin_days: missedCheckinDays(patientId),
     appointment_adherence_percent: missedAppts ? 70 : 95,
     missed_appointments_30d: missedAppts,
     checkin_completion_percent: dash.progress_percent,
     blood_pressure_systolic: bpSys,
-    blood_pressure_diastolic: seriesFrom([82, 84, 86, 88, 90]),
+    blood_pressure_diastolic: bpDia,
     blood_sugar: sugar,
     sleep_hours: seriesFrom(
       checkins.map((c) => c.sleep_hours).filter((v): v is number => v != null)
@@ -113,7 +133,11 @@ export function buildObservationsFromLocal(
         ? checkins.map((c) => c.temperature)
         : [98.4, 98.6, 98.8],
     ),
-    weight_kg: seriesFrom([72, 72.2, 72.4, 72.8, 73.1]),
+    weight_kg: seriesFrom(
+      checkins.map((c) => c.weight).filter((v): v is number => v != null).length
+        ? checkins.map((c) => c.weight)
+        : [72, 72.2, 72.4, 72.8, 73.1],
+    ),
     symptom_log: checkins.length
       ? checkins.map((c) => ({
           recorded_at: c.recorded_at,

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { CaregiverManager } from "@/modules/patient/components/caregiver-manager";
 import {
   usePatientMutations,
   usePatientProfile,
@@ -104,6 +105,10 @@ export function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <div id="caregivers">
+        <CaregiverManager />
+      </div>
 
       <Card>
         <CardHeader>

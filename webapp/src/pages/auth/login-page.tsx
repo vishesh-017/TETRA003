@@ -1,7 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  type Location,
+} from "react-router-dom";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -28,15 +34,36 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const DEMO_ROLES: Array<{ role: UserRole; label: string }> = [
   { role: "doctor", label: "Doctor" },
-  { role: "patient", label: "Patient" },
-  { role: "caregiver", label: "Caregiver" },
+  { role: "patient", label: "Asha · Patient" },
+  { role: "caregiver", label: "Priya · Caregiver" },
   { role: "health_worker", label: "Health Worker" },
 ];
 
+function redirectTarget(
+  from: Location | undefined,
+  role: UserRole | undefined,
+): string {
+  if (from?.pathname && from.pathname !== "/login" && from.pathname !== "/signup") {
+    return `${from.pathname}${from.search || ""}`;
+  }
+  return role ? roleHomePath(role) : "/app";
+}
+
 export function LoginPage() {
-  const { login, loginDemo, isAuthenticated, user, isLoading } = useAuth();
+  const {
+    login,
+    loginDemo,
+    loginCaregiverInvite,
+    isAuthenticated,
+    user,
+    isLoading,
+  } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: Location } | null)?.from;
   const [formError, setFormError] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   const {
     register,
@@ -48,14 +75,14 @@ export function LoginPage() {
   });
 
   if (!isLoading && isAuthenticated && user) {
-    return <Navigate to={roleHomePath(user.role)} replace />;
+    return <Navigate to={redirectTarget(from, user.role)} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
       await login(values);
-      navigate("/app", { replace: true });
+      navigate(redirectTarget(from, undefined), { replace: true });
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to sign in",
@@ -134,13 +161,56 @@ export function LoginPage() {
                 variant="outline"
                 onClick={() => {
                   loginDemo(item.role);
-                  navigate(roleHomePath(item.role));
+                  navigate(redirectTarget(from, item.role), { replace: true });
                 }}
               >
                 {item.label}
               </Button>
             ))}
           </div>
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-teal-100 bg-teal-50/50 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-teal-900/70">
+            Caregiver invite
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Patients can add you from Profile → My caregivers. Enter the invite
+            code they shared (demo seed: <span className="font-mono">PRIYA-ASHA</span>).
+          </p>
+          <div className="flex gap-2">
+            <Input
+              value={inviteCode}
+              onChange={(e) => {
+                setInviteCode(e.target.value.toUpperCase());
+                setInviteError(null);
+              }}
+              placeholder="INVITE-CODE"
+              className="font-mono uppercase"
+              aria-label="Caregiver invite code"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                try {
+                  loginCaregiverInvite(inviteCode);
+                  navigate("/caregiver", { replace: true });
+                } catch (error) {
+                  setInviteError(
+                    error instanceof Error
+                      ? error.message
+                      : "Invalid invite code",
+                  );
+                }
+              }}
+            >
+              Open
+            </Button>
+          </div>
+          {inviteError ? (
+            <p className="text-xs text-destructive">{inviteError}</p>
+          ) : null}
         </div>
 
         <p className="text-center text-sm text-muted-foreground">

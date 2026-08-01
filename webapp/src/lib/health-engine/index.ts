@@ -37,6 +37,13 @@ export { computeTrendAnalysis } from "./trends";
 export { simulateLifestyle, applyAdjustments } from "./simulator";
 export { computeAlertDecision } from "./alerts";
 export { explainPrediction } from "./explain";
+export {
+  DEFAULT_ESCALATION_THRESHOLDS,
+  getEscalationThresholds,
+  resetEscalationThresholds,
+  setEscalationThresholds,
+  type EscalationThresholds,
+} from "./thresholds";
 
 let mlProvider: HealthModelProvider | null = null;
 
@@ -73,6 +80,7 @@ export function evaluateHealth(
     recovery_score: recovery.recovery_score,
     readmission_probability_percent:
       readmission.readmission_probability_percent,
+    missed_checkin_days: obs.missed_checkin_days,
   });
   const explain = explainPrediction({
     recovery,

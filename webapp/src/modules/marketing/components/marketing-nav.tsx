@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
-import { HealNexusLogo } from "@/components/brand/logo";
+import { HealNexusMark } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
@@ -42,15 +42,22 @@ export function MarketingNav() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 transition-all duration-300",
+        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
         scrolled
-          ? "border-b border-border/70 bg-card/80 shadow-soft backdrop-blur-xl"
+          ? "border-b border-border/70 bg-background/80 shadow-soft backdrop-blur-xl"
           : "bg-transparent",
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" aria-label="HealNexus home">
-          <HealNexusLogo />
+        <Link to="/" aria-label="HealNexus home" className="shrink-0">
+          {/* Icon only — full wordmark lives in the hero to avoid double branding */}
+          <HealNexusMark
+            size={40}
+            className={cn(
+              "ring-1 transition-shadow",
+              scrolled ? "ring-border/50 shadow-soft" : "ring-white/15",
+            )}
+          />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Marketing">

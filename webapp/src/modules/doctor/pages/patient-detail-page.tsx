@@ -98,18 +98,19 @@ export function PatientDetailPage() {
   const health = useMemo(
     () =>
       patientId ? evaluateHealth(buildObservationsForPatient(patientId)) : null,
-    [patientId, checkins.dataUpdatedAt, medicines.dataUpdatedAt],
+    // Recompute when underlying store-backed lists refresh
+    [patientId, checkins.data, medicines.data],
   );
 
   const digitalPassport = useMemo(
     () =>
       patientId ? identityRepository.getDigitalPassport(patientId) : null,
-    [patientId, patient.dataUpdatedAt],
+    [patientId, patient.data],
   );
 
   const timeline = useMemo(
     () => (patientId ? identityRepository.getTimeline(patientId) : []),
-    [patientId, checkins.dataUpdatedAt, discharges.dataUpdatedAt],
+    [patientId, checkins.data, discharges.data],
   );
 
   if (patient.isLoading) return <LoadingScreen fullScreen={false} />;
@@ -460,13 +461,21 @@ export function PatientDetailPage() {
         )
       ) : null}
 
-      {tab === "passport" && digitalPassport ? (
-        <div className="space-y-4">
-          <PassportWallet passport={digitalPassport} />
-          <EmergencyCard passport={digitalPassport} />
-          <PassportDetailGrid passport={digitalPassport} />
-          <MedicalTimeline events={timeline} />
-        </div>
+      {tab === "passport" ? (
+        digitalPassport ? (
+          <div className="space-y-4">
+            <PassportWallet passport={digitalPassport} />
+            <EmergencyCard passport={digitalPassport} />
+            <PassportDetailGrid passport={digitalPassport} />
+            <MedicalTimeline events={timeline} />
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-sm text-muted-foreground">
+              No digital passport is available for this patient yet.
+            </CardContent>
+          </Card>
+        )
       ) : null}
 
       {tab === "discharge" ? (

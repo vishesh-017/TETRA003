@@ -4,7 +4,7 @@ import { TRUSTED } from "@/modules/marketing/data";
 export function TrustedBySection() {
   return (
     <Section className="!py-10">
-      <p className="text-center text-label">Trusted by care teams (demo)</p>
+      <p className="text-center text-label">Trusted by care teams</p>
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {TRUSTED.map((name) => (
           <div

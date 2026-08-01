@@ -274,6 +274,24 @@ export const patientRepository = {
         date,
       });
     }
+
+    if (status === "skipped") {
+      const streak = getStore()
+        .medicineEvents.filter((e) => e.patient_id === patientId)
+        .sort((a, b) => b.acted_at.localeCompare(a.acted_at));
+      let consecutive = 0;
+      for (const e of streak) {
+        if (e.status === "missed" || e.status === "skipped") consecutive += 1;
+        else break;
+      }
+      if (consecutive >= 2) {
+        const { processAdherencePipeline } = await import(
+          "@/modules/health-pipeline/process-checkin"
+        );
+        await processAdherencePipeline(patientId);
+      }
+    }
+
     return this.listMedicines(userId);
   },
 
@@ -494,12 +512,18 @@ export const patientRepository = {
     updateStore((draft) => {
       draft.checkins.unshift(row);
     });
-    bumpRecovery(patientId, 2);
 
     if (env.isSupabaseConfigured) {
       await getSupabaseClient()?.from("health_checkins").insert(row);
     }
-    return row;
+
+    // Health intelligence → scores → escalation → doctor/caregiver notifications
+    const { processCheckInPipeline } = await import(
+      "@/modules/health-pipeline/process-checkin"
+    );
+    const pipeline = await processCheckInPipeline(patientId, row.id);
+
+    return { ...row, pipeline };
   },
 
   getRecovery(userId: string): RecoveryView {
