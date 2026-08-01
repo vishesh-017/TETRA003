@@ -94,9 +94,17 @@ export function useSaveScreening() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: RuralScreeningInput) => {
-      const hwId = ruralRepository.resolveHealthWorkerId(user!.id);
+      if (!user?.id) throw new Error("Sign in as a health worker to save");
+      const hwId = ruralRepository.resolveHealthWorkerId(user.id);
+      // Always persist offline first — never block on network sync.
       const saved = await saveScreening(hwId, input);
-      if (isOnline()) await runRuralSync();
+      if (isOnline()) {
+        try {
+          await runRuralSync();
+        } catch {
+          // Keep pending in IndexedDB; Sync page can retry later.
+        }
+      }
       return saved;
     },
     onSuccess: async () => {

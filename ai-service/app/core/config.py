@@ -17,7 +17,12 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8001
 
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # Include your Vercel URL(s) in production, e.g.
+    # https://your-app.vercel.app,http://localhost:5173
+    cors_origins: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "https://vishesh-017s-projects.vercel.app"
+    )
 
     exa_api_key: str = ""
     exa_base_url: str = "https://api.exa.ai"

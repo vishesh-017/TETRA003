@@ -54,33 +54,56 @@ export function openRuralDb(): Promise<IDBDatabase> {
 }
 
 export async function idbGetAll<T>(store: StoreName): Promise<T[]> {
-  if (!canUseIdb()) return lsRead<T>(store);
-  const db = await openRuralDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, "readonly");
-    const req = tx.objectStore(store).getAll();
-    req.onsuccess = () => resolve((req.result as T[]) ?? []);
-    req.onerror = () => reject(req.error);
-  });
+  const fromLs = lsRead<T>(store);
+  if (!canUseIdb()) return fromLs;
+  try {
+    const db = await openRuralDb();
+    const fromIdb = await new Promise<T[]>((resolve, reject) => {
+      const tx = db.transaction(store, "readonly");
+      const req = tx.objectStore(store).getAll();
+      req.onsuccess = () => resolve((req.result as T[]) ?? []);
+      req.onerror = () => reject(req.error);
+    });
+    // Merge localStorage fallback rows (private-mode saves) with IDB.
+    if (!fromLs.length) return fromIdb;
+    const map = new Map<string, T>();
+    for (const row of fromIdb) {
+      const id = (row as { id?: string }).id;
+      if (id) map.set(id, row);
+    }
+    for (const row of fromLs) {
+      const id = (row as { id?: string }).id;
+      if (id) map.set(id, row);
+    }
+    return [...map.values()];
+  } catch {
+    return fromLs;
+  }
 }
 
 export async function idbPut<T extends { id: string }>(
   store: StoreName,
   row: T,
 ): Promise<T> {
-  if (!canUseIdb()) {
+  const toLocal = () => {
     const all = lsRead<T>(store).filter((r) => r.id !== row.id);
     all.push(row);
     lsWrite(store, all);
     return row;
+  };
+  if (!canUseIdb()) return toLocal();
+  try {
+    const db = await openRuralDb();
+    return await new Promise<T>((resolve, reject) => {
+      const tx = db.transaction(store, "readwrite");
+      tx.objectStore(store).put(row);
+      tx.oncomplete = () => resolve(row);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // Private mode / quota / IDB blocked — still save offline via localStorage.
+    return toLocal();
   }
-  const db = await openRuralDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, "readwrite");
-    tx.objectStore(store).put(row);
-    tx.oncomplete = () => resolve(row);
-    tx.onerror = () => reject(tx.error);
-  });
 }
 
 export async function idbDelete(store: StoreName, id: string): Promise<void> {

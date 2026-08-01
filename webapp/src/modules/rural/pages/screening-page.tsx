@@ -109,18 +109,32 @@ export function RuralScreeningPage() {
       return;
     }
     let saved = 0;
+    const errors: string[] = [];
     for (const name of campQueue) {
-      await save.mutateAsync({
-        ...form,
-        patient_id: null,
-        patient_name: name,
-        notes: `Camp: ${campName}`,
-      });
-      saved += 1;
+      try {
+        await save.mutateAsync({
+          ...form,
+          patient_id: null,
+          patient_name: name,
+          notes: `Camp: ${campName}`,
+        });
+        saved += 1;
+      } catch (e) {
+        errors.push(
+          `${name}: ${e instanceof Error ? e.message : "save failed"}`,
+        );
+      }
     }
-    toast.success(`Camp batch saved locally (${saved}) — sync when online`);
-    setCampQueue([]);
-    setDoneId("camp-batch");
+    if (saved > 0) {
+      toast.success(
+        `Camp batch saved offline (${saved}/${campQueue.length}) — open Sync to upload later`,
+      );
+      setCampQueue([]);
+      setDoneId("camp-batch");
+    }
+    if (errors.length) {
+      toast.error(errors[0] || "Some camp rows failed to save");
+    }
   };
 
   if (doneId) {

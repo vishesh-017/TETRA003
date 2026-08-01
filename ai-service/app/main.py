@@ -39,12 +39,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Vercel frontend → Render AI: OPTIONS preflight must succeed.
+# allow_origin_regex covers *.vercel.app; explicit list covers local + custom domains.
+_cors_origins = settings.cors_origin_list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list or ["*"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_origins=_cors_origins if _cors_origins else ["*"],
+    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app",
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 register_exception_handlers(app)
@@ -68,6 +73,7 @@ def health() -> HealthResponse:
             "care-companion",
             "patient-summary",
             "health-assistant",
+            "emergency-checkup",
             "education",
             "government-guidance",
             "predict/recovery-score",
