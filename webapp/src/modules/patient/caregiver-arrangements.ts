@@ -120,6 +120,11 @@ export const patientCaregiverService = {
           phone,
           role: "caregiver",
           locale: "en",
+          username: name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ".")
+            .replace(/^\.|\.$/g, "")
+            .slice(0, 24) || `caregiver.${caregiverUserId.slice(-4)}`,
           address: null,
           notification_prefs: {
             medicine: true,

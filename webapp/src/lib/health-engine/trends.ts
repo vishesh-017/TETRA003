@@ -11,7 +11,14 @@ import { meta, seriesValues, toClinicalTrend, trendDirection } from "./utils";
 const CLINICAL_LABEL: Record<ClinicalTrend, string> = {
   improving: "Improving",
   stable: "Stable",
-  declining: "Declining",
+  declining: "Worsening",
+  insufficient: "Insufficient Data",
+};
+
+const DIRECTION_LABEL: Record<string, string> = {
+  increasing: "Rising",
+  decreasing: "Falling",
+  stable: "Stable",
   insufficient: "Insufficient Data",
 };
 
@@ -57,11 +64,14 @@ function metric(
   const clinical = toClinicalTrend(direction, risingBad);
   const nl = narrative(label, direction, clinical);
 
+  const dirLabel = DIRECTION_LABEL[direction] || CLINICAL_LABEL[clinical];
   return {
     metric: key,
     direction,
     clinical_trend: clinical,
-    label: `${label} ${CLINICAL_LABEL[clinical]}`,
+    // Chart title follows the plotted series direction (Rising/Falling),
+    // while clinical_trend remains Improving/Worsening for badges.
+    label: `${label} ${dirLabel}`,
     natural_language: nl,
     points: (series ?? []).slice(-14).map((p, i) => ({
       index: i + 1,
@@ -79,10 +89,12 @@ function narrative(
   if (direction === "insufficient") {
     return `Not enough ${label.toLowerCase()} points to detect a reliable trend.`;
   }
-  if (clinical === "stable") {
+  if (clinical === "stable" || direction === "stable") {
     return `${label} appears stable across recent readings.`;
   }
-  return `${label} is ${clinical} over the observed window.`;
+  const dir = DIRECTION_LABEL[direction]?.toLowerCase() || direction;
+  const clinicalWord = clinical === "declining" ? "worsening" : clinical;
+  return `${label} is ${dir} — clinical status ${clinicalWord}.`;
 }
 
 function adherenceTrend(adherence: number | null | undefined): TrendItem {

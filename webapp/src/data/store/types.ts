@@ -23,7 +23,8 @@ export type NotificationType =
   | "doctor_message"
   | "emergency"
   | "health_tip"
-  | "investigation";
+  | "investigation"
+  | "referral";
 
 export type InvestigationStatus =
   | "pending"
@@ -71,6 +72,8 @@ export interface ProfileRow {
   phone: string | null;
   role: Role;
   locale: string;
+  /** Unique handle for linking patients/doctors (scalable login identity). */
+  username: string | null;
   address: Record<string, unknown> | null;
   notification_prefs: {
     medicine: boolean;
@@ -409,7 +412,7 @@ export interface HealNexusStore {
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 10;
+export const STORE_VERSION = 12;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {

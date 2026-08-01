@@ -1,2 +1,2 @@
-/** Doctor home — premium Intelligence Center (hero screen). */
-export { IntelligenceCenterPage as DashboardPage } from "@/modules/doctor/intelligence/pages/intelligence-center-page";
+/** Doctor home — Active Panel / Escalation triage. */
+export { EscalationPage as DashboardPage } from "@/modules/doctor/escalation/pages/escalation-page";

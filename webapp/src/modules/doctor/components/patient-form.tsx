@@ -1,15 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { QrCode, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAppLocale } from "@/i18n/locale-context";
 import {
+  linkPatientFormSchema,
   patientFormSchema,
   toPatientPayload,
+  type LinkPatientFormSchema,
   type PatientFormSchema,
 } from "@/modules/doctor/schemas";
 import type { PatientDetail } from "@/modules/doctor/types";
@@ -51,6 +55,90 @@ export function PatientForm({
   onSubmit,
   onCancel,
 }: PatientFormProps) {
+  if (!initial) {
+    return (
+      <LinkPatientForm
+        submitting={submitting}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  return (
+    <EditPatientForm
+      initial={initial}
+      submitting={submitting}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    />
+  );
+}
+
+function LinkPatientForm({
+  submitting,
+  onSubmit,
+  onCancel,
+}: Omit<PatientFormProps, "initial">) {
+  const { t } = useAppLocale();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LinkPatientFormSchema>({
+    resolver: zodResolver(linkPatientFormSchema),
+    defaultValues: { username_or_qr: "" },
+  });
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={handleSubmit((values) =>
+        onSubmit({ username_or_qr: values.username_or_qr.trim() }),
+      )}
+    >
+      <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+          <UserRound className="h-4 w-4 text-primary" />
+          {t("link_patient")}
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">{t("username_hint")}</p>
+        <Field label={t("username_or_qr")} error={errors.username_or_qr?.message}>
+          <div className="relative">
+            <QrCode className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              {...register("username_or_qr")}
+              className="pl-9"
+              placeholder="asha.patel or HNASHA201QRDEMO"
+              autoFocus
+            />
+          </div>
+        </Field>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Demo usernames: asha.patel · ravi.shah · meera.desai
+        </p>
+      </div>
+
+      <div className="flex flex-wrap justify-end gap-2 pt-2">
+        {onCancel ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Linking…" : t("link_patient")}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function EditPatientForm({
+  initial,
+  submitting,
+  onSubmit,
+  onCancel,
+}: PatientFormProps & { initial: PatientDetail }) {
   const {
     register,
     handleSubmit,
@@ -117,30 +205,6 @@ export function PatientForm({
         <Textarea {...register("medical_history")} rows={3} />
       </Field>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Field label="Emergency contact name">
-          <Input {...register("emergency_name")} />
-        </Field>
-        <Field label="Emergency phone">
-          <Input {...register("emergency_phone")} />
-        </Field>
-        <Field label="Relationship">
-          <Input {...register("emergency_relationship")} />
-        </Field>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Field label="Caregiver name">
-          <Input {...register("caregiver_name")} />
-        </Field>
-        <Field label="Caregiver phone">
-          <Input {...register("caregiver_phone")} />
-        </Field>
-        <Field label="Caregiver relationship">
-          <Input {...register("caregiver_relationship")} />
-        </Field>
-      </div>
-
       <div className="flex flex-wrap justify-end gap-2 pt-2">
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>
@@ -148,7 +212,7 @@ export function PatientForm({
           </Button>
         ) : null}
         <Button type="submit" disabled={submitting}>
-          {submitting ? "Saving…" : initial ? "Update patient" : "Add patient"}
+          {submitting ? "Saving…" : "Update patient"}
         </Button>
       </div>
     </form>

@@ -26,6 +26,7 @@ import { investigationRepository } from "@/modules/investigations/repository";
 import { patientCaregiverService } from "@/modules/patient/caregiver-arrangements";
 import { organizeCareCompanion } from "@/services/ai.service";
 import { getSupabaseClient } from "@/lib/supabase";
+import { normalizeUsername, suggestUsername } from "@/lib/username";
 
 function adherenceForPatient(patientId: string): number {
   const store = getStore();
@@ -211,7 +212,86 @@ export const doctorRepository = {
     };
   },
 
+  /**
+   * Link an existing portal user to this doctor by HealNexus username
+   * or digital passport QR token. Scalable for any role that owns a profile.
+   */
+  linkPatientByUsernameOrQr(
+    userId: string,
+    usernameOrQr: string,
+  ): PatientDetail {
+    const doctor = ensureDoctor(userId);
+    const raw = usernameOrQr.trim();
+    if (!raw) {
+      throw Object.assign(new Error("Username or passport QR is required"), {
+        status: 400,
+      });
+    }
+
+    const store = getStore();
+    const needle = normalizeUsername(raw);
+    const qrNeedle = raw.toUpperCase();
+
+    const profile =
+      store.profiles.find(
+        (p) => p.username && normalizeUsername(p.username) === needle,
+      ) ||
+      store.profiles.find(
+        (p) =>
+          p.email &&
+          normalizeUsername(p.email.split("@")[0] || "") === needle,
+      );
+
+    let patient =
+      profile && profile.role === "patient"
+        ? store.patients.find((p) => p.user_id === profile.id)
+        : undefined;
+
+    if (!patient) {
+      const passport = store.passports.find(
+        (p) => p.qr_token.toUpperCase() === qrNeedle,
+      );
+      if (passport) {
+        patient = store.patients.find((p) => p.id === passport.patient_id);
+      }
+    }
+
+    if (!patient) {
+      throw Object.assign(
+        new Error(
+          "No patient found for that username or passport QR. Ask them to share their HealNexus username or passport QR from the portal.",
+        ),
+        { status: 404 },
+      );
+    }
+
+    const already = store.relationships.some(
+      (r) =>
+        r.doctor_id === doctor.id &&
+        r.patient_id === patient!.id &&
+        r.status === "active",
+    );
+    if (!already) {
+      updateStore((draft) => {
+        draft.relationships.push({
+          doctor_id: doctor.id,
+          patient_id: patient!.id,
+          status: "active",
+        });
+      });
+    }
+
+    return this.getPatient(userId, patient.id);
+  },
+
   createPatient(userId: string, body: Record<string, unknown>): PatientDetail {
+    if (body.username_or_qr) {
+      return this.linkPatientByUsernameOrQr(
+        userId,
+        String(body.username_or_qr),
+      );
+    }
+
     const doctor = ensureDoctor(userId);
     const profileId = newId();
     const patientId = newId();
@@ -224,6 +304,9 @@ export const doctorRepository = {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+    const username =
+      (body.username as string) ||
+      suggestUsername(String(body.full_name || "patient"));
 
     updateStore((draft) => {
       draft.profiles.push({
@@ -233,6 +316,7 @@ export const doctorRepository = {
         phone: (body.phone as string) || null,
         role: "patient",
         locale: "en",
+        username: normalizeUsername(username),
         address: body.address_line
           ? { line1: body.address_line, city: body.city }
           : null,

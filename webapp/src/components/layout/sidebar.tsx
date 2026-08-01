@@ -55,15 +55,9 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       id: "command",
       label: "Command",
       items: [
-        { label: "Intelligence", href: "/doctor", icon: LayoutDashboard },
+        { label: "Escalation", href: "/doctor", icon: ShieldAlert },
         { label: "Patients", href: "/doctor/patients", icon: Users },
-        { label: "High Risk", href: "/doctor/high-risk", icon: Activity },
         { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
-        {
-          label: "Investigations",
-          href: "/doctor/investigations",
-          icon: ClipboardList,
-        },
         {
           label: "Analytics",
           href: "/doctor/analytics",

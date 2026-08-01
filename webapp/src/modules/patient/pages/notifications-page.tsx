@@ -7,6 +7,7 @@ import {
   HeartPulse,
   MessageSquare,
   Pill,
+  Share2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   emergency: AlertTriangle,
   health_tip: HeartPulse,
   investigation: FlaskConical,
+  referral: Share2,
 };
 
 export function NotificationsPage() {

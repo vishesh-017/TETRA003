@@ -58,19 +58,9 @@ const PatientDetailPage = lazy(() =>
     default: m.PatientDetailPage,
   })),
 );
-const HighRiskPage = lazy(() =>
-  import("@/modules/doctor/pages/high-risk-page").then((m) => ({
-    default: m.HighRiskPage,
-  })),
-);
 const AppointmentsPage = lazy(() =>
   import("@/modules/doctor/pages/appointments-page").then((m) => ({
     default: m.AppointmentsPage,
-  })),
-);
-const DoctorInvestigationsPage = lazy(() =>
-  import("@/modules/doctor/pages/investigations-page").then((m) => ({
-    default: m.InvestigationsPage,
   })),
 );
 
@@ -377,11 +367,7 @@ export function AppRouter() {
             />
             <Route
               path="/doctor/high-risk"
-              element={
-                <Lazy>
-                  <HighRiskPage />
-                </Lazy>
-              }
+              element={<Navigate to="/doctor" replace />}
             />
             <Route
               path="/doctor/appointments"
@@ -393,11 +379,7 @@ export function AppRouter() {
             />
             <Route
               path="/doctor/investigations"
-              element={
-                <Lazy>
-                  <DoctorInvestigationsPage />
-                </Lazy>
-              }
+              element={<Navigate to="/doctor" replace />}
             />
           </Route>
         </Route>

@@ -112,7 +112,7 @@ export function useDoctorMutations() {
     mutationFn: (body: Record<string, unknown>) =>
       doctorApi.createPatient(token, body),
     onSuccess: async (patient) => {
-      toast.success("Patient added");
+      toast.success("Patient linked to your panel");
       await invalidateCareGraph(qc, { patientId: patient.id });
     },
     onError: (error: Error) => toast.error(error.message),

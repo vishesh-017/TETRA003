@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const linkPatientFormSchema = z.object({
+  username_or_qr: z
+    .string()
+    .min(3, "Enter a username or passport QR token"),
+});
+
+export type LinkPatientFormSchema = z.infer<typeof linkPatientFormSchema>;
+
 export const patientFormSchema = z.object({
   full_name: z.string().min(2, "Name is required"),
   email: z.string().email().optional().or(z.literal("")),

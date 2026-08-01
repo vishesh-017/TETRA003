@@ -136,6 +136,12 @@ export const ruralRepository = {
         phone: input.phone ?? null,
         role: "patient",
         locale: "gu",
+        username:
+          input.full_name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ".")
+            .replace(/^\.|\.$/g, "")
+            .slice(0, 24) || `patient.${userId.slice(-4)}`,
         address: { village: input.village ?? "Village", city: "Ahmedabad" },
         notification_prefs: {
           medicine: true,

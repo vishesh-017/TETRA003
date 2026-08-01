@@ -62,27 +62,26 @@ export function buildObservationsFromLocal(
     .filter((c) => c.patient_id === patientId)
     .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
 
-  // Prefer real check-in series whenever available (needed for escalation accuracy)
-  const sugarDemo = [132, 140, 148, 155, 168];
-  const bpDemo = [128, 132, 136, 142, 148];
+  // Prefer real check-in series. Fallback demos stay flat-stable so charts
+  // never contradict labels when a patient has no longitudinal vitals yet.
   const sugar = checkins.length
     ? seriesFrom(
         checkins.map((c) => c.blood_sugar),
         checkins.map((c) => c.recorded_at),
       )
-    : seriesFrom(sugarDemo);
+    : seriesFrom([138, 140, 139, 141, 140]);
   const bpSys = checkins.length
     ? seriesFrom(
         checkins.map((c) => c.bp_systolic),
         checkins.map((c) => c.recorded_at),
       )
-    : seriesFrom(bpDemo);
+    : seriesFrom([128, 130, 129, 131, 130]);
   const bpDia = checkins.length
     ? seriesFrom(
         checkins.map((c) => c.bp_diastolic),
         checkins.map((c) => c.recorded_at),
       )
-    : seriesFrom([82, 84, 86, 88, 90]);
+    : seriesFrom([82, 84, 83, 84, 82]);
 
   const conditions: PatientObservationBundle["conditions"] = [];
   for (const c of patient?.chronic_diseases || []) {

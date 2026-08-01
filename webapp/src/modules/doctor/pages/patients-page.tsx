@@ -12,12 +12,14 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useAppLocale } from "@/i18n/locale-context";
 import { PatientForm } from "@/modules/doctor/components/patient-form";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
 import { useDoctorMutations, useDoctorPatients } from "@/modules/doctor/hooks";
 import type { PatientDetail } from "@/modules/doctor/types";
 
 export function PatientsPage() {
+  const { t } = useAppLocale();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -48,8 +50,8 @@ export function PatientsPage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <PageHeader
         eyebrow="Caseload"
-        title="Patients"
-        description="Add, search, and manage discharged patients under your care."
+        title={t("nav_patients")}
+        description="Link patients by HealNexus username or passport QR, then manage continuity of care."
         actions={
           <Button
             onClick={() => {
@@ -57,7 +59,7 @@ export function PatientsPage() {
               setShowForm(true);
             }}
           >
-            Add patient
+            {t("add_patient")}
           </Button>
         }
       />
@@ -80,7 +82,9 @@ export function PatientsPage() {
       {showForm ? (
         <Card>
           <CardHeader>
-            <CardTitle>{editing ? "Edit patient" : "Add patient"}</CardTitle>
+            <CardTitle>
+              {editing ? "Edit patient" : t("link_patient")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <PatientForm
@@ -118,8 +122,10 @@ export function PatientsPage() {
         <EmptyState
           icon={Users}
           title="No patients yet"
-          description="Add your first discharged patient to begin continuity monitoring."
-          action={<Button onClick={() => setShowForm(true)}>Add patient</Button>}
+          description="Link a patient with their HealNexus username or passport QR to begin monitoring."
+          action={
+            <Button onClick={() => setShowForm(true)}>{t("link_patient")}</Button>
+          }
         />
       ) : (
         <div className="grid gap-3">
