@@ -65,15 +65,6 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
         },
       ],
     },
-    {
-      id: "network",
-      label: "Network",
-      items: [
-        { label: "Benefits", href: "/government/benefits", icon: Sparkles },
-        { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
-        { label: "Hospitals", href: "/maps", icon: MapPinned },
-      ],
-    },
   ],
   patient: [
     {
@@ -102,7 +93,8 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       label: "Identity",
       items: [
         { label: "Passport", href: "/patient/passport", icon: Stethoscope },
-        { label: "Benefits", href: "/government/benefits", icon: Hospital },
+        { label: "Benefits", href: "/government/benefits", icon: Sparkles },
+        { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
         { label: "Hospitals", href: "/maps", icon: MapPinned },
         {
           label: "Notifications",

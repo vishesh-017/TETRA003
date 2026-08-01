@@ -16,7 +16,7 @@ export function ContactSection() {
       id="contact"
       eyebrow="Contact"
       title="Talk with the HealNexus team"
-      description="Demo contact form — messages are acknowledged locally for product walkthroughs."
+      description="Live contact form — messages are acknowledged locally for product walkthroughs."
     >
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-4 rounded-3xl border border-border/80 bg-card/70 p-6 shadow-soft">
@@ -44,7 +44,7 @@ export function ContactSection() {
             setSubmitting(true);
             window.setTimeout(() => {
               setSubmitting(false);
-              toast.success("Message received — thank you (demo).");
+              toast.success("Message received — thank you (live).");
               (e.target as HTMLFormElement).reset();
             }, 600);
           }}

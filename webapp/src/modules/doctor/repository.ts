@@ -933,7 +933,7 @@ export const doctorRepository = {
         id,
         patient_id: String(body.patient_id),
         doctor_id: doctor.id,
-        doctor_name: "Dr. Demo Clinician",
+        doctor_name: "Dr. Live Clinician",
         scheduled_at: String(body.scheduled_at),
         location: (body.location as string) || null,
         status: "scheduled",

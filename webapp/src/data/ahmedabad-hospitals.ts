@@ -68,7 +68,7 @@ export const AHMEDABAD_DEMO_HOSPITALS: DemoHospital[] = [
   },
   {
     id: "emergency-demo",
-    name: "Ahmedabad Emergency Care Demo Centre",
+    name: "Ahmedabad Emergency Care Live Centre",
     hospital_type: "emergency",
     latitude: 23.0225,
     longitude: 72.5714,

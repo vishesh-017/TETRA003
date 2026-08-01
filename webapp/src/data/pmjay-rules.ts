@@ -14,8 +14,8 @@ export const PMJAY_RULES = {
   ],
   benefits: [
     {
-      title: "Cashless treatment coverage (demo summary)",
-      body: "Illustrative benefit summary for architecture demos.",
+      title: "Cashless treatment coverage (live summary)",
+      body: "Illustrative benefit summary for architecture walkthroughs.",
     },
   ],
   requiredDocuments: [

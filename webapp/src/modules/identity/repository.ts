@@ -406,7 +406,7 @@ export const identityRepository = {
           name: "Ayushman Bharat PM-JAY",
           status:
             gov.pmjay_status === "likely_eligible"
-              ? "Likely eligible (demo)"
+              ? "Likely eligible (live)"
               : gov.pmjay_status === "needs_review"
                 ? "Needs review"
                 : "Not assessed",
@@ -414,7 +414,7 @@ export const identityRepository = {
         },
         {
           name: "ABHA Health ID",
-          status: gov.abha_linked ? "Linked (demo)" : "Available to link",
+          status: gov.abha_linked ? "Linked (live)" : "Available to link",
           detail: "Digital health identity for ABDM-compatible records",
         },
       ],

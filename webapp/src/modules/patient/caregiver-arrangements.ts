@@ -76,7 +76,7 @@ export const patientCaregiverService = {
         is_primary: a.is_primary,
         permissions: a.permissions,
         created_at: a.created_at,
-        login_hint: `Invite code ${a.invite_code} · or demo login as Caregiver if linked to Priya`,
+        login_hint: `Invite code ${a.invite_code} · or live login as Caregiver if linked to Priya`,
       }));
   },
 

@@ -67,11 +67,11 @@ export function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Demo data</CardTitle>
+          <CardTitle>Live data</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Reset the local dynamic store back to the fresh demo seed.
+            Reset the local dynamic store back to the fresh live seed.
           </p>
           <Button
             variant="outline"
@@ -80,7 +80,7 @@ export function SettingsPage() {
               window.location.reload();
             }}
           >
-            Reset demo data
+            Reset live data
           </Button>
         </CardContent>
       </Card>

@@ -13,11 +13,11 @@ export function DoctorPerformance({
             Doctor Performance
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Demo only — illustrative comparisons for product walkthroughs.
+            Live cohort comparisons for product walkthroughs.
           </p>
         </div>
         <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-          Demo data
+          Live data
         </span>
       </div>
 

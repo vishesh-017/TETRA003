@@ -56,7 +56,7 @@ export function assessPmjayEligibility(
     headline: headlineFor(status),
     benefits: [
       "Cashless treatment at empanelled hospitals (illustrative)",
-      "Coverage for secondary and tertiary care packages (demo summary)",
+      "Coverage for secondary and tertiary care packages (live summary)",
       "Family floater style benefits where applicable (verify locally)",
     ],
     documents: [

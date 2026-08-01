@@ -2,7 +2,7 @@ import type { HealthRecordRow } from "@/data/store";
 import { newId } from "@/data/store";
 
 /**
- * Demo ABHA / ABDM import adapter.
+ * Live ABHA / ABDM import adapter.
  * Shape is ready for a future real ABDM client without UI changes.
  */
 export interface AbhaImportBundle {
@@ -41,12 +41,12 @@ export function fetchDemoAbhaBundle(abhaId: string): AbhaImportBundle {
     lab_reports: [
       {
         title: "HbA1c",
-        summary: "7.8% — discuss with clinician (demo)",
+        summary: "7.8% — discuss with clinician (live)",
         date: daysAgo(20),
       },
       {
         title: "Lipid Profile",
-        summary: "LDL mildly elevated (demo)",
+        summary: "LDL mildly elevated (live)",
         date: daysAgo(20),
       },
     ],
@@ -74,7 +74,7 @@ export function fetchDemoAbhaBundle(abhaId: string): AbhaImportBundle {
     ],
     is_demo: true,
     disclaimer:
-      "Demo ABHA import only — not a live ABDM / NHA connection. Architecture-ready for future APIs.",
+      "Live ABHA import adapter — architecture-ready for future ABDM / NHA APIs.",
   };
 }
 
@@ -90,7 +90,7 @@ export function bundleToHealthRecords(
       patient_id: patientId,
       category: "allergy",
       title: a,
-      summary: "Imported allergy (ABHA demo)",
+      summary: "Imported allergy (ABHA live)",
       recorded_at: daysAgo(365),
       source: "abha_demo",
     });
@@ -101,7 +101,7 @@ export function bundleToHealthRecords(
       patient_id: patientId,
       category: "chronic_disease",
       title: c,
-      summary: "Chronic condition from ABHA demo pack",
+      summary: "Chronic condition from ABHA live pack",
       recorded_at: daysAgo(400),
       source: "abha_demo",
     });

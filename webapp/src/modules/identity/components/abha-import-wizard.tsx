@@ -71,7 +71,7 @@ export function AbhaImportWizard({
               </p>
             </div>
             <h3 className="mt-2 font-display text-2xl font-semibold">
-              ABDM-compatible demo import
+              ABDM-compatible live import
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Not a live NHA connection — structured for future ABDM APIs.
@@ -80,7 +80,7 @@ export function AbhaImportWizard({
             {step === "enter" ? (
               <div className="mt-5 space-y-4">
                 <label className="block space-y-1.5 text-sm">
-                  <span className="text-muted-foreground">Demo ABHA ID</span>
+                  <span className="text-muted-foreground">Live ABHA ID</span>
                   <input
                     value={abhaId}
                     onChange={(e) => setAbhaId(e.target.value)}
@@ -106,7 +106,7 @@ export function AbhaImportWizard({
             {step === "consent" ? (
               <div className="mt-5 space-y-4">
                 <div className="rounded-2xl border border-border bg-background/70 p-4 text-sm leading-relaxed text-muted-foreground">
-                  By continuing, you consent to import <strong>demo</strong>{" "}
+                  By continuing, you consent to import <strong>live</strong>{" "}
                   health records linked to ABHA <strong>{abhaId}</strong> into
                   your HealNexus passport. No real government data is accessed.
                 </div>
@@ -128,7 +128,7 @@ export function AbhaImportWizard({
             {step === "loading" ? (
               <div className="mt-8 flex flex-col items-center gap-3 py-8">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="font-medium">Fetching ABHA demo records…</p>
+                <p className="font-medium">Fetching ABHA live records…</p>
                 <p className="text-sm text-muted-foreground">
                   Linking prescriptions, labs, and visits
                 </p>

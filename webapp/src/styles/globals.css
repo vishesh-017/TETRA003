@@ -237,3 +237,102 @@
     transform: translateY(0);
   }
 }
+
+/* ─── Marketing shell (landing) — Space Grotesk · funded SaaS look ─── */
+.marketing-shell {
+  --hn-primary: #2563eb;
+  --hn-secondary: #14b8a6;
+  --hn-accent: #22c55e;
+  --hn-bg: #f8fafc;
+  --hn-card: #ffffff;
+  --hn-text: #0f172a;
+  --hn-muted: #64748b;
+  --hn-border: rgba(15, 23, 42, 0.08);
+  --hn-glow: 0 0 80px rgba(37, 99, 235, 0.12);
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
+  color: var(--hn-text);
+  background-color: var(--hn-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.marketing-shell .font-display {
+  font-family: var(--font-display);
+}
+
+.hn-gradient-text {
+  background: linear-gradient(135deg, #2563eb 0%, #14b8a6 55%, #22c55e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hn-mesh {
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% -10%, rgba(37, 99, 235, 0.16), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 90% 10%, rgba(20, 184, 166, 0.12), transparent 50%),
+    radial-gradient(ellipse 40% 35% at 50% 100%, rgba(34, 197, 94, 0.08), transparent 55%);
+}
+
+.hn-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 20%, transparent 75%);
+}
+
+.hn-glass {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 40px rgba(37, 99, 235, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.hn-card-premium {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 8px 28px rgba(15, 53, 96, 0.06);
+}
+
+@keyframes hn-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes hn-pulse-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes hn-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.hn-float {
+  animation: hn-float 6s ease-in-out infinite;
+}
+
+.hn-float-delay {
+  animation: hn-float 7.5s ease-in-out 0.8s infinite;
+}

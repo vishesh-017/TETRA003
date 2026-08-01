@@ -49,7 +49,7 @@ export function PassportCardVisual() {
           </span>
         </div>
         <div className="mt-7 space-y-1.5">
-          <p className="text-xs opacity-80">ABHA demo</p>
+          <p className="text-xs opacity-80">ABHA live</p>
           <p className="font-mono text-lg tracking-wider">12-3456-7890</p>
         </div>
       </div>

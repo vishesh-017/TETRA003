@@ -5,7 +5,7 @@ import { MarketingNav } from "@/modules/marketing/components/marketing-nav";
 
 export function MarketingLayout() {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="marketing-shell min-h-dvh">
       <MarketingNav />
       <main>
         <Outlet />

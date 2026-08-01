@@ -1,20 +1,20 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { HealNexusMark } from "@/components/brand/logo";
-import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { roleHomePath } from "@/services/auth.service";
 
 const LINKS = [
-  { label: "Features", href: "/features" },
-  { label: "Solutions", href: "/#solutions" },
-  { label: "Pricing", href: "/pricing" },
+  { label: "Home", href: "/#home" },
+  { label: "How it Works", href: "/#how-it-works" },
+  { label: "Features", href: "/#features" },
+  { label: "For Doctors", href: "/#for-doctors" },
+  { label: "For Patients", href: "/#for-patients" },
   { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
 ];
 
 export function MarketingNav() {
@@ -24,7 +24,7 @@ export function MarketingNav() {
   const location = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -44,38 +44,33 @@ export function MarketingNav() {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-300",
         scrolled
-          ? "border-b border-border/70 bg-background/80 shadow-soft backdrop-blur-xl"
+          ? "border-b border-[#0F172A]/06 bg-[#F8FAFC]/75 shadow-[0_8px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl"
           : "bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" aria-label="HealNexus home" className="shrink-0">
-          {/* Icon only — full wordmark lives in the hero to avoid double branding */}
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="HealNexus home">
           <HealNexusMark
-            size={40}
-            className={cn(
-              "ring-1 transition-shadow",
-              scrolled ? "ring-border/50 shadow-soft" : "ring-white/15",
-            )}
+            size={36}
+            className="rounded-xl ring-1 ring-[#0F172A]/08"
           />
+          <span className="font-display text-[17px] font-bold tracking-tight text-[#0F172A]">
+            HealNexus
+          </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Marketing">
+        <nav
+          className="hidden items-center gap-0.5 lg:flex"
+          aria-label="Marketing"
+        >
           {LINKS.map((link) => (
-            <NavLink
+            <Link
               key={link.href}
               to={link.href}
-              className={({ isActive }) =>
-                cn(
-                  "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                  isActive && !link.href.includes("#")
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )
-              }
+              className="rounded-xl px-3 py-2 text-[13px] font-medium text-[#64748B] transition hover:bg-white/70 hover:text-[#0F172A]"
             >
               {link.label}
-            </NavLink>
+            </Link>
           ))}
         </nav>
 
@@ -83,19 +78,22 @@ export function MarketingNav() {
           {isAuthenticated && user ? null : (
             <Link
               to="/login"
-              className={cn(buttonVariants({ variant: "ghost" }))}
+              className="rounded-xl px-3.5 py-2 text-[13px] font-semibold text-[#475569] transition hover:text-[#0F172A]"
             >
-              Sign In
+              Login
             </Link>
           )}
-          <Link to={primaryHref} className={cn(buttonVariants())}>
+          <Link
+            to={primaryHref}
+            className="inline-flex h-10 items-center rounded-xl bg-[#2563EB] px-4 text-[13px] font-semibold text-white shadow-[0_6px_16px_rgba(37,99,235,0.3)] transition hover:bg-[#1D4ED8]"
+          >
             {primaryLabel}
           </Link>
         </div>
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#0F172A]/08 bg-white/80 lg:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -109,28 +107,31 @@ export function MarketingNav() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden border-b border-border bg-card/95 backdrop-blur-xl lg:hidden"
+            className="overflow-hidden border-b border-[#0F172A]/06 bg-[#F8FAFC]/95 backdrop-blur-xl lg:hidden"
           >
-            <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+            <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3">
               {LINKS.map((link) => (
                 <Link
                   key={link.href}
                   to={link.href}
-                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[#0F172A] hover:bg-white"
                 >
                   {link.label}
                 </Link>
               ))}
-              <div className="mt-2 grid gap-2 border-t border-border pt-3">
+              <div className="mt-2 grid gap-2 border-t border-[#0F172A]/06 pt-3">
                 {!isAuthenticated ? (
                   <Link
                     to="/login"
-                    className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-[#0F172A]/10 bg-white text-sm font-semibold"
                   >
-                    Sign In
+                    Login
                   </Link>
                 ) : null}
-                <Link to={primaryHref} className={cn(buttonVariants(), "w-full")}>
+                <Link
+                  to={primaryHref}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2563EB] text-sm font-semibold text-white"
+                >
                   {primaryLabel}
                 </Link>
               </div>

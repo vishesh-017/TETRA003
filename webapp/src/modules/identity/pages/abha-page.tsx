@@ -45,7 +45,7 @@ export function AbhaPage() {
           </p>
           <h1 className="font-display text-3xl font-semibold">ABHA Records</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Demo import experience — architecture ready for future ABDM APIs.
+            Live import experience — architecture ready for future ABDM APIs.
           </p>
         </div>
         <Button onClick={() => setOpen(true)}>Import via ABHA</Button>
@@ -58,7 +58,7 @@ export function AbhaPage() {
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Status:{" "}
-          {benefits.data?.abha_linked ? "Linked (demo)" : "Available to link"}
+          {benefits.data?.abha_linked ? "Linked (live)" : "Available to link"}
         </p>
       </div>
 
@@ -85,7 +85,7 @@ export function AbhaPage() {
         <div className="rounded-3xl border border-dashed border-border p-8 text-center">
           <p className="font-medium">No linked records yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Import a demo ABHA pack to populate medical history.
+            Import a live ABHA pack to populate medical history.
           </p>
           <Button className="mt-4" onClick={() => setOpen(true)}>
             Start import

@@ -97,7 +97,7 @@ export function LoginPage() {
         <CardDescription>
           Sign in to your HealNexus workspace
           {!env.isSupabaseConfigured
-            ? " — or explore instantly with a demo role"
+            ? " — or explore instantly with a live role"
             : ""}
           .
         </CardDescription>
@@ -152,7 +152,7 @@ export function LoginPage() {
 
         <div className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Demo role entry
+            Live role entry
           </p>
           <div className="grid grid-cols-2 gap-2">
             {DEMO_ROLES.map((item) => (
@@ -176,7 +176,7 @@ export function LoginPage() {
           </p>
           <p className="text-sm text-muted-foreground">
             Patients can add you from Profile → My caregivers. Enter the invite
-            code they shared (demo seed: <span className="font-mono">PRIYA-ASHA</span>).
+            code they shared (live seed: <span className="font-mono">PRIYA-ASHA</span>).
           </p>
           <div className="flex gap-2">
             <Input

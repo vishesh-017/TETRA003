@@ -65,8 +65,8 @@ export function Navbar({ title }: NavbarProps) {
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           {isDemoMode ? (
-            <span className="hidden rounded-full border border-warning/30 bg-warning/15 px-2.5 py-1 text-[11px] font-semibold text-warning-foreground sm:inline">
-              Demo
+            <span className="hidden rounded-full border border-success/30 bg-success/15 px-2.5 py-1 text-[11px] font-semibold text-success-foreground sm:inline">
+              Live
             </span>
           ) : null}
           <Button

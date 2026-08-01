@@ -1,18 +1,14 @@
 import { useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { ContactSection } from "@/modules/marketing/components/contact";
-import { FaqSection } from "@/modules/marketing/components/faq";
-import { FeaturesSection } from "@/modules/marketing/components/features";
-import { HeroSection } from "@/modules/marketing/components/hero";
-import { HowItWorksSection } from "@/modules/marketing/components/how-it-works";
-import { PricingSection } from "@/modules/marketing/components/pricing";
-import { StorytellingScroll } from "@/modules/marketing/components/storytelling-scroll";
-import { TestimonialsSection } from "@/modules/marketing/components/testimonials";
-import { TrustedBySection } from "@/modules/marketing/components/trusted-by";
-import { WhyHealNexusSection } from "@/modules/marketing/components/why-healnexus";
+import { BentoFeatures } from "@/modules/marketing/landing/bento-features";
+import { DoctorPreview } from "@/modules/marketing/landing/doctor-preview";
+import { FinalCta } from "@/modules/marketing/landing/final-cta";
+import { LandingHero } from "@/modules/marketing/landing/hero-section";
+import { JourneyTimeline } from "@/modules/marketing/landing/journey-timeline";
+import { PatientPreview } from "@/modules/marketing/landing/patient-preview";
+import { StatsSection } from "@/modules/marketing/landing/stats-section";
+import { TestimonialsSection } from "@/modules/marketing/landing/testimonials-section";
 
 export function LandingPage() {
   const location = useLocation();
@@ -24,52 +20,20 @@ export function LandingPage() {
     if (el) {
       window.setTimeout(() => {
         el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 50);
+      }, 60);
     }
   }, [location.hash]);
 
   return (
-    <>
-      <HeroSection />
-      <TrustedBySection />
-      <FeaturesSection limit={6} />
-      <div className="mx-auto max-w-6xl px-4 pb-2 text-center sm:px-6">
-        <Link
-          to="/features"
-          className={cn(buttonVariants({ variant: "outline" }))}
-        >
-          Explore all features
-        </Link>
-      </div>
-      <StorytellingScroll />
-      <HowItWorksSection />
-      <WhyHealNexusSection />
-      <PricingSection />
+    <div className="relative overflow-x-clip">
+      <LandingHero />
+      <BentoFeatures />
+      <JourneyTimeline />
+      <DoctorPreview />
+      <PatientPreview />
+      <StatsSection />
       <TestimonialsSection />
-      <FaqSection />
-      <ContactSection />
-      <section className="border-t border-border/70 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 py-16">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <h2 className="font-display text-3xl font-semibold tracking-tight">
-            Ready to see continuity of care done right?
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            Jump into a demo workspace as a doctor, patient, caregiver, or
-            health worker in seconds.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link to="/signup" className={cn(buttonVariants({ size: "lg" }))}>
-              Get Started
-            </Link>
-            <Link
-              to="/login"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </section>
-    </>
+      <FinalCta />
+    </div>
   );
 }

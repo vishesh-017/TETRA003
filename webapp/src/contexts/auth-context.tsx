@@ -39,7 +39,7 @@ const DEMO_USERS: Record<UserRole, User> = {
   doctor: {
     id: "00000000-0000-4000-8000-000000000001",
     email: "doctor@healnexus.demo",
-    full_name: "Dr. Demo Clinician",
+    full_name: "Dr. Live Clinician",
     phone: null,
     role: "doctor",
     locale: "en",
@@ -69,7 +69,7 @@ const DEMO_USERS: Record<UserRole, User> = {
   health_worker: {
     id: "00000000-0000-4000-8000-000000000004",
     email: "asha@healnexus.demo",
-    full_name: "Demo Health Worker",
+    full_name: "Live Health Worker",
     phone: null,
     role: "health_worker",
     locale: "en",

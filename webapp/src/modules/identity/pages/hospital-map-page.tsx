@@ -3,8 +3,9 @@ import L from "leaflet";
 import { Link } from "react-router-dom";
 
 import { SafeMapContainer } from "@/components/maps/safe-map";
-import { AHMEDABAD_DEMO_HOSPITALS } from "@/data/ahmedabad-hospitals";
 import { buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
+import { AHMEDABAD_DEMO_HOSPITALS } from "@/data/ahmedabad-hospitals";
 import { cn } from "@/lib/utils";
 
 const icon = L.icon({
@@ -17,6 +18,7 @@ const icon = L.icon({
 });
 
 export function HospitalMapPage() {
+  const { user } = useAuth();
   const center: [number, number] = [23.0225, 72.5714];
 
   return (
@@ -27,15 +29,17 @@ export function HospitalMapPage() {
             Ahmedabad Hospitals
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Demo map — PM-JAY empanelled and emergency centres.
+            Live map — PM-JAY empanelled and emergency centres.
           </p>
         </div>
-        <Link
-          to="/government/pmjay"
-          className={cn(buttonVariants({ variant: "outline" }))}
-        >
-          PM-JAY Assistant
-        </Link>
+        {user?.role === "patient" ? (
+          <Link
+            to="/government/pmjay"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            PM-JAY Assistant
+          </Link>
+        ) : null}
       </div>
 
       <div className="map-shell h-[420px] rounded-3xl border border-border shadow-soft">

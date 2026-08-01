@@ -421,21 +421,21 @@ function buildDoctorPerformance(
   const personas = [
     {
       doctor_id: primary.id,
-      doctor_name: primaryProfile?.full_name || "Dr. Demo Clinician",
+      doctor_name: primaryProfile?.full_name || "Dr. Live Clinician",
       specialty: primary.specialty,
       hospital: primary.hospital_affiliation || "Civil Hospital Ahmedabad",
       slice: rows.slice(0, split),
     },
     {
       doctor_id: `${primary.id}-demo-b`,
-      doctor_name: "Dr. N. Mehta (demo)",
+      doctor_name: "Dr. N. Mehta (live)",
       specialty: "Cardiology",
       hospital: "SVP Hospital Ahmedabad",
       slice: rows.slice(split, split * 2),
     },
     {
       doctor_id: `${primary.id}-demo-c`,
-      doctor_name: "Dr. S. Iyer (demo)",
+      doctor_name: "Dr. S. Iyer (live)",
       specialty: "Endocrinology",
       hospital: "LG Hospital Ahmedabad",
       slice: rows.slice(split * 2),
@@ -739,7 +739,7 @@ export const analyticsRepository = {
         ]),
       },
       {
-        title: "Doctor performance (demo)",
+        title: "Doctor performance (live)",
         headers: [
           "Doctor",
           "Patients",

@@ -409,7 +409,7 @@ export interface HealNexusStore {
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 9;
+export const STORE_VERSION = 10;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {

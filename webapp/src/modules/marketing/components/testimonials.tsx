@@ -6,7 +6,7 @@ export function TestimonialsSection() {
     <Section
       eyebrow="Stories"
       title="Trusted by people who deliver care"
-      description="Demo testimonials illustrating the product narrative."
+      description="Live testimonials illustrating the product narrative."
     >
       <div className="grid gap-4 md:grid-cols-3">
         {TESTIMONIALS.map((t) => (

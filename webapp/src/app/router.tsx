@@ -689,6 +689,35 @@ export function AppRouter() {
           </Route>
         </Route>
 
+        <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
+          <Route element={<AppLayout />}>
+            <Route
+              path="/government/pmjay"
+              element={
+                <Lazy>
+                  <PmjayPage />
+                </Lazy>
+              }
+            />
+            <Route
+              path="/government/benefits"
+              element={
+                <Lazy>
+                  <BenefitsPage />
+                </Lazy>
+              }
+            />
+            <Route
+              path="/government/abha"
+              element={
+                <Lazy>
+                  <AbhaPage />
+                </Lazy>
+              }
+            />
+          </Route>
+        </Route>
+
         <Route
           element={
             <ProtectedRoute
@@ -707,30 +736,6 @@ export function AppRouter() {
               element={
                 <Lazy>
                   <HospitalMapPage />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/government/pmjay"
-              element={
-                <Lazy>
-                  <PmjayPage />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/government/abha"
-              element={
-                <Lazy>
-                  <AbhaPage />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/government/benefits"
-              element={
-                <Lazy>
-                  <BenefitsPage />
                 </Lazy>
               }
             />

@@ -44,7 +44,7 @@ export function PassportWallet({ passport }: { passport: DigitalPassport }) {
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto]">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Stat label="Blood group" value={passport.blood_group || "—"} />
-            <Stat label="ABHA (Demo)" value={passport.abha_id_demo || "—"} mono />
+            <Stat label="ABHA (Live)" value={passport.abha_id_demo || "—"} mono />
             <Stat
               label="Recovery"
               value={

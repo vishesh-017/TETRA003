@@ -108,7 +108,7 @@ export function PatientForm({
         <Field label="Allergies (comma separated)">
           <Input {...register("allergies")} placeholder="Penicillin" />
         </Field>
-        <Field label="ABHA ID (Demo)">
+        <Field label="ABHA ID (Live)">
           <Input {...register("abha_id_demo")} />
         </Field>
       </div>

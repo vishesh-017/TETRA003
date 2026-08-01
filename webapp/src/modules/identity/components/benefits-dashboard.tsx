@@ -12,7 +12,7 @@ export function BenefitsDashboard({ data }: { data: BenefitsDashboardData }) {
         <StatusCard
           icon={Shield}
           title="ABHA status"
-          value={data.abha_linked ? "Linked (demo)" : "Not linked"}
+          value={data.abha_linked ? "Linked (live)" : "Not linked"}
           detail={data.abha_id || "Import via ABHA to link"}
           badge={data.abha_linked ? "Active" : "Action"}
         />

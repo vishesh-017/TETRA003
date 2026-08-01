@@ -48,7 +48,7 @@ export function SignupPage() {
       <CardHeader>
         <CardTitle className="font-display text-2xl">Get started</CardTitle>
         <CardDescription>
-          Choose a demo workspace to explore HealNexus instantly. Full account
+          Choose a live workspace to explore HealNexus instantly. Full account
           signup is available via Sign In when Supabase Auth is configured.
         </CardDescription>
       </CardHeader>

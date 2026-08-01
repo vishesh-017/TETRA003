@@ -205,7 +205,7 @@ export function PatientDetailPage() {
 
       {tab === "overview" ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <InfoCard title="ABHA (Demo)" value={data.abha_id_demo || "—"} />
+          <InfoCard title="ABHA (Live)" value={data.abha_id_demo || "—"} />
           <InfoCard title="Adherence" value={`${data.adherence_percent ?? 100}%`} />
           <InfoCard title="Missed medicines" value={data.missed_medicines} />
           <InfoCard title="Missed check-ins" value={data.missed_checkins} />
