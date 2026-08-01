@@ -17,6 +17,12 @@ import { useEscalationBundle } from "@/modules/doctor/escalation/hooks";
 import type { RiskFilter } from "@/modules/doctor/escalation/types";
 import { cn } from "@/lib/utils";
 
+function doctorDisplayName(fullName?: string | null) {
+  const raw = (fullName || "Doctor").trim();
+  if (/^dr\.?\s+/i.test(raw)) return raw.replace(/^dr\.?\s+/i, "Dr. ");
+  return `Dr. ${raw}`;
+}
+
 export function DoctorHomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -57,24 +63,24 @@ export function DoctorHomePage() {
   }
 
   const openEscalations = counts.critical + counts.high;
-  const firstName = (user?.full_name || "Doctor").replace(/^Dr\.?\s*/i, "");
+  const greetingName = doctorDisplayName(user?.full_name);
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-5 pb-10">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-teal-950 via-teal-900 to-emerald-900 p-6 text-white shadow-lg sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-xl">
+      <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-teal-950 via-teal-900 to-emerald-900 p-5 text-white shadow-lg sm:p-7">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-center">
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-100/90">
               Doctor workspace
             </p>
-            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              Namaste, Dr. {firstName}
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-[2.15rem]">
+              Namaste, {greetingName}
             </h1>
-            <p className="mt-2 text-sm text-teal-50/85">
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-teal-50/85">
               Your active panel is risk-sorted. Triage escalations, link patients
               by username/QR, and keep follow-ups on track.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               <Link
                 to="/doctor/patients"
                 className={cn(
@@ -107,7 +113,8 @@ export function DoctorHomePage() {
               </Link>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
             {[
               { label: "Total patients", value: counts.all },
               { label: "Critical", value: counts.critical },
@@ -116,12 +123,12 @@ export function DoctorHomePage() {
             ].map((tile) => (
               <div
                 key={tile.label}
-                className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3 backdrop-blur"
+                className="flex min-h-[88px] flex-col justify-between rounded-2xl border border-white/10 bg-white/10 px-3.5 py-3 backdrop-blur"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-teal-100/80">
                   {tile.label}
                 </p>
-                <p className="mt-1 font-display text-2xl font-semibold">
+                <p className="font-display text-3xl font-semibold tabular-nums leading-none">
                   {tile.value}
                 </p>
               </div>

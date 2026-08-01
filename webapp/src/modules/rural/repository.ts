@@ -178,6 +178,7 @@ export const ruralRepository = {
             .replace(/[^a-z0-9]+/g, ".")
             .replace(/^\.|\.$/g, "")
             .slice(0, 24) || `patient.${userId.slice(-4)}`,
+        password: null,
         address: { village: input.village ?? "Village", city: "Ahmedabad" },
         notification_prefs: {
           medicine: true,

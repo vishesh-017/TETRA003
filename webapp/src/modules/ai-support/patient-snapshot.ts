@@ -199,7 +199,7 @@ export function buildLivePatientSnapshot(
     ),
     health,
     care_plan_warning_signs: carePlan?.warning_signs || [],
-    care_plan_summary: carePlan?.patient_summary || null,
+    care_plan_summary: carePlan?.ai_summary || null,
   };
 }
 

@@ -131,6 +131,7 @@ export const patientCaregiverService = {
             .replace(/[^a-z0-9]+/g, ".")
             .replace(/^\.|\.$/g, "")
             .slice(0, 24) || `caregiver.${caregiverUserId.slice(-4)}`,
+          password: null,
           address: null,
           notification_prefs: {
             medicine: true,

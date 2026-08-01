@@ -178,7 +178,7 @@ export function queryAiDatabase(
             : null;
           return {
             when: a.scheduled_at,
-            location: a.location,
+            location: a.location || "Clinic",
             status: a.status,
             doctor: docProfile?.full_name || "Doctor",
           };

@@ -228,7 +228,7 @@ export function usePatientMutations() {
   });
 
   const requestAppointment = useMutation({
-    mutationFn: (input: {
+    mutationFn: async (input: {
       doctorId?: string;
       scheduledAt: string;
       location?: string;

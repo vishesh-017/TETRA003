@@ -22,7 +22,7 @@ export function PatientInvestigationsPage() {
   const [tab, setTab] = useState("labs");
 
   if (dash.isLoading) {
-    return <LoadingScreen label="Loading investigations…" fullScreen={false} />;
+    return <LoadingScreen label="Loading reports…" fullScreen={false} />;
   }
 
   if (!dash.data) {
@@ -39,10 +39,10 @@ export function PatientInvestigationsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="font-display text-3xl font-semibold">Investigations</h1>
+        <h1 className="font-display text-3xl font-semibold">Reports</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Labs, imaging, and uploaded reports in one place. You or your doctor
-          can add a test — both stay in sync.
+          Labs, imaging, and uploaded files in one place. You or your doctor can
+          add a test — both stay in sync.
         </p>
       </motion.div>
       <AiDisclaimer />

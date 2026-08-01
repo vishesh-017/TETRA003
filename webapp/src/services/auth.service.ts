@@ -3,28 +3,75 @@ import { getSupabaseClient } from "@/lib/supabase";
 import type { MeResponse, User, UserRole } from "@/types";
 
 export interface LoginCredentials {
+  /** User ID (username) or email */
   email: string;
   password: string;
 }
 
+/** Local store login for admin-created and demo accounts. */
+export function loginWithLocalCredentials({
+  email,
+  password,
+}: LoginCredentials): User {
+  const idOrEmail = email.trim().toLowerCase();
+  if (!idOrEmail || !password) {
+    throw new Error("Enter User ID and password");
+  }
+  const profile = getStore().profiles.find(
+    (p) =>
+      p.username?.toLowerCase() === idOrEmail ||
+      p.email?.toLowerCase() === idOrEmail,
+  );
+  if (!profile) {
+    throw new Error("Unknown User ID or email");
+  }
+  if (!profile.password || profile.password !== password) {
+    throw new Error("Incorrect password");
+  }
+  const patient = getStore().patients.find((p) => p.user_id === profile.id);
+  if (patient?.is_archived) {
+    throw new Error("This account is archived");
+  }
+  return {
+    id: profile.id,
+    email: profile.email,
+    full_name: profile.full_name,
+    phone: profile.phone,
+    role: profile.role,
+    locale: profile.locale,
+    avatar_url: null,
+    is_active: true,
+  };
+}
+
 export async function loginWithPassword({ email, password }: LoginCredentials) {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    throw new Error(
-      "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-    );
+  // Prefer local DB when credentials match (admin-created users, demo seed).
+  try {
+    const localUser = loginWithLocalCredentials({ email, password });
+    return {
+      session: { access_token: `local-token-${localUser.id}` },
+      user: {
+        id: localUser.id,
+        email: localUser.email,
+        user_metadata: { full_name: localUser.full_name, role: localUser.role },
+        app_metadata: { role: localUser.role },
+      },
+      localUser,
+    };
+  } catch (localError) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      throw localError instanceof Error
+        ? localError
+        : new Error("Unable to sign in");
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
   }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
 }
 
 export async function logout() {
@@ -58,6 +105,12 @@ function profileToUser(id: string): User | null {
 
 /** Frontend-first: resolve user from local dynamic store or Supabase profile. */
 export async function fetchCurrentUser(token: string): Promise<MeResponse> {
+  if (token.startsWith("local-token-")) {
+    const id = token.replace("local-token-", "");
+    const user = profileToUser(id);
+    if (user) return { user };
+  }
+
   if (token.startsWith("demo-token-")) {
     const role = token.replace("demo-token-", "") as UserRole;
     const id =
@@ -67,7 +120,9 @@ export async function fetchCurrentUser(token: string): Promise<MeResponse> {
           ? IDS.patientUser
           : role === "caregiver"
             ? "00000000-0000-4000-8000-000000000003"
-            : "00000000-0000-4000-8000-000000000004";
+            : role === "admin"
+              ? IDS.adminUser
+              : IDS.healthWorkerUser;
     const user = profileToUser(id);
     if (user) return { user };
   }

@@ -644,19 +644,3 @@ function InfoCard({ title, value }: { title: string; value: string | number }) {
   );
 }
 
-function ContactBlock({
-  title,
-  contact,
-}: {
-  title: string;
-  contact?: { name?: string; phone?: string; relationship?: string } | null;
-}) {
-  return (
-    <div className="rounded-xl border border-border p-3">
-      <p className="font-medium">{title}</p>
-      <p className="text-sm text-muted-foreground">
-        {contact?.name || "—"} · {contact?.phone || "—"} · {contact?.relationship || "—"}
-      </p>
-    </div>
-  );
-}

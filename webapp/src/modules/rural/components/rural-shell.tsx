@@ -1,12 +1,15 @@
 import { Outlet } from "react-router-dom";
 
+import { useAuth } from "@/contexts/auth-context";
 import { RuralLocaleProvider, useRuralLocale } from "@/modules/rural/i18n/locale-context";
 import { useOnlineStatus } from "@/modules/rural/hooks";
 import { cn } from "@/lib/utils";
 
 function ShellInner() {
+  const { user } = useAuth();
   const { t, locale, setLocale, labels } = useRuralLocale();
   const online = useOnlineStatus();
+  const workerName = user?.full_name || "Health worker";
 
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-3xl flex-col gap-3 pb-8">
@@ -14,10 +17,10 @@ function ShellInner() {
         <div>
           <p className="text-label">Field care</p>
           <h1 className="font-display text-2xl font-semibold tracking-tight">
-            {t("appName")}
+            Namaste, {workerName}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Camps & verified screening, patient map, offline sync, education.
+            {t("appName")} · camps, verified screening, map, offline sync.
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">

@@ -39,7 +39,7 @@ const DEMO_USERS: Record<UserRole, User> = {
   doctor: {
     id: "00000000-0000-4000-8000-000000000001",
     email: "doctor@healnexus.demo",
-    full_name: "Dr. Live Clinician",
+    full_name: "Dr. Ananya Mehta",
     phone: null,
     role: "doctor",
     locale: "en",
@@ -69,7 +69,7 @@ const DEMO_USERS: Record<UserRole, User> = {
   health_worker: {
     id: "00000000-0000-4000-8000-000000000004",
     email: "hw@healnexus.demo",
-    full_name: "Live Health Worker",
+    full_name: "Kavita Solanki",
     phone: null,
     role: "health_worker",
     locale: "en",
@@ -174,10 +174,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      const data = await loginWithPassword(credentials);
+      const data = (await loginWithPassword(credentials)) as {
+        session?: { access_token?: string } | null;
+        user?: {
+          id?: string;
+          email?: string | null;
+          user_metadata?: { full_name?: string; role?: UserRole };
+          app_metadata?: { role?: UserRole };
+        } | null;
+        localUser?: User;
+      };
+      if (data.localUser) {
+        setIsDemoMode(true);
+        setAccessToken(`local-token-${data.localUser.id}`);
+        setUser(data.localUser);
+        return;
+      }
       const token = data.session?.access_token;
       if (!token) {
-        throw new Error("No session returned from Supabase");
+        throw new Error("No session returned");
       }
       setAccessToken(token);
       setIsDemoMode(false);

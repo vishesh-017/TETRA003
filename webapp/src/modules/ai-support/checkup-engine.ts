@@ -21,18 +21,6 @@ function band(score: number): RiskLevel {
   return "low";
 }
 
-function mapRisk(level: string): RiskLevel {
-  if (level === "medium") return "moderate";
-  if (
-    level === "critical" ||
-    level === "high" ||
-    level === "moderate" ||
-    level === "low"
-  )
-    return level;
-  return "moderate";
-}
-
 function sugarScore(sugar: number | null): number {
   if (sugar == null) return 0;
   if (sugar >= 250) return 92;
@@ -223,7 +211,7 @@ function buildWarnings(snap: LivePatientSnapshot): string[] {
 }
 
 function buildReferral(
-  snap: LivePatientSnapshot,
+  _snap: LivePatientSnapshot,
   scores: DiseaseRiskScore[],
   warnings: string[],
   criticality: RiskLevel,

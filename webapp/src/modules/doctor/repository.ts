@@ -334,6 +334,7 @@ export const doctorRepository = {
         role: "patient",
         locale: "en",
         username: normalizeUsername(username),
+        password: (body.password as string) || "demo123",
         address: body.address_line
           ? { line1: body.address_line, city: body.city }
           : null,
@@ -1048,12 +1049,15 @@ export const doctorRepository = {
   createAppointment(userId: string, body: Record<string, unknown>): AppointmentItem {
     const doctor = ensureDoctor(userId);
     const id = newId();
+    const doctorName =
+      getStore().profiles.find((p) => p.id === userId)?.full_name ||
+      "Dr. Ananya Mehta";
     updateStore((draft) => {
       draft.appointments.push({
         id,
         patient_id: String(body.patient_id),
         doctor_id: doctor.id,
-        doctor_name: "Dr. Live Clinician",
+        doctor_name: doctorName,
         scheduled_at: String(body.scheduled_at),
         location: (body.location as string) || null,
         status: "scheduled",

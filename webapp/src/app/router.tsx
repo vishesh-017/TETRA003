@@ -73,12 +73,6 @@ const DoctorReportsPage = lazy(() =>
     default: m.DoctorReportsPage,
   })),
 );
-const PatientReportsPage = lazy(() =>
-  import("@/modules/reports/pages/patient-reports-page").then((m) => ({
-    default: m.PatientReportsPage,
-  })),
-);
-
 const PatientHomePage = lazy(() =>
   import("@/modules/patient/pages/home-page").then((m) => ({
     default: m.PatientHomePage,
@@ -236,12 +230,6 @@ const CaregiverSettingsPage = lazy(() =>
     default: m.CaregiverSettingsPage,
   })),
 );
-const PmjayPage = lazy(() =>
-  import("@/modules/identity/pages/pmjay-page").then((m) => ({
-    default: m.PmjayPage,
-  })),
-);
-
 const RuralShell = lazy(() =>
   import("@/modules/rural/components/rural-shell").then((m) => ({
     default: m.RuralShell,
@@ -275,11 +263,6 @@ const RuralScreeningPage = lazy(() =>
 const RuralSyncPage = lazy(() =>
   import("@/modules/rural/pages/sync-page").then((m) => ({
     default: m.RuralSyncPage,
-  })),
-);
-const RuralVisitsPage = lazy(() =>
-  import("@/modules/rural/pages/visits-page").then((m) => ({
-    default: m.RuralVisitsPage,
   })),
 );
 
@@ -482,9 +465,7 @@ export function AppRouter() {
             />
             <Route
               path="/patient/reports"
-              element={
-                <Navigate to="/patient/investigations" replace />
-              }
+              element={<Navigate to="/patient/investigations" replace />}
             />
             <Route
               path="/patient/appointments"

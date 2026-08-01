@@ -85,7 +85,7 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
         { label: "Today", href: "/patient", icon: HeartPulse },
         { label: "Care Plan", href: "/patient/care-plan", icon: Sparkles },
         {
-          label: "Investigations",
+          label: "Reports",
           href: "/patient/investigations",
           icon: ClipboardList,
         },

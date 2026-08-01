@@ -421,7 +421,7 @@ function buildDoctorPerformance(
   const personas = [
     {
       doctor_id: primary.id,
-      doctor_name: primaryProfile?.full_name || "Dr. Live Clinician",
+      doctor_name: primaryProfile?.full_name || "Dr. Ananya Mehta",
       specialty: primary.specialty,
       hospital: primary.hospital_affiliation || "Civil Hospital Ahmedabad",
       slice: rows.slice(0, split),

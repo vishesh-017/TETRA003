@@ -80,6 +80,8 @@ export interface ProfileRow {
   locale: string;
   /** Unique handle for linking patients/doctors (scalable login identity). */
   username: string | null;
+  /** Local demo auth password (admin-created accounts). Never use for production secrets. */
+  password: string | null;
   address: Record<string, unknown> | null;
   notification_prefs: {
     medicine: boolean;
@@ -468,7 +470,7 @@ export interface HealNexusStore {
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 16;
+export const STORE_VERSION = 18;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {

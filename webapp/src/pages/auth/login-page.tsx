@@ -20,23 +20,22 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { env } from "@/config/env";
 import { useAuth } from "@/contexts/auth-context";
 import { roleHomePath } from "@/services/auth.service";
 import type { UserRole } from "@/types";
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().min(2, "Enter User ID or email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const DEMO_ROLES: Array<{ role: UserRole; label: string }> = [
-  { role: "doctor", label: "Doctor" },
+  { role: "doctor", label: "Dr. Ananya · Doctor" },
   { role: "patient", label: "Asha · Patient" },
   { role: "caregiver", label: "Priya · Caregiver" },
-  { role: "health_worker", label: "Health Worker" },
+  { role: "health_worker", label: "Kavita · Health Worker" },
   { role: "admin", label: "Admin" },
 ];
 
@@ -83,7 +82,7 @@ export function LoginPage() {
     setFormError(null);
     try {
       await login(values);
-      navigate(redirectTarget(from, undefined), { replace: true });
+      navigate("/app", { replace: true });
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to sign in",
@@ -96,28 +95,28 @@ export function LoginPage() {
       <CardHeader>
         <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
         <CardDescription>
-          Sign in to your HealNexus workspace
-          {!env.isSupabaseConfigured
-            ? " — or explore instantly with a live role"
-            : ""}
-          .
+          Sign in with User ID + password (admin-created or demo), or explore
+          with a live role.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">User ID or email</Label>
             <Input
               id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@hospital.org"
-              disabled={!env.isSupabaseConfigured || isSubmitting}
+              autoComplete="username"
+              placeholder="asha.patel or you@hospital.org"
+              disabled={isSubmitting}
               {...register("email")}
             />
             {errors.email ? (
               <p className="text-xs text-destructive">{errors.email.message}</p>
             ) : null}
+            <p className="text-[11px] text-muted-foreground">
+              Demo seed: <span className="font-mono">asha.patel</span> /{" "}
+              <span className="font-mono">demo123</span>
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -126,7 +125,7 @@ export function LoginPage() {
               id="password"
               type="password"
               autoComplete="current-password"
-              disabled={!env.isSupabaseConfigured || isSubmitting}
+              disabled={isSubmitting}
               {...register("password")}
             />
             {errors.password ? (
@@ -142,11 +141,7 @@ export function LoginPage() {
             </p>
           ) : null}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={!env.isSupabaseConfigured || isSubmitting}
-          >
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>
