@@ -137,6 +137,15 @@ export function useDoctorMutations() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const deletePatient = useMutation({
+    mutationFn: (id: string) => doctorApi.deletePatient(token, id),
+    onSuccess: async (_data, id) => {
+      toast.success("Patient removed from your panel");
+      await invalidateCareGraph(qc, { patientId: id });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const saveDischarge = useMutation({
     mutationFn: ({
       patientId,
@@ -266,6 +275,7 @@ export function useDoctorMutations() {
     createPatient,
     updatePatient,
     archivePatient,
+    deletePatient,
     saveDischarge,
     finalizeDischarge,
     updateCarePlanDraft,

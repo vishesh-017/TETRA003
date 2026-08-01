@@ -26,6 +26,7 @@ export function ProfilePage() {
     if (!query.data) return;
     const address = query.data.address as { line1?: string; city?: string } | null;
     form.reset({
+      username: query.data.username || "",
       phone: query.data.phone || "",
       address_line: address?.line1 || "",
       city: address?.city || "",
@@ -52,6 +53,7 @@ export function ProfilePage() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     await updateProfile.mutateAsync({
+      username: values.username,
       phone: values.phone,
       address: { line1: values.address_line, city: values.city },
       preferred_language: values.preferred_language,
@@ -88,6 +90,15 @@ export function ProfilePage() {
             <p className="font-medium">{query.data.full_name}</p>
           </div>
           <div>
+            <p className="text-xs text-muted-foreground">Passport QR / ID</p>
+            <p className="font-medium font-mono text-xs">
+              {query.data.passport_qr || "—"}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Share this with your doctor to link your panel
+            </p>
+          </div>
+          <div>
             <p className="text-xs text-muted-foreground">Blood group</p>
             <p className="font-medium">{query.data.blood_group || "—"}</p>
           </div>
@@ -117,6 +128,18 @@ export function ProfilePage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
+              <Field
+                label="HealNexus username"
+                error={form.formState.errors.username?.message}
+              >
+                <Input
+                  {...form.register("username")}
+                  placeholder="e.g. asha.patel"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Doctors use this username (or your passport QR) to link you.
+                </p>
+              </Field>
               <Field label="Phone">
                 <Input {...form.register("phone")} />
               </Field>
@@ -182,15 +205,18 @@ export function ProfilePage() {
 
 function Field({
   label,
+  error,
   children,
 }: {
   label: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

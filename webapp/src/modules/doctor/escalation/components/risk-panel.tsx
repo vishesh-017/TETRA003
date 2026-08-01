@@ -35,6 +35,8 @@ interface RiskPanelProps {
   onRefer: () => void;
   onOrder: (name: string) => void;
   onOpenChart: () => void;
+  onAcknowledge?: () => void;
+  onResolve?: () => void;
 }
 
 export function RiskPanel({
@@ -44,6 +46,8 @@ export function RiskPanel({
   onRefer,
   onOrder,
   onOpenChart,
+  onAcknowledge,
+  onResolve,
 }: RiskPanelProps) {
   const { t } = useAppLocale();
   const chartData = risk.disease_scores.map((d) => ({
@@ -65,6 +69,21 @@ export function RiskPanel({
           <Share2 className="mr-1.5 h-4 w-4" />
           {t("refer_patient")}
         </Button>
+        {onAcknowledge ? (
+          <Button type="button" size="sm" variant="outline" onClick={onAcknowledge}>
+            Acknowledge
+          </Button>
+        ) : null}
+        {onResolve ? (
+          <Button
+            type="button"
+            size="sm"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={onResolve}
+          >
+            Resolve
+          </Button>
+        ) : null}
       </div>
 
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-teal-950 to-slate-900 p-5 text-slate-50 shadow-xl sm:p-6">

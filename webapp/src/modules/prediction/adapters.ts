@@ -52,8 +52,12 @@ export function buildObservationsFromLocal(
   const profile = store.profiles.find((p) => p.id === patient?.user_id);
   const recovery = patientRepository.getRecovery(userId);
   const meds = patientRepository.listMedicines(userId);
-  const taken = meds.filter((m) => m.today_status === "completed").length;
-  const adherence = meds.length ? (taken / meds.length) * 100 : 72;
+  const medUnits = meds.reduce((sum, m) => {
+    if (m.today_status === "completed") return sum + 1;
+    if (m.today_status === "late") return sum + 0.7;
+    return sum;
+  }, 0);
+  const adherence = meds.length ? (medUnits / meds.length) * 100 : 72;
   const missedMeds = store.medicineEvents.filter(
     (e) => e.patient_id === patientId && e.status === "missed",
   ).length;

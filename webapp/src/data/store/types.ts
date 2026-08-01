@@ -12,6 +12,7 @@ export type CarePlanStatus =
   | "superseded";
 export type AppointmentStatus =
   | "scheduled"
+  | "approved"
   | "completed"
   | "cancelled"
   | "missed"
@@ -200,7 +201,7 @@ export interface MedicineEventRow {
   id: string;
   patient_id: string;
   medicine_id: string | null;
-  status: "taken" | "skipped" | "missed";
+  status: "taken" | "late" | "skipped" | "missed";
   scheduled_for: string | null;
   acted_at: string;
   date: string;
@@ -384,6 +385,24 @@ export interface HomeVisitRow {
   village: string | null;
 }
 
+/** Shared clinical reports (patient upload ↔ doctor feedback). */
+export interface ClinicalReportRow {
+  id: string;
+  patient_id: string;
+  doctor_id: string | null;
+  title: string;
+  report_type: string;
+  notes: string | null;
+  attachment_name: string | null;
+  attachment_url: string | null;
+  attachment_mime: string | null;
+  doctor_feedback: string | null;
+  feedback_at: string | null;
+  status: "uploaded" | "reviewed" | "needs_attention";
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HealNexusStore {
   version: number;
   profiles: ProfileRow[];
@@ -406,13 +425,14 @@ export interface HealNexusStore {
   investigations: InvestigationRow[];
   alerts: AlertRow[];
   healthRecords: HealthRecordRow[];
+  clinicalReports: ClinicalReportRow[];
   governmentProfiles: GovernmentProfileRow[];
   healthWorkers: HealthWorkerRow[];
   healthWorkerAssignments: HealthWorkerAssignmentRow[];
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 12;
+export const STORE_VERSION = 13;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {

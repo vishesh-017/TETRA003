@@ -316,6 +316,33 @@ export const escalationRepository = {
     });
   },
 
+  acknowledgePatientAlerts(userId: string, patientId: string) {
+    ensureDoctor(userId);
+    updateStore((draft) => {
+      for (const a of draft.alerts) {
+        if (a.patient_id === patientId && a.status === "open") {
+          a.status = "acknowledged";
+        }
+      }
+    });
+  },
+
+  resolvePatientAlerts(userId: string, patientId: string) {
+    ensureDoctor(userId);
+    const now = new Date().toISOString();
+    updateStore((draft) => {
+      for (const a of draft.alerts) {
+        if (
+          a.patient_id === patientId &&
+          (a.status === "open" || a.status === "acknowledged")
+        ) {
+          a.status = "resolved";
+          a.resolved_at = now;
+        }
+      }
+    });
+  },
+
   submitReferral(userId: string, payload: ReferralPayload) {
     const doctor = ensureDoctor(userId);
     const now = new Date().toISOString();

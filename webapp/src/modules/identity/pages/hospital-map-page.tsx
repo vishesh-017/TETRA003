@@ -1,10 +1,12 @@
-import { Marker, Popup, TileLayer } from "react-leaflet";
+import { Marker, Popup, TileLayer, CircleMarker } from "react-leaflet";
 import L from "leaflet";
+import { LocateFixed } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { SafeMapContainer } from "@/components/maps/safe-map";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import {
   AHMEDABAD_DEMO_HOSPITALS,
@@ -13,6 +15,23 @@ import {
 import { useAppLocale } from "@/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import type { DemoHospital } from "@/types/domain";
+
+function haversineKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function makePinIcon(color: string) {
   const svg = encodeURIComponent(`
@@ -41,16 +60,49 @@ export function HospitalMapPage() {
   const { user } = useAuth();
   const { t } = useAppLocale();
   const [filter, setFilter] = useState<Filter>("all");
-  const center: [number, number] = [23.0225, 72.5714];
+  const [userPos, setUserPos] = useState<[number, number] | null>(null);
+  const defaultCenter: [number, number] = [23.0225, 72.5714];
+  const center = userPos || defaultCenter;
+
+  const locateMe = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported on this device");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserPos([pos.coords.latitude, pos.coords.longitude]);
+        toast.success("Location updated — nearest hospitals sorted");
+      },
+      () => toast.error("Unable to read location. Allow location access."),
+      { enableHighAccuracy: true, timeout: 12_000 },
+    );
+  };
+
+  useEffect(() => {
+    // Soft prompt once; user can also click Locate.
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+      () => undefined,
+      { maximumAge: 60_000, timeout: 8000 },
+    );
+  }, []);
 
   const hospitals = useMemo(() => {
-    return AHMEDABAD_DEMO_HOSPITALS.filter((h) => {
+    const filtered = AHMEDABAD_DEMO_HOSPITALS.filter((h) => {
       if (filter === "pmjay") return h.pmjay_empanelled;
       if (filter === "emergency") return h.is_emergency;
       if (filter === "government") return h.hospital_type === "government";
       return true;
     });
-  }, [filter]);
+    if (!userPos) return filtered;
+    return [...filtered].sort(
+      (a, b) =>
+        haversineKm(userPos[0], userPos[1], a.latitude, a.longitude) -
+        haversineKm(userPos[0], userPos[1], b.latitude, b.longitude),
+    );
+  }, [filter, userPos]);
 
   const icons = useMemo(() => {
     const map = new Map<string, L.Icon>();
@@ -81,7 +133,7 @@ export function HospitalMapPage() {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(
           [
             ["all", "All"],
@@ -104,6 +156,15 @@ export function HospitalMapPage() {
             {label}
           </button>
         ))}
+        <Button type="button" size="sm" variant="outline" onClick={locateMe}>
+          <LocateFixed className="mr-1.5 h-4 w-4" />
+          Use my location
+        </Button>
+        {userPos ? (
+          <span className="text-xs text-muted-foreground">
+            Sorted by distance from you
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-3 text-[11px] font-medium text-muted-foreground">
@@ -123,6 +184,19 @@ export function HospitalMapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {userPos ? (
+            <CircleMarker
+              center={userPos}
+              radius={9}
+              pathOptions={{
+                color: "#0F766E",
+                fillColor: "#14B8A6",
+                fillOpacity: 0.9,
+              }}
+            >
+              <Popup>You are here</Popup>
+            </CircleMarker>
+          ) : null}
           {hospitals.map((h) => (
             <Marker
               key={h.id}
@@ -133,6 +207,18 @@ export function HospitalMapPage() {
                 <strong>{h.name}</strong>
                 <br />
                 {h.address}
+                {userPos ? (
+                  <>
+                    <br />
+                    {haversineKm(
+                      userPos[0],
+                      userPos[1],
+                      h.latitude,
+                      h.longitude,
+                    ).toFixed(1)}{" "}
+                    km away
+                  </>
+                ) : null}
                 <br />
                 {h.pmjay_empanelled
                   ? `${t("pmjay_available")}`
@@ -156,7 +242,20 @@ export function HospitalMapPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {hospitals.map((h) => (
-          <HospitalCard key={h.id} hospital={h} />
+          <HospitalCard
+            key={h.id}
+            hospital={h}
+            distanceKm={
+              userPos
+                ? haversineKm(
+                    userPos[0],
+                    userPos[1],
+                    h.latitude,
+                    h.longitude,
+                  )
+                : null
+            }
+          />
         ))}
       </div>
     </div>
@@ -175,7 +274,13 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-function HospitalCard({ hospital: h }: { hospital: DemoHospital }) {
+function HospitalCard({
+  hospital: h,
+  distanceKm,
+}: {
+  hospital: DemoHospital;
+  distanceKm?: number | null;
+}) {
   const { t } = useAppLocale();
   const color = hospitalPinColor(h);
 
@@ -194,6 +299,12 @@ function HospitalCard({ hospital: h }: { hospital: DemoHospital }) {
           aria-hidden
         />
       </div>
+
+      {distanceKm != null ? (
+        <p className="mt-2 text-xs font-medium text-teal-700">
+          {distanceKm.toFixed(1)} km away
+        </p>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {h.pmjay_empanelled ? (

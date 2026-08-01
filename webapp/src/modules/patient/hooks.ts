@@ -194,11 +194,17 @@ export function usePatientMutations() {
       status,
     }: {
       medicineId: string;
-      status: "taken" | "skipped";
+      status: "taken" | "late" | "skipped";
     }) => patientRepository.markMedicine(userId, medicineId, status),
     onSuccess: async (_, vars) => {
       await invalidateAll();
-      toast.success(vars.status === "taken" ? "Marked as taken" : "Marked as skipped");
+      toast.success(
+        vars.status === "taken"
+          ? "Marked as taken"
+          : vars.status === "late"
+            ? "Marked as late taken — scores updated"
+            : "Marked as skipped",
+      );
     },
   });
 

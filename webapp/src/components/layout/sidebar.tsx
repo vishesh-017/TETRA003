@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { HealNexusLogo, HealNexusMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
@@ -55,9 +54,11 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       id: "command",
       label: "Command",
       items: [
-        { label: "Escalation", href: "/doctor", icon: ShieldAlert },
+        { label: "Home", href: "/doctor", icon: LayoutDashboard },
+        { label: "Escalation", href: "/doctor/escalations", icon: ShieldAlert },
         { label: "Patients", href: "/doctor/patients", icon: Users },
         { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
+        { label: "Reports", href: "/doctor/reports", icon: ClipboardList },
         {
           label: "Analytics",
           href: "/doctor/analytics",
@@ -86,6 +87,7 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
           icon: CalendarDays,
         },
         { label: "Recovery", href: "/patient/recovery-score", icon: ChartColumn },
+        { label: "Reports", href: "/patient/reports", icon: ClipboardList },
       ],
     },
     {
@@ -96,11 +98,6 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
         { label: "Benefits", href: "/government/benefits", icon: Sparkles },
         { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
         { label: "Hospitals", href: "/maps", icon: MapPinned },
-        {
-          label: "Notifications",
-          href: "/patient/notifications",
-          icon: Bell,
-        },
         {
           label: "Caregivers",
           href: "/patient/profile#caregivers",
@@ -295,9 +292,6 @@ export function Sidebar() {
           >
             {t("ai_disclaimer")}
           </p>
-          <div className={cn(collapsed && "md:hidden")}>
-            <LanguageSwitcher />
-          </div>
           {user ? (
             <Button
               variant="outline"

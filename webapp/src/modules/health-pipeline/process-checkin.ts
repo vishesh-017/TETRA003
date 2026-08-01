@@ -14,6 +14,57 @@ import {
 } from "@/lib/health-engine";
 import { getSupabaseClient } from "@/lib/supabase";
 import { buildObservationsForPatient } from "@/modules/prediction/adapters";
+import {
+  isPredictionEngineConfigured,
+  predictionApi,
+} from "@/modules/prediction/api";
+import type { PatientObservationBundle } from "@/modules/prediction/types";
+
+async function refineScoresWithMl(
+  patientId: string,
+  obs: PatientObservationBundle,
+  local: HealthIntelligenceBundle,
+) {
+  if (!isPredictionEngineConfigured()) return;
+  try {
+    const [recovery, readmission] = await Promise.all([
+      predictionApi.recoveryScore(obs),
+      predictionApi.readmission({
+        ...obs,
+        recovery_score: local.recovery.recovery_score,
+      }),
+    ]);
+    const recoveryScore = Math.round(
+      recovery.recovery_score ?? local.recovery.recovery_score,
+    );
+    const riskScore = Math.round(
+      readmission.readmission_probability_percent ??
+        local.readmission.readmission_probability_percent,
+    );
+    const riskLevel = mapReadmissionLevel(
+      readmission.risk_category || local.readmission.risk_category,
+      recoveryScore,
+    );
+    const now = new Date().toISOString();
+    updateStore((draft) => {
+      const recoveryRow = draft.recoveryScores.find(
+        (r) => r.patient_id === patientId,
+      );
+      if (recoveryRow) {
+        recoveryRow.score = recoveryScore;
+        recoveryRow.computed_at = now;
+      }
+      const risk = draft.risks.find((r) => r.patient_id === patientId);
+      if (risk) {
+        risk.score = riskScore;
+        risk.level = riskLevel;
+        risk.computed_at = now;
+      }
+    });
+  } catch {
+    /* keep local dynamic scores */
+  }
+}
 
 export interface CheckInPipelineResult {
   health: HealthIntelligenceBundle;
@@ -149,7 +200,10 @@ export function syncScoresFromEngine(patientId: string): {
     obs.missed_medicine_doses_7d ?? 0,
     consecutiveMissedMeds(patientId),
   );
+  // Local engine is always dynamic from current vitals/adherence.
+  // Optional ML service can refine scores when VITE_AI_API_BASE_URL is set.
   const health = evaluateHealth(obs);
+  void refineScoresWithMl(patientId, obs, health).catch(() => undefined);
   const recoveryScore = Math.round(health.recovery.recovery_score);
   const riskLevel = mapReadmissionLevel(
     health.readmission.risk_category,

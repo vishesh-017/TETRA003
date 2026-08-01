@@ -8,14 +8,25 @@ import type { MedicineView } from "@/modules/patient/types";
 export function MedicineCard({
   medicine,
   onTaken,
+  onLate,
   onSkipped,
   busy,
 }: {
   medicine: MedicineView;
   onTaken: () => void;
+  onLate?: () => void;
   onSkipped: () => void;
   busy?: boolean;
 }) {
+  const statusLabel =
+    medicine.today_status === "completed"
+      ? "Taken"
+      : medicine.today_status === "late"
+        ? "Late taken"
+        : medicine.today_status === "skipped"
+          ? "Skipped"
+          : "Due";
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -26,12 +37,15 @@ export function MedicineCard({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-display text-lg font-semibold">{medicine.name}</h3>
-              <Badge variant={medicine.today_status === "completed" ? "secondary" : "outline"}>
-                {medicine.today_status === "completed"
-                  ? "Taken"
-                  : medicine.today_status === "skipped"
-                    ? "Skipped"
-                    : "Due"}
+              <Badge
+                variant={
+                  medicine.today_status === "completed" ||
+                  medicine.today_status === "late"
+                    ? "secondary"
+                    : "outline"
+                }
+              >
+                {statusLabel}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -46,10 +60,15 @@ export function MedicineCard({
           </div>
         </div>
         {medicine.today_status === "pending" ? (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button disabled={busy} onClick={onTaken}>
               Taken
             </Button>
+            {onLate ? (
+              <Button variant="secondary" disabled={busy} onClick={onLate}>
+                Late taken
+              </Button>
+            ) : null}
             <Button variant="outline" disabled={busy} onClick={onSkipped}>
               Skipped
             </Button>

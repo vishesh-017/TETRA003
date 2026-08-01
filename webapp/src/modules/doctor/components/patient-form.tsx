@@ -115,7 +115,8 @@ function LinkPatientForm({
           </div>
         </Field>
         <p className="mt-2 text-xs text-muted-foreground">
-          Demo usernames: asha.patel · ravi.shah · meera.desai
+          Demo: asha.patel / HNASHA201QRDEMO · ravi.shah / HNRAVI202QRDEMO ·
+          meera.desai / HNMEERA203QRDEMO
         </p>
       </div>
 

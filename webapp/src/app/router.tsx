@@ -63,6 +63,21 @@ const AppointmentsPage = lazy(() =>
     default: m.AppointmentsPage,
   })),
 );
+const DoctorEscalationPage = lazy(() =>
+  import("@/modules/doctor/escalation/pages/escalation-page").then((m) => ({
+    default: m.EscalationPage,
+  })),
+);
+const DoctorReportsPage = lazy(() =>
+  import("@/modules/reports/pages/doctor-reports-page").then((m) => ({
+    default: m.DoctorReportsPage,
+  })),
+);
+const PatientReportsPage = lazy(() =>
+  import("@/modules/reports/pages/patient-reports-page").then((m) => ({
+    default: m.PatientReportsPage,
+  })),
+);
 
 const PatientHomePage = lazy(() =>
   import("@/modules/patient/pages/home-page").then((m) => ({
@@ -366,8 +381,24 @@ export function AppRouter() {
               }
             />
             <Route
+              path="/doctor/escalations"
+              element={
+                <Lazy>
+                  <DoctorEscalationPage />
+                </Lazy>
+              }
+            />
+            <Route
+              path="/doctor/reports"
+              element={
+                <Lazy>
+                  <DoctorReportsPage />
+                </Lazy>
+              }
+            />
+            <Route
               path="/doctor/high-risk"
-              element={<Navigate to="/doctor" replace />}
+              element={<Navigate to="/doctor/escalations" replace />}
             />
             <Route
               path="/doctor/appointments"
@@ -379,7 +410,7 @@ export function AppRouter() {
             />
             <Route
               path="/doctor/investigations"
-              element={<Navigate to="/doctor" replace />}
+              element={<Navigate to="/doctor/reports" replace />}
             />
           </Route>
         </Route>
@@ -423,6 +454,14 @@ export function AppRouter() {
               element={
                 <Lazy>
                   <MedicinesPage />
+                </Lazy>
+              }
+            />
+            <Route
+              path="/patient/reports"
+              element={
+                <Lazy>
+                  <PatientReportsPage />
                 </Lazy>
               }
             />

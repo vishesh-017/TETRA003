@@ -265,21 +265,38 @@ export const doctorRepository = {
       );
     }
 
-    const already = store.relationships.some(
-      (r) =>
-        r.doctor_id === doctor.id &&
-        r.patient_id === patient!.id &&
-        r.status === "active",
-    );
-    if (!already) {
-      updateStore((draft) => {
+    updateStore((draft) => {
+      const target = draft.patients.find((p) => p.id === patient!.id);
+      if (target) {
+        target.is_archived = false;
+        target.status = "active";
+      }
+      const rel = draft.relationships.find(
+        (r) => r.doctor_id === doctor.id && r.patient_id === patient!.id,
+      );
+      if (rel) {
+        rel.status = "active";
+      } else {
         draft.relationships.push({
           doctor_id: doctor.id,
           patient_id: patient!.id,
           status: "active",
         });
-      });
-    }
+      }
+      // Ensure passport exists so QR linking works next time
+      if (!draft.passports.some((p) => p.patient_id === patient!.id)) {
+        draft.passports.push({
+          patient_id: patient!.id,
+          qr_token: `HN${patient!.id.replace(/-/g, "").slice(-10).toUpperCase()}`,
+          abha_id_demo: patient!.abha_id_demo,
+          allergies: patient!.allergies || [],
+          medical_history: patient!.medical_history,
+          emergency_contacts: patient!.emergency_contact || {},
+          current_medicines: [],
+          blood_group: patient!.blood_group,
+        });
+      }
+    });
 
     return this.getPatient(userId, patient.id);
   },
@@ -426,6 +443,21 @@ export const doctorRepository = {
         patient.medical_history = String(body.medical_history);
     });
     return this.getPatient(userId, patientId);
+  },
+
+  deletePatient(userId: string, patientId: string) {
+    const doctor = ensureDoctor(userId);
+    updateStore((draft) => {
+      draft.relationships = draft.relationships.filter(
+        (r) => !(r.doctor_id === doctor.id && r.patient_id === patientId),
+      );
+      const patient = draft.patients.find((p) => p.id === patientId);
+      if (patient) {
+        patient.is_archived = true;
+        patient.status = "archived";
+      }
+    });
+    return { ok: true };
   },
 
   archivePatient(userId: string, patientId: string) {
@@ -999,9 +1031,13 @@ export const doctorRepository = {
         patient_name: toListItem(a.patient_id).full_name,
         scheduled_at: a.scheduled_at,
         location: a.location,
-        status: (["scheduled", "completed", "cancelled", "missed"].includes(
-          a.status,
-        )
+        status: ([
+          "scheduled",
+          "approved",
+          "completed",
+          "cancelled",
+          "missed",
+        ].includes(a.status)
           ? a.status
           : "scheduled") as AppointmentItem["status"],
         appointment_type: a.appointment_type,

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
@@ -18,13 +18,21 @@ import type { RiskFilter } from "@/modules/doctor/escalation/types";
 export function EscalationPage() {
   const { t } = useAppLocale();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const bundle = useEscalationBundle();
   const actions = useEscalationActions();
 
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    searchParams.get("patient"),
+  );
   const [referOpen, setReferOpen] = useState(false);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("patient");
+    if (fromUrl) setSelectedId(fromUrl);
+  }, [searchParams]);
 
   const riskQuery = usePatientRiskData(selectedId);
 
@@ -133,6 +141,10 @@ export function EscalationPage() {
                   name,
                 })
               }
+              onAcknowledge={() =>
+                actions.acknowledge.mutate(selectedId)
+              }
+              onResolve={() => actions.resolve.mutate(selectedId)}
             />
           )}
         </div>

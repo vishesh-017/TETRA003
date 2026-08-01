@@ -1,10 +1,11 @@
-import { Bell, ChevronDown, LogOut, Menu, Moon, PanelLeft, Sun } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Moon, PanelLeft, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { HealNexusLogo } from "@/components/brand/logo";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { NotificationsPopover } from "@/components/layout/notifications-popover";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useShell } from "@/contexts/shell-context";
 import { useTheme } from "@/contexts/theme-context";
@@ -23,15 +24,6 @@ export function Navbar({ title }: NavbarProps) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const notificationsHref =
-    user?.role === "patient"
-      ? "/patient/notifications"
-      : user?.role === "health_worker"
-        ? "/rural/notifications"
-        : user?.role === "caregiver"
-          ? "/caregiver/alerts"
-          : "/doctor";
 
   const roleLabel =
     user?.role === "patient"
@@ -121,13 +113,7 @@ export function Navbar({ title }: NavbarProps) {
             )}
           </Button>
 
-          <Link
-            to={notificationsHref}
-            className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
-            aria-label="Open notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </Link>
+          <NotificationsPopover />
 
           <div className="relative" ref={menuRef}>
             <button

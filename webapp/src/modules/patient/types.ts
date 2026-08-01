@@ -53,7 +53,7 @@ export interface MedicineView {
   frequency: string | null;
   time_slots: string[];
   instructions: string | null;
-  today_status: TaskStatus | "none";
+  today_status: TaskStatus | "late" | "none";
 }
 
 export interface AppointmentView {
@@ -94,6 +94,8 @@ export interface PatientProfileView {
   full_name: string;
   email: string | null;
   phone: string | null;
+  username: string | null;
+  passport_qr: string | null;
   address: Record<string, unknown> | null;
   preferred_language: string;
   emergency_contact: {

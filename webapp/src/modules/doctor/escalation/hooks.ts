@@ -71,5 +71,29 @@ export function useEscalationActions() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { orderInvestigation, submitReferral };
+  const acknowledge = useMutation({
+    mutationFn: (patientId: string) => {
+      escalationRepository.acknowledgePatientAlerts(userId, patientId);
+      return Promise.resolve(patientId);
+    },
+    onSuccess: async (patientId) => {
+      toast.success("Escalation acknowledged");
+      await invalidateCareGraph(qc, { patientId });
+      await qc.invalidateQueries({ queryKey: ["doctor", "escalation"] });
+    },
+  });
+
+  const resolve = useMutation({
+    mutationFn: (patientId: string) => {
+      escalationRepository.resolvePatientAlerts(userId, patientId);
+      return Promise.resolve(patientId);
+    },
+    onSuccess: async (patientId) => {
+      toast.success("Escalation resolved");
+      await invalidateCareGraph(qc, { patientId });
+      await qc.invalidateQueries({ queryKey: ["doctor", "escalation"] });
+    },
+  });
+
+  return { orderInvestigation, submitReferral, acknowledge, resolve };
 }

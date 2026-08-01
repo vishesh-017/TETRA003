@@ -239,11 +239,14 @@ export const patientRepository = {
           frequency: m.frequency,
           time_slots: m.time_slots,
           instructions: m.instructions,
-          today_status: event?.status === "taken"
-            ? "completed"
-            : event?.status === "skipped"
-              ? "skipped"
-              : "pending",
+          today_status:
+            event?.status === "taken"
+              ? "completed"
+              : event?.status === "late"
+                ? "late"
+                : event?.status === "skipped"
+                  ? "skipped"
+                  : "pending",
         };
       });
   },
@@ -251,7 +254,7 @@ export const patientRepository = {
   async markMedicine(
     userId: string,
     medicineId: string,
-    status: "taken" | "skipped",
+    status: "taken" | "late" | "skipped",
   ) {
     const patientId = resolvePatientId(userId);
     const date = todayKey();
@@ -433,10 +436,13 @@ export const patientRepository = {
     const patientId = resolvePatientId(userId);
     const patient = store.patients.find((p) => p.id === patientId)!;
     const profile = store.profiles.find((p) => p.id === patient.user_id)!;
+    const passport = store.passports.find((p) => p.patient_id === patientId);
     return {
       full_name: profile.full_name,
       email: profile.email,
       phone: profile.phone,
+      username: profile.username,
+      passport_qr: passport?.qr_token ?? null,
       address: profile.address ?? patient.address,
       preferred_language: patient.preferred_language,
       emergency_contact: patient.emergency_contact,
@@ -451,6 +457,7 @@ export const patientRepository = {
   async updateProfile(
     userId: string,
     patch: Partial<{
+      username: string;
       phone: string;
       address: Record<string, unknown>;
       preferred_language: string;
@@ -463,6 +470,16 @@ export const patientRepository = {
       const profile = draft.profiles.find((p) => p.id === userId);
       const patient = draft.patients.find((p) => p.id === patientId);
       if (profile) {
+        if (patch.username != null) {
+          const next = patch.username.trim().toLowerCase();
+          const taken = draft.profiles.some(
+            (p) =>
+              p.id !== profile.id &&
+              p.username?.toLowerCase() === next,
+          );
+          if (taken) throw new Error("Username already taken");
+          profile.username = next;
+        }
         if (patch.phone != null) profile.phone = patch.phone;
         if (patch.address) profile.address = patch.address;
         if (patch.notification_prefs)

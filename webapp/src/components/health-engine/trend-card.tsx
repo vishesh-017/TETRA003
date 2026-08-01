@@ -57,7 +57,7 @@ export function TrendCard({ trends }: { trends: TrendAnalysisResult }) {
                   variant={TREND_VARIANT[t.clinical_trend]}
                   className="capitalize"
                 >
-                  {t.clinical_trend}
+                  {directionBadge(t)}
                 </Badge>
               </CardHeader>
               <CardContent className="h-52">
@@ -95,4 +95,12 @@ function TrendRow({ item }: { item: TrendItem }) {
       {item.natural_language}
     </p>
   );
+}
+
+/** Badge follows series direction (Rising/Falling), matching chart title. */
+function directionBadge(t: TrendItem): string {
+  if (t.direction === "increasing") return "Rising";
+  if (t.direction === "decreasing") return "Falling";
+  if (t.direction === "stable") return "Stable";
+  return "Insufficient";
 }

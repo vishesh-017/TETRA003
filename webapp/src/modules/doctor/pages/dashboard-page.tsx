@@ -1,2 +1,2 @@
-/** Doctor home — Active Panel / Escalation triage. */
-export { EscalationPage as DashboardPage } from "@/modules/doctor/escalation/pages/escalation-page";
+/** Doctor home — workspace + active panel. */
+export { DoctorHomePage as DashboardPage } from "@/modules/doctor/pages/home-page";

@@ -11,6 +11,7 @@ export type CarePlanStatus =
   | "superseded";
 export type AppointmentStatus =
   | "scheduled"
+  | "approved"
   | "completed"
   | "cancelled"
   | "missed";

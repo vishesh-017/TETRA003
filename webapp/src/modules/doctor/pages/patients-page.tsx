@@ -165,7 +165,7 @@ export function PatientsPage() {
                   </Button>
                   <Button
                     size="sm"
-                    variant="destructive"
+                    variant="outline"
                     disabled={mutations.archivePatient.isPending}
                     onClick={() => {
                       if (confirm(`Archive ${patient.full_name}?`)) {
@@ -174,6 +174,22 @@ export function PatientsPage() {
                     }}
                   >
                     Archive
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={mutations.deletePatient.isPending}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Remove ${patient.full_name} from your panel? They can be linked again later via username/QR.`,
+                        )
+                      ) {
+                        mutations.deletePatient.mutate(patient.id);
+                      }
+                    }}
+                  >
+                    Delete
                   </Button>
                 </div>
               </CardContent>

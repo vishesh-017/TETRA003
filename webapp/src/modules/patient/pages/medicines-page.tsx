@@ -19,9 +19,13 @@ export function MedicinesPage() {
       />
     );
 
-  const taken = meds.data.filter((m) => m.today_status === "completed").length;
+  const scoreUnits = meds.data.reduce((sum, m) => {
+    if (m.today_status === "completed") return sum + 1;
+    if (m.today_status === "late") return sum + 0.7;
+    return sum;
+  }, 0);
   const adherence = meds.data.length
-    ? Math.round((taken / meds.data.length) * 100)
+    ? Math.round((scoreUnits / meds.data.length) * 100)
     : 0;
 
   return (
@@ -40,6 +44,9 @@ export function MedicinesPage() {
             busy={markMedicine.isPending}
             onTaken={() =>
               markMedicine.mutate({ medicineId: medicine.id, status: "taken" })
+            }
+            onLate={() =>
+              markMedicine.mutate({ medicineId: medicine.id, status: "late" })
             }
             onSkipped={() =>
               markMedicine.mutate({ medicineId: medicine.id, status: "skipped" })

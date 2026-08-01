@@ -330,6 +330,7 @@ export const NAV_LABEL_KEYS: Record<string, DictKey> = {
   Settings: "nav_settings",
   Intelligence: "nav_escalation",
   Escalation: "nav_escalation",
+  Reports: "nav_investigations",
   Patients: "nav_patients",
   "High Risk": "nav_high_risk",
   Analytics: "nav_analytics",

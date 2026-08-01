@@ -60,6 +60,9 @@ export const doctorApi = {
   archivePatient: (token: string | null, id: string) =>
     Promise.resolve(doctorRepository.archivePatient(actorId(token), id)),
 
+  deletePatient: (token: string | null, id: string) =>
+    Promise.resolve(doctorRepository.deletePatient(actorId(token), id)),
+
   listDischarges: (token: string | null, patientId: string) =>
     Promise.resolve(
       doctorRepository.listDischarges(

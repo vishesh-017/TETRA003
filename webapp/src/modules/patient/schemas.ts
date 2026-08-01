@@ -20,6 +20,11 @@ export const checkInSchema = z.object({
 export type CheckInSchema = z.infer<typeof checkInSchema>;
 
 export const profileSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(32)
+    .regex(/^[a-zA-Z0-9._-]+$/, "Use letters, numbers, . _ - only"),
   phone: z.string().min(8, "Enter a valid phone").max(20),
   address_line: z.string().optional(),
   city: z.string().optional(),
