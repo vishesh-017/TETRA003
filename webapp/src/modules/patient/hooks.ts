@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/auth-context";
 import { subscribeStore, type TaskStatus } from "@/data/store";
+import { invalidateCareGraph } from "@/lib/care-graph";
 
 import {
   patientCaregiverService,
@@ -71,6 +72,7 @@ export function useActiveCarePlan() {
 
 export function usePatientMedicines() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.medicines(userId),
     queryFn: () => patientRepository.listMedicines(userId),
@@ -80,6 +82,7 @@ export function usePatientMedicines() {
 
 export function usePatientAppointments() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.appointments(userId),
     queryFn: () => patientRepository.listAppointments(userId),
@@ -89,6 +92,7 @@ export function usePatientAppointments() {
 
 export function usePatientPassport() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.passport(userId),
     queryFn: () => patientRepository.getPassport(userId),
@@ -98,6 +102,7 @@ export function usePatientPassport() {
 
 export function usePatientNotifications() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.notifications(userId),
     queryFn: () => patientRepository.listNotifications(userId),
@@ -107,6 +112,7 @@ export function usePatientNotifications() {
 
 export function usePatientCaregivers() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.caregivers(userId),
     queryFn: () => patientCaregiverService.list(userId),
@@ -117,12 +123,7 @@ export function usePatientCaregivers() {
 export function usePatientCaregiverMutations() {
   const userId = usePatientUserId();
   const qc = useQueryClient();
-  const invalidate = () =>
-    Promise.all([
-      qc.invalidateQueries({ queryKey: keys.caregivers(userId) }),
-      qc.invalidateQueries({ queryKey: keys.profile(userId) }),
-      qc.invalidateQueries({ queryKey: keys.notifications(userId) }),
-    ]);
+  const invalidate = () => invalidateCareGraph(qc);
 
   const addCaregiver = useMutation({
     mutationFn: async (input: CaregiverInviteInput) =>
@@ -147,6 +148,7 @@ export function usePatientCaregiverMutations() {
 
 export function usePatientProfile() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.profile(userId),
     queryFn: () => patientRepository.getProfile(userId),
@@ -156,6 +158,7 @@ export function usePatientProfile() {
 
 export function usePatientRecovery() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.recovery(userId),
     queryFn: () => patientRepository.getRecovery(userId),
@@ -168,9 +171,7 @@ export function usePatientMutations() {
   const qc = useQueryClient();
 
   const invalidateAll = async () => {
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ["patient"] }),
-    ]);
+    await invalidateCareGraph(qc);
   };
 
   const setTaskStatus = useMutation({
@@ -225,8 +226,6 @@ export function usePatientMutations() {
       patientRepository.submitCheckIn(userId, input),
     onSuccess: async (result) => {
       await invalidateAll();
-      void qc.invalidateQueries({ queryKey: ["doctor"] });
-      void qc.invalidateQueries({ queryKey: ["patients"] });
       const pipeline = result.pipeline;
       if (pipeline?.escalated) {
         toast.warning("Check-in saved — care team alerted", {

@@ -137,16 +137,78 @@ async function persistNotification(row: {
   await supabase.from("notifications").insert(row);
 }
 
+/** Sync store recovery/risk from Health Intelligence Engine (single source of truth). */
+export function syncScoresFromEngine(patientId: string): {
+  health: HealthIntelligenceBundle;
+  recovery_score: number;
+  risk_level: RiskLevel;
+  risk_score: number;
+} {
+  const obs = buildObservationsForPatient(patientId);
+  obs.missed_medicine_doses_7d = Math.max(
+    obs.missed_medicine_doses_7d ?? 0,
+    consecutiveMissedMeds(patientId),
+  );
+  const health = evaluateHealth(obs);
+  const recoveryScore = Math.round(health.recovery.recovery_score);
+  const riskLevel = mapReadmissionLevel(
+    health.readmission.risk_category,
+    recoveryScore,
+  );
+  const riskScore = Math.round(
+    health.readmission.readmission_probability_percent,
+  );
+  const now = new Date().toISOString();
+
+  updateStore((draft) => {
+    const recovery = draft.recoveryScores.find((r) => r.patient_id === patientId);
+    if (recovery) {
+      recovery.score = recoveryScore;
+      recovery.computed_at = now;
+    } else {
+      draft.recoveryScores.push({
+        patient_id: patientId,
+        score: recoveryScore,
+        computed_at: now,
+      });
+    }
+
+    const risk = draft.risks.find((r) => r.patient_id === patientId);
+    if (risk) {
+      risk.score = riskScore;
+      risk.level = riskLevel;
+      risk.computed_at = now;
+    } else {
+      draft.risks.push({
+        patient_id: patientId,
+        score: riskScore,
+        level: riskLevel,
+        computed_at: now,
+      });
+    }
+  });
+
+  void persistPredictions(patientId, recoveryScore, riskLevel, riskScore);
+  return {
+    health,
+    recovery_score: recoveryScore,
+    risk_level: riskLevel,
+    risk_score: riskScore,
+  };
+}
+
 /**
  * After a check-in is stored: evaluate health intelligence, persist scores,
  * escalate if thresholds breached, notify doctor + caregivers.
  */
 export async function processCheckInPipeline(
   patientId: string,
-  checkInId: string,
+  checkInId: string | null,
 ): Promise<CheckInPipelineResult> {
   const store = getStore();
-  const checkIn = store.checkins.find((c) => c.id === checkInId);
+  const checkIn = checkInId
+    ? store.checkins.find((c) => c.id === checkInId)
+    : undefined;
   const missedDays = checkIn
     ? daysWithoutCheckIn(patientId, checkIn.recorded_at)
     : 0;
@@ -326,7 +388,7 @@ export async function processCheckInPipeline(
   };
 }
 
-/** Re-run escalation after medicine events (missed streak). */
+/** Re-run score sync + escalation after medicine events (missed streak). */
 export async function processAdherencePipeline(patientId: string) {
-  return processCheckInPipeline(patientId, `adh-${patientId}`);
+  return processCheckInPipeline(patientId, null);
 }

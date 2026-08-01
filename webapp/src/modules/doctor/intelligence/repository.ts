@@ -18,6 +18,7 @@ import type {
   SuggestedAction,
 } from "@/modules/doctor/intelligence/types";
 import type { RiskLevel } from "@/modules/doctor/types";
+import { investigationRepository } from "@/modules/investigations/repository";
 import { buildObservationsForPatient } from "@/modules/prediction/adapters";
 import { countPendingSync } from "@/modules/rural/offline/storage";
 
@@ -158,7 +159,16 @@ export const intelligenceRepository = {
         : null;
 
       const patient = store.patients.find((x) => x.id === p.id);
-      const caregiver = patient?.caregiver_info?.name ?? null;
+      const arrangement = store.caregiverArrangements.find(
+        (a) =>
+          a.patient_id === p.id &&
+          a.status === "active" &&
+          a.is_primary,
+      ) || store.caregiverArrangements.find(
+        (a) => a.patient_id === p.id && a.status === "active",
+      );
+      const caregiver =
+        arrangement?.caregiver_name || patient?.caregiver_info?.name || null;
 
       const priority =
         riskRank(risk) * 40 +
@@ -213,6 +223,8 @@ export const intelligenceRepository = {
           a.severity === "high"),
     ).length;
 
+    const invStats = investigationRepository.complianceStats(doctor.id);
+
     const summary: IntelligenceSummary = {
       total_patients: patients.length,
       active_followups: store.appointments.filter(
@@ -232,6 +244,8 @@ export const intelligenceRepository = {
           a.scheduled_at.slice(0, 10) === today,
       ).length,
       emergency_alerts,
+      investigation_compliance: invStats.compliance_rate,
+      investigation_overdue: invStats.overdue,
     };
 
     const alerts = this.buildAlerts(userId, priority_queue);

@@ -128,6 +128,8 @@ export async function organizeCareCompanion(input: {
   follow_up_date?: string;
   hospital_name?: string;
   patient_name?: string;
+  /** Prescribed investigations — organize reminders only; never interpret results. */
+  investigations?: string;
 }): Promise<CareCompanionResult> {
   const { organizeCareCompanionLocal } = await import(
     "@/services/care-companion-local"

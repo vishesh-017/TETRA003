@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { AbhaImportWizard } from "@/modules/identity/components/abha-import-wizard";
 import {
@@ -12,10 +13,23 @@ import {
 } from "@/modules/identity/hooks";
 
 export function AbhaPage() {
+  const { user } = useAuth();
   const passport = useDigitalPassport();
   const records = useHealthRecords();
   const benefits = useBenefitsDashboard();
   const [open, setOpen] = useState(false);
+  const passportHref =
+    user?.role === "doctor"
+      ? "/doctor/patients"
+      : user?.role === "caregiver"
+        ? "/caregiver"
+        : "/patient/passport";
+  const backLabel =
+    user?.role === "doctor"
+      ? "Back to patients"
+      : user?.role === "caregiver"
+        ? "Back to home"
+        : "Back to Passport";
 
   if (passport.isLoading || records.isLoading)
     return <LoadingScreen label="Loading ABHA workspace…" fullScreen={false} />;
@@ -80,10 +94,10 @@ export function AbhaPage() {
       ) : null}
 
       <Link
-        to="/patient/passport"
+        to={passportHref}
         className={cn(buttonVariants({ variant: "outline" }), "w-fit")}
       >
-        Back to Passport
+        {backLabel}
       </Link>
 
       <AbhaImportWizard

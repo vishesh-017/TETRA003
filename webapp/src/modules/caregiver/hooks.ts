@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/auth-context";
 import { IDS, subscribeStore } from "@/data/store";
+import { invalidateCareGraph } from "@/lib/care-graph";
 import { getSupabaseClient } from "@/lib/supabase";
 
 import { caregiverRepository } from "./repository";
@@ -128,7 +129,7 @@ export function useCaregiverMutations() {
       toast.success(
         vars.status === "taken" ? "Medicine marked taken" : "Medicine skipped",
       );
-      await qc.invalidateQueries({ queryKey: caregiverKeys.all });
+      await invalidateCareGraph(qc);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -150,7 +151,7 @@ export function useCaregiverMutations() {
           ? "Reschedule requested"
           : "Cancellation requested",
       );
-      await qc.invalidateQueries({ queryKey: caregiverKeys.all });
+      await invalidateCareGraph(qc);
     },
     onError: (error: Error) => toast.error(error.message),
   });

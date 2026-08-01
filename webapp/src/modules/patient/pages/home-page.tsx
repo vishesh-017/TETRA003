@@ -14,6 +14,7 @@ import { ProgressBar } from "@/modules/patient/components/progress-ring";
 import { PassportPreview } from "@/modules/patient/components/passport-preview";
 import { QuickActions } from "@/modules/patient/components/quick-actions";
 import { TaskRow } from "@/modules/patient/components/task-row";
+import { PendingInvestigationsPanel } from "@/modules/investigations/components/pending-investigations";
 import {
   usePatientMutations,
   usePatientPassport,
@@ -87,6 +88,12 @@ export function PatientHomePage() {
       </motion.section>
 
       {intel ? <AlertBanner alert={intel.alerts} /> : null}
+
+      <PendingInvestigationsPanel
+        patientId={data.patient_id}
+        title="Pending Investigations"
+        mode="patient"
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

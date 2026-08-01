@@ -11,6 +11,7 @@ export function organizeCareCompanionLocal(input: {
   follow_up_date?: string;
   patient_name?: string;
   hospital_name?: string;
+  investigations?: string;
 }): CareCompanionResult {
   const meds = (input.medicines || "")
     .split("\n")
@@ -66,6 +67,16 @@ export function organizeCareCompanionLocal(input: {
           detail: exercise,
           category: "activity",
         },
+        ...(input.investigations
+          ? [
+              {
+                title: "Investigation reminder",
+                detail:
+                  "Complete prescribed lab/imaging tests on time. Follow preparation instructions. Do not interpret results yourself — your doctor will review them.",
+                category: "monitoring",
+              },
+            ]
+          : []),
         {
           title: "Hydration",
           detail: "Sip water through the afternoon.",
@@ -105,7 +116,11 @@ export function organizeCareCompanionLocal(input: {
       "The AI Care Companion does not diagnose or change prescriptions.",
     caregiver_instructions:
       "Help the patient take medicines on the written schedule, keep a vitals/symptom log, support meals and hydration, and escort them for follow-up. " +
-      "Do not add new medicines. Escalate for chest pain, severe breathlessness, confusion, fainting, or sudden worsening.",
+      (input.investigations
+        ? "Remind them about upcoming investigations and help with fasting/travel to the lab if needed. "
+        : "") +
+      "Do not add new medicines. Escalate for chest pain, severe breathlessness, confusion, fainting, or sudden worsening. " +
+      "Never interpret lab or imaging results.",
     warning_signs: [
       "Chest pain or pressure",
       "Severe shortness of breath",
@@ -117,6 +132,12 @@ export function organizeCareCompanionLocal(input: {
       "Follow today's schedule for medicines, meals, hydration, and activity",
       "Complete daily health check-ins in HealNexus",
       "Do not change medicines without speaking to your doctor",
+      ...(input.investigations
+        ? [
+            "Complete prescribed investigations on or before the due date",
+            "Upload the report in HealNexus if available — your doctor reviews it (AI never interprets results)",
+          ]
+        : []),
       input.follow_up_date
         ? `Attend follow-up on ${input.follow_up_date}`
         : "Confirm your next clinic appointment with the care team",

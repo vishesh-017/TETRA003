@@ -303,12 +303,59 @@ export const identityRepository = {
       });
     }
 
+    for (const inv of (store.investigations ?? []).filter(
+      (x) => x.patient_id === patientId,
+    )) {
+      events.push({
+        id: `inv-assign-${inv.id}`,
+        kind: "investigation",
+        title: `Investigation assigned: ${inv.name}`,
+        summary: [inv.purpose, `Due ${inv.due_date}`, inv.priority]
+          .filter(Boolean)
+          .join(" · "),
+        at: inv.created_at,
+        meta: inv.status,
+      });
+      if (inv.reminder_sent_at) {
+        events.push({
+          id: `inv-remind-${inv.id}`,
+          kind: "investigation",
+          title: `Reminder sent: ${inv.name}`,
+          summary: "Patient and caregiver notified",
+          at: inv.reminder_sent_at,
+          meta: "reminder",
+        });
+      }
+      if (inv.completed_at) {
+        events.push({
+          id: `inv-done-${inv.id}`,
+          kind: "investigation",
+          title: `Investigation completed: ${inv.name}`,
+          summary: "Awaiting or completed doctor review",
+          at: inv.completed_at,
+          meta: inv.status,
+        });
+      }
+      if (inv.reviewed_at) {
+        events.push({
+          id: `inv-review-${inv.id}`,
+          kind: "investigation",
+          title: `Doctor reviewed: ${inv.name}`,
+          summary: "Doctor marked investigation complete",
+          at: inv.reviewed_at,
+          meta: "reviewed",
+        });
+      }
+    }
+
     for (const r of (store.healthRecords ?? []).filter(
       (x) => x.patient_id === patientId,
     )) {
       const kind: TimelineEvent["kind"] =
         r.category === "lab_report"
-          ? "report"
+          ? r.metadata?.event
+            ? "investigation"
+            : "report"
           : r.category === "vaccination"
             ? "vaccination"
             : r.category === "doctor_note"

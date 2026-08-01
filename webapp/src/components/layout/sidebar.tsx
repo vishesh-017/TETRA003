@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChartColumn,
   ChevronsLeft,
+  ClipboardList,
   HeartHandshake,
   HeartPulse,
   Hospital,
@@ -53,6 +54,11 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
         { label: "High Risk", href: "/doctor/high-risk", icon: Activity },
         { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
         {
+          label: "Investigations",
+          href: "/doctor/investigations",
+          icon: ClipboardList,
+        },
+        {
           label: "Analytics",
           href: "/doctor/analytics",
           icon: ChartColumn,
@@ -76,6 +82,11 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       items: [
         { label: "Today", href: "/patient", icon: HeartPulse },
         { label: "Care Plan", href: "/patient/care-plan", icon: Sparkles },
+        {
+          label: "Investigations",
+          href: "/patient/investigations",
+          icon: ClipboardList,
+        },
         { label: "Check-in", href: "/patient/check-in", icon: Activity },
         { label: "Medicines", href: "/patient/medicines", icon: Pill },
         {

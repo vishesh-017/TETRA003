@@ -15,6 +15,7 @@ import { FamilyHealthSummaryCard } from "@/modules/caregiver/components/family-h
 import { FamilySwitcher } from "@/modules/caregiver/components/family-switcher";
 import { HealthRing } from "@/modules/caregiver/components/health-ring";
 import { InsightCards } from "@/modules/caregiver/components/insight-cards";
+import { CaregiverInvestigationStatus } from "@/modules/caregiver/components/investigation-status";
 import { MedicineSchedule } from "@/modules/caregiver/components/medicine-schedule";
 import { PassportTiltCard } from "@/modules/caregiver/components/passport-tilt-card";
 import { SmartAlerts } from "@/modules/caregiver/components/smart-alerts";
@@ -116,6 +117,11 @@ export function CaregiverHomePage() {
           </div>
 
           <CarePlanBrief plan={carePlan} />
+
+          <CaregiverInvestigationStatus
+            patientId={selected.id}
+            patientName={selected.name}
+          />
 
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <InsightCards insights={insights} />

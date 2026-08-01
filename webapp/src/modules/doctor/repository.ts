@@ -22,8 +22,45 @@ import type {
   PatientDetail,
   PatientListItem,
 } from "@/modules/doctor/types";
+import { investigationRepository } from "@/modules/investigations/repository";
+import { patientCaregiverService } from "@/modules/patient/caregiver-arrangements";
 import { organizeCareCompanion } from "@/services/ai.service";
 import { getSupabaseClient } from "@/lib/supabase";
+
+function adherenceForPatient(patientId: string): number {
+  const store = getStore();
+  const meds = store.medicines.filter(
+    (m) => m.patient_id === patientId && m.active,
+  );
+  if (!meds.length) return 100;
+  const today = todayKey();
+  const events = store.medicineEvents.filter(
+    (e) => e.patient_id === patientId && e.date === today,
+  );
+  let total = 0;
+  let taken = 0;
+  for (const med of meds) {
+    const slots = med.time_slots.length || 1;
+    total += slots;
+    taken += events.filter(
+      (e) => e.medicine_id === med.id && e.status === "taken",
+    ).length;
+  }
+  return total ? Math.round((taken / total) * 100) : 100;
+}
+
+function missedCheckinsForPatient(patientId: string): number {
+  const today = todayKey();
+  const recent = getStore()
+    .checkins.filter((c) => c.patient_id === patientId)
+    .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at));
+  if (!recent.length) return 3;
+  const last = recent[0]!.recorded_at.slice(0, 10);
+  const ms =
+    new Date(`${today}T12:00:00`).getTime() -
+    new Date(`${last}T12:00:00`).getTime();
+  return Math.max(0, Math.floor(ms / 86_400_000));
+}
 
 function ageFromDob(dob?: string | null): number | null {
   if (!dob) return null;
@@ -164,10 +201,12 @@ export const doctorRepository = {
           : risk === "moderate"
             ? "watch"
             : "stable",
-      adherence_percent: 70,
-      missed_checkins: 0,
+      adherence_percent: adherenceForPatient(patientId),
+      missed_checkins: missedCheckinsForPatient(patientId),
       missed_medicines: store.medicineEvents.filter(
-        (e) => e.patient_id === patientId && e.status === "missed",
+        (e) =>
+          e.patient_id === patientId &&
+          (e.status === "missed" || e.status === "skipped"),
       ).length,
     };
   },
@@ -176,6 +215,16 @@ export const doctorRepository = {
     const doctor = ensureDoctor(userId);
     const profileId = newId();
     const patientId = newId();
+    const now = new Date().toISOString();
+    const allergies = String(body.allergies || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const chronic = String(body.chronic_diseases || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     updateStore((draft) => {
       draft.profiles.push({
         id: profileId,
@@ -204,14 +253,8 @@ export const doctorRepository = {
         address: body.address_line
           ? { line1: String(body.address_line), city: String(body.city || "") }
           : null,
-        chronic_diseases: String(body.chronic_diseases || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        allergies: String(body.allergies || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        chronic_diseases: chronic,
+        allergies,
         medical_history: (body.medical_history as string) || null,
         emergency_contact: {
           name: body.emergency_name as string,
@@ -228,25 +271,54 @@ export const doctorRepository = {
         preferred_language: "en",
         status: "active",
         is_archived: false,
-        created_at: new Date().toISOString(),
+        created_at: now,
       });
       draft.relationships.push({
         doctor_id: doctor.id,
         patient_id: patientId,
         status: "active",
       });
+      draft.passports.push({
+        patient_id: patientId,
+        qr_token: `HN${patientId.replace(/-/g, "").slice(-10).toUpperCase()}`,
+        abha_id_demo: (body.abha_id_demo as string) || null,
+        allergies,
+        medical_history:
+          (body.medical_history as string) || chronic.join("; ") || null,
+        emergency_contacts: {
+          name: (body.emergency_name as string) || undefined,
+          phone: (body.emergency_phone as string) || undefined,
+          relationship: (body.emergency_relationship as string) || undefined,
+        },
+        current_medicines: [],
+        blood_group: (body.blood_group as string) || null,
+      });
       draft.recoveryScores.push({
         patient_id: patientId,
         score: 75,
-        computed_at: new Date().toISOString(),
+        computed_at: now,
       });
       draft.risks.push({
         patient_id: patientId,
         score: 25,
         level: "low",
-        computed_at: new Date().toISOString(),
+        computed_at: now,
       });
     });
+
+    if (body.caregiver_name && body.caregiver_phone) {
+      try {
+        patientCaregiverService.add(profileId, {
+          name: String(body.caregiver_name),
+          phone: String(body.caregiver_phone),
+          relationship: String(body.caregiver_relationship || "Family"),
+          makePrimary: true,
+        });
+      } catch {
+        // Caregiver invite is best-effort; patient record remains valid.
+      }
+    }
+
     return this.getPatient(userId, patientId);
   },
 
@@ -302,9 +374,18 @@ export const doctorRepository = {
           HighRiskPatient["readmission_risk"]
         >,
         disease_progression: undefined,
-        missed_medicines: 0,
-        missed_checkins: 0,
-        escalation_status: "watch",
+        missed_medicines: getStore().medicineEvents.filter(
+          (e) =>
+            e.patient_id === p.id &&
+            (e.status === "missed" || e.status === "skipped"),
+        ).length,
+        missed_checkins: missedCheckinsForPatient(p.id),
+        escalation_status:
+          getStore().alerts.some(
+            (a) => a.patient_id === p.id && a.status === "open",
+          )
+            ? "escalated"
+            : "watch",
         phone: p.phone,
       }));
     if (opts?.sort_by === "missed_medicines") return rows;
@@ -432,6 +513,11 @@ export const doctorRepository = {
       });
     });
 
+    investigationRepository.activateForDischarge(dischargeId);
+
+    const investigationText =
+      investigationRepository.textSummaryForPatient(discharge.patient_id);
+
     const organized = await organizeCareCompanion({
       diagnosis: discharge.diagnosis_text || undefined,
       medicines: discharge.medicines_text || undefined,
@@ -439,10 +525,18 @@ export const doctorRepository = {
       diet_advice: discharge.diet_advice || undefined,
       exercise_advice: discharge.exercise_advice || undefined,
       restrictions: discharge.restrictions || undefined,
-      special_instructions: discharge.special_instructions || undefined,
+      special_instructions: [
+        discharge.special_instructions,
+        investigationText
+          ? `Required investigations:\n${investigationText}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n") || undefined,
       follow_up_date: discharge.follow_up_date || undefined,
       hospital_name: discharge.hospital_name || undefined,
       patient_name: profile?.full_name,
+      investigations: investigationText || undefined,
     });
 
     const filledAt = new Date().toISOString();
@@ -704,6 +798,20 @@ export const doctorRepository = {
       plan.approved_by = doctor.user_id;
       plan.approved_at = now;
       plan.updated_at = now;
+
+      const activeMeds = draft.medicines.filter(
+        (m) => m.patient_id === plan.patient_id && m.active,
+      );
+      const passport = draft.passports.find(
+        (p) => p.patient_id === plan.patient_id,
+      );
+      if (passport) {
+        passport.current_medicines = activeMeds.map((m) => ({
+          name: m.name,
+          dose: m.dose || undefined,
+          time: m.time_slots?.[0] || undefined,
+        }));
+      }
 
       if (patientUserId) {
         draft.notifications.unshift({

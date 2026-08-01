@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   Bell,
   CalendarDays,
+  FlaskConical,
   HeartPulse,
   MessageSquare,
   Pill,
@@ -25,6 +26,7 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   doctor_message: MessageSquare,
   emergency: AlertTriangle,
   health_tip: HeartPulse,
+  investigation: FlaskConical,
 };
 
 export function NotificationsPage() {

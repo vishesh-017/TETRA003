@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ClipboardList,
   FileText,
+  FlaskConical,
   Hospital,
   Pill,
   Stethoscope,
@@ -22,6 +23,7 @@ const ICONS = {
   report: FileText,
   vaccination: Syringe,
   note: FileText,
+  investigation: FlaskConical,
 };
 
 export function MedicalTimeline({ events }: { events: TimelineEvent[] }) {

@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
+import { getStore, IDS } from "@/data/store";
+import { InvestigationPicker } from "@/modules/investigations/components/investigation-picker";
+import { PendingInvestigationsPanel } from "@/modules/investigations/components/pending-investigations";
+import { investigationRepository } from "@/modules/investigations/repository";
+import type { InvestigationDraftInput } from "@/modules/investigations/types";
+
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import {
   AlertBanner,
@@ -23,7 +29,11 @@ import {
   PassportDetailGrid,
   PassportWallet,
 } from "@/modules/identity/components/passport-wallet";
-import { identityRepository } from "@/modules/identity/repository";
+import {
+  useDigitalPassport,
+  useMedicalTimeline,
+} from "@/modules/identity/hooks";
+import { usePatientInvestigations } from "@/modules/investigations/hooks";
 import { buildObservationsForPatient } from "@/modules/prediction/adapters";
 import { CarePlanReview } from "@/modules/doctor/components/care-plan-review";
 import { DischargeForm } from "@/modules/doctor/components/discharge-form";
@@ -68,12 +78,41 @@ export function PatientDetailPage() {
   const checkins = usePatientCheckins(patientId);
   const medicines = usePatientMedicines(patientId);
   const appointments = useDoctorAppointments({ patient_id: patientId });
+  const investigations = usePatientInvestigations(patientId);
+  const digitalPassport = useDigitalPassport(patientId);
+  const timeline = useMedicalTimeline(patientId);
   const mutations = useDoctorMutations();
+  const [investigationDrafts, setInvestigationDrafts] = useState<
+    InvestigationDraftInput[]
+  >([]);
 
   useEffect(() => {
     const fromUrl = searchParams.get("tab");
     if (fromUrl && fromUrl !== tab) setTab(fromUrl);
   }, [searchParams, tab]);
+
+  useEffect(() => {
+    if (!patientId) return;
+    const dischargeId =
+      getStore().discharges.find(
+        (d) => d.patient_id === patientId && d.status === "draft",
+      )?.id ||
+      getStore().discharges.find((d) => d.patient_id === patientId)?.id;
+    const rows = investigationRepository
+      .listForPatient(patientId)
+      .filter((i) => !dischargeId || i.discharge_id === dischargeId || !i.discharge_id)
+      .filter((i) => i.status !== "cancelled" && i.status !== "completed");
+    setInvestigationDrafts(
+      rows.map((r) => ({
+        name: r.name,
+        purpose: r.purpose,
+        due_date: r.due_date,
+        priority: r.priority,
+        notes: r.notes,
+        preparation: r.preparation,
+      })),
+    );
+  }, [patientId, discharges.data, investigations.data]);
 
   const changeTab = (next: string) => {
     setTab(next);
@@ -102,18 +141,7 @@ export function PatientDetailPage() {
     () =>
       patientId ? evaluateHealth(buildObservationsForPatient(patientId)) : null,
     // Recompute when underlying store-backed lists refresh
-    [patientId, checkins.data, medicines.data],
-  );
-
-  const digitalPassport = useMemo(
-    () =>
-      patientId ? identityRepository.getDigitalPassport(patientId) : null,
-    [patientId, patient.data],
-  );
-
-  const timeline = useMemo(
-    () => (patientId ? identityRepository.getTimeline(patientId) : []),
-    [patientId, checkins.data, discharges.data],
+    [patientId, checkins.data, medicines.data, investigations.data],
   );
 
   if (patient.isLoading) return <LoadingScreen fullScreen={false} />;
@@ -131,11 +159,25 @@ export function PatientDetailPage() {
 
   const saveDischarge = (values: DischargeFormSchema) => {
     if (!patientId) return;
-    mutations.saveDischarge.mutate({
-      patientId,
-      dischargeId: latestDraft?.id,
-      body: { ...values, source: "manual" },
-    });
+    const doctorId =
+      getStore().doctors.find((d) => d.id === IDS.doctor)?.id || IDS.doctor;
+    mutations.saveDischarge.mutate(
+      {
+        patientId,
+        dischargeId: latestDraft?.id,
+        body: { ...values, source: "manual" },
+      },
+      {
+        onSuccess: (discharge) => {
+          investigationRepository.replaceForDischarge(
+            patientId,
+            doctorId,
+            discharge.id,
+            investigationDrafts,
+          );
+        },
+      },
+    );
   };
 
   return (
@@ -465,12 +507,12 @@ export function PatientDetailPage() {
       ) : null}
 
       {tab === "passport" ? (
-        digitalPassport ? (
+        digitalPassport.data ? (
           <div className="space-y-4">
-            <PassportWallet passport={digitalPassport} />
-            <EmergencyCard passport={digitalPassport} />
-            <PassportDetailGrid passport={digitalPassport} />
-            <MedicalTimeline events={timeline} />
+            <PassportWallet passport={digitalPassport.data} />
+            <EmergencyCard passport={digitalPassport.data} />
+            <PassportDetailGrid passport={digitalPassport.data} />
+            <MedicalTimeline events={timeline.data || []} />
           </div>
         ) : (
           <Card>
@@ -494,7 +536,7 @@ export function PatientDetailPage() {
                 ) : null}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <DischargeForm
                 initial={latestDraft || latestFinal}
                 saving={mutations.saveDischarge.isPending}
@@ -502,17 +544,40 @@ export function PatientDetailPage() {
                 onSaveDraft={saveDischarge}
                 onFinalize={
                   latestDraft
-                    ? () =>
-                        patientId &&
+                    ? () => {
+                        if (!patientId) return;
+                        const doctorId =
+                          getStore().doctors.find((d) => d.id === IDS.doctor)
+                            ?.id || IDS.doctor;
+                        investigationRepository.replaceForDischarge(
+                          patientId,
+                          doctorId,
+                          latestDraft.id,
+                          investigationDrafts,
+                        );
                         mutations.finalizeDischarge.mutate({
                           dischargeId: latestDraft.id,
                           patientId,
-                        })
+                        });
+                      }
                     : undefined
                 }
               />
+              <InvestigationPicker
+                value={investigationDrafts}
+                onChange={setInvestigationDrafts}
+                disabled={(latestDraft || latestFinal)?.status === "finalized"}
+              />
             </CardContent>
           </Card>
+
+          {patientId ? (
+            <PendingInvestigationsPanel
+              patientId={patientId}
+              title="Investigation compliance"
+              mode="doctor"
+            />
+          ) : null}
 
           {mutations.finalizeDischarge.isPending || reviewCarePlan ? (
             <div className="space-y-3">

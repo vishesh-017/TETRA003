@@ -22,7 +22,41 @@ export type NotificationType =
   | "appointment"
   | "doctor_message"
   | "emergency"
-  | "health_tip";
+  | "health_tip"
+  | "investigation";
+
+export type InvestigationStatus =
+  | "pending"
+  | "scheduled"
+  | "completed"
+  | "overdue"
+  | "cancelled"
+  | "review_required";
+
+export type InvestigationPriority = "routine" | "important" | "urgent";
+
+export interface InvestigationRow {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  discharge_id: string | null;
+  name: string;
+  purpose: string | null;
+  due_date: string;
+  priority: InvestigationPriority;
+  notes: string | null;
+  status: InvestigationStatus;
+  preparation: string | null;
+  completed_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_mime: string | null;
+  reminder_sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface ContactInfo {
   name?: string;
@@ -366,6 +400,7 @@ export interface HealNexusStore {
   appointments: AppointmentRow[];
   notifications: NotificationRow[];
   discharges: DischargeRow[];
+  investigations: InvestigationRow[];
   alerts: AlertRow[];
   healthRecords: HealthRecordRow[];
   governmentProfiles: GovernmentProfileRow[];
@@ -374,7 +409,7 @@ export interface HealNexusStore {
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 8;
+export const STORE_VERSION = 9;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {

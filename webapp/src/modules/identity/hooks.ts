@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
+import { subscribeStore } from "@/data/store";
+import { invalidateCareGraph } from "@/lib/care-graph";
 import { identityRepository } from "@/modules/identity/repository";
 import type {
   PmjayEligibilityResult,
@@ -15,9 +18,19 @@ const keys = {
   emergency: (token: string) => ["identity", "emergency", token] as const,
 };
 
+function useInvalidateIdentityOnStore() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    return subscribeStore(() => {
+      void qc.invalidateQueries({ queryKey: ["identity"] });
+    });
+  }, [qc]);
+}
+
 export function useDigitalPassport(patientOrUserId?: string | null) {
   const { user } = useAuth();
   const id = patientOrUserId ?? user?.id;
+  useInvalidateIdentityOnStore();
   return useQuery({
     queryKey: keys.passport(id || "none"),
     queryFn: () => identityRepository.getDigitalPassport(id!),
@@ -28,6 +41,7 @@ export function useDigitalPassport(patientOrUserId?: string | null) {
 export function useMedicalTimeline(patientOrUserId?: string | null) {
   const { user } = useAuth();
   const id = patientOrUserId ?? user?.id;
+  useInvalidateIdentityOnStore();
   return useQuery({
     queryKey: keys.timeline(id || "none"),
     queryFn: () => identityRepository.getTimeline(id!),
@@ -38,6 +52,7 @@ export function useMedicalTimeline(patientOrUserId?: string | null) {
 export function useHealthRecords(patientOrUserId?: string | null) {
   const { user } = useAuth();
   const id = patientOrUserId ?? user?.id;
+  useInvalidateIdentityOnStore();
   return useQuery({
     queryKey: keys.records(id || "none"),
     queryFn: () => identityRepository.listHealthRecords(id!),
@@ -48,6 +63,7 @@ export function useHealthRecords(patientOrUserId?: string | null) {
 export function useBenefitsDashboard(patientOrUserId?: string | null) {
   const { user } = useAuth();
   const id = patientOrUserId ?? user?.id;
+  useInvalidateIdentityOnStore();
   return useQuery({
     queryKey: keys.benefits(id || "none"),
     queryFn: () => identityRepository.getBenefitsDashboard(id!),
@@ -69,13 +85,7 @@ export function useIdentityMutations() {
   const id = user?.id;
 
   const invalidate = async () => {
-    if (!id) return;
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: keys.passport(id) }),
-      qc.invalidateQueries({ queryKey: keys.timeline(id) }),
-      qc.invalidateQueries({ queryKey: keys.records(id) }),
-      qc.invalidateQueries({ queryKey: keys.benefits(id) }),
-    ]);
+    await invalidateCareGraph(qc);
   };
 
   const importAbha = useMutation({

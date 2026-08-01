@@ -81,27 +81,11 @@ function progressFromTasks(tasks: TodayTask[]): number {
   return Math.round((done / tasks.length) * 100);
 }
 
-function bumpRecovery(patientId: string, delta: number) {
-  updateStore((draft) => {
-    const row = draft.recoveryScores.find((r) => r.patient_id === patientId);
-    if (!row) {
-      draft.recoveryScores.push({
-        patient_id: patientId,
-        score: Math.min(100, Math.max(0, 70 + delta)),
-        computed_at: new Date().toISOString(),
-      });
-      return;
-    }
-    row.score = Math.min(100, Math.max(0, row.score + delta));
-    row.computed_at = new Date().toISOString();
-    const risk = draft.risks.find((r) => r.patient_id === patientId);
-    if (risk) {
-      risk.score = Math.max(5, 100 - row.score);
-      risk.level =
-        row.score >= 80 ? "low" : row.score >= 60 ? "moderate" : "high";
-      risk.computed_at = row.computed_at;
-    }
-  });
+async function refreshScoresFromEngine(patientId: string) {
+  const { syncScoresFromEngine } = await import(
+    "@/modules/health-pipeline/process-checkin"
+  );
+  syncScoresFromEngine(patientId);
 }
 
 async function syncTaskToSupabase(
@@ -230,8 +214,7 @@ export const patientRepository = {
         });
       }
     });
-    if (status === "completed") bumpRecovery(patientId, 1);
-    if (status === "skipped") bumpRecovery(patientId, -0.5);
+    await refreshScoresFromEngine(patientId);
     await syncTaskToSupabase(patientId, taskId, status);
     return this.getTodayDashboard(userId);
   },
@@ -294,7 +277,7 @@ export const patientRepository = {
         });
       }
     });
-    bumpRecovery(patientId, status === "taken" ? 1.5 : -1);
+    await refreshScoresFromEngine(patientId);
 
     if (env.isSupabaseConfigured) {
       const supabase = getSupabaseClient();

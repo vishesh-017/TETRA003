@@ -21,6 +21,8 @@ export interface IntelligenceSummary {
   missed_checkins: number;
   appointments_today: number;
   emergency_alerts: number;
+  investigation_compliance: number;
+  investigation_overdue: number;
 }
 
 export interface PriorityPatientCard {

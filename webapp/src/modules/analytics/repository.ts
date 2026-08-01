@@ -247,6 +247,15 @@ function buildKpis(
   const followupRate = (completed / Math.max(totalAppts, 1)) * 100;
   const adherence = avg(current.map((r) => r.adherence));
   const attention = current.filter((r) => r.needs_attention).length;
+  const patientIds = new Set(current.map((r) => r.patient_id));
+  const invRows = getStore().investigations.filter(
+    (i) => patientIds.has(i.patient_id) && i.status !== "cancelled",
+  );
+  const invDone = invRows.filter(
+    (i) => i.status === "completed" || i.status === "review_required",
+  ).length;
+  const invCompliance =
+    (invDone / Math.max(invRows.length, 1)) * 100;
 
   const mk = (
     id: string,
@@ -331,6 +340,14 @@ function buildKpis(
       Math.max(0, Math.round(attention / prevFactor)),
       "Which patients need attention?",
       true,
+    ),
+    mk(
+      "investigation_compliance",
+      "Investigation Compliance",
+      invCompliance,
+      "percent",
+      invCompliance * prevFactor,
+      "Are prescribed investigations being completed?",
     ),
   ];
 }

@@ -6,8 +6,9 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/auth-context";
-import { doctorApi } from "@/modules/doctor/api";
+import { invalidateCareGraph } from "@/lib/care-graph";
 import { queryKeys } from "@/lib/query-keys";
+import { doctorApi } from "@/modules/doctor/api";
 
 export function useDoctorToken() {
   const { accessToken } = useAuth();
@@ -107,17 +108,12 @@ export function useDoctorMutations() {
   const token = useDoctorToken();
   const qc = useQueryClient();
 
-  const invalidatePatients = async () => {
-    await qc.invalidateQueries({ queryKey: queryKeys.patients.all });
-    await qc.invalidateQueries({ queryKey: ["doctor"] });
-  };
-
   const createPatient = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       doctorApi.createPatient(token, body),
-    onSuccess: async () => {
+    onSuccess: async (patient) => {
       toast.success("Patient added");
-      await invalidatePatients();
+      await invalidateCareGraph(qc, { patientId: patient.id });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -127,17 +123,16 @@ export function useDoctorMutations() {
       doctorApi.updatePatient(token, id, body),
     onSuccess: async (_data, vars) => {
       toast.success("Patient updated");
-      await qc.invalidateQueries({ queryKey: queryKeys.patients.detail(vars.id) });
-      await invalidatePatients();
+      await invalidateCareGraph(qc, { patientId: vars.id });
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const archivePatient = useMutation({
     mutationFn: (id: string) => doctorApi.archivePatient(token, id),
-    onSuccess: async () => {
+    onSuccess: async (_data, id) => {
       toast.success("Patient archived");
-      await invalidatePatients();
+      await invalidateCareGraph(qc, { patientId: id });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -157,9 +152,7 @@ export function useDoctorMutations() {
         : doctorApi.createDischarge(token, patientId, body),
     onSuccess: async (_data, vars) => {
       toast.success("Discharge draft saved");
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "discharges", vars.patientId],
-      });
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -171,26 +164,12 @@ export function useDoctorMutations() {
       dischargeId: string;
       patientId: string;
     }) => doctorApi.finalizeDischarge(token, dischargeId),
-    onMutate: async (vars) => {
+    onMutate: async () => {
       toast.message("Generating AI Recovery Plan…");
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "discharges", vars.patientId],
-      });
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "care-plans", vars.patientId],
-      });
     },
     onSuccess: async (_data, vars) => {
       toast.success("AI Care Companion draft ready for review");
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "discharges", vars.patientId],
-      });
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "care-plans", vars.patientId],
-      });
-      await qc.invalidateQueries({
-        queryKey: queryKeys.patients.detail(vars.patientId),
-      });
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -206,9 +185,7 @@ export function useDoctorMutations() {
     }) => doctorApi.updateCarePlanDraft(token, carePlanId, body),
     onSuccess: async (_data, vars) => {
       toast.success("Draft updates saved");
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "care-plans", vars.patientId],
-      });
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -224,9 +201,7 @@ export function useDoctorMutations() {
     }) => doctorApi.rejectCarePlan(token, carePlanId, body),
     onSuccess: async (_data, vars) => {
       toast.message("AI draft rejected — not published to patient");
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "care-plans", vars.patientId],
-      });
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -242,14 +217,7 @@ export function useDoctorMutations() {
     }) => doctorApi.approveCarePlan(token, carePlanId, body),
     onSuccess: async (_data, vars) => {
       toast.success("Recovery plan published to patient & caregiver");
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "care-plans", vars.patientId],
-      });
-      await qc.invalidateQueries({
-        queryKey: ["doctor", "medicines", vars.patientId],
-      });
-      await qc.invalidateQueries({ queryKey: ["patient"] });
-      await qc.invalidateQueries({ queryKey: ["caregiver"] });
+      await invalidateCareGraph(qc, { patientId: vars.patientId });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -258,9 +226,7 @@ export function useDoctorMutations() {
     mutationFn: (id: string) => doctorApi.aiSummary(token, id),
     onSuccess: async (_data, id) => {
       toast.success("AI summary refreshed");
-      await qc.invalidateQueries({
-        queryKey: queryKeys.patients.detail(id),
-      });
+      await invalidateCareGraph(qc, { patientId: id });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -268,10 +234,11 @@ export function useDoctorMutations() {
   const createAppointment = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       doctorApi.createAppointment(token, body),
-    onSuccess: async () => {
+    onSuccess: async (_data, body) => {
       toast.success("Appointment scheduled");
-      await qc.invalidateQueries({ queryKey: ["doctor", "appointments"] });
-      await qc.invalidateQueries({ queryKey: ["doctor", "dashboard"] });
+      await invalidateCareGraph(qc, {
+        patientId: body.patient_id as string | undefined,
+      });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -281,7 +248,7 @@ export function useDoctorMutations() {
       doctorApi.updateAppointment(token, id, body),
     onSuccess: async () => {
       toast.success("Appointment updated");
-      await qc.invalidateQueries({ queryKey: ["doctor", "appointments"] });
+      await invalidateCareGraph(qc);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -290,7 +257,7 @@ export function useDoctorMutations() {
     mutationFn: (id: string) => doctorApi.cancelAppointment(token, id),
     onSuccess: async () => {
       toast.success("Appointment cancelled");
-      await qc.invalidateQueries({ queryKey: ["doctor", "appointments"] });
+      await invalidateCareGraph(qc);
     },
     onError: (error: Error) => toast.error(error.message),
   });

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
+import { invalidateCareGraph } from "@/lib/care-graph";
 import {
   countPendingSync,
   listNotifications,
@@ -104,7 +105,7 @@ export function useSaveScreening() {
         qc.invalidateQueries({ queryKey: keys.pending }),
         qc.invalidateQueries({ queryKey: keys.notifications }),
         qc.invalidateQueries({ queryKey: ["rural", "dashboard"] }),
-        qc.invalidateQueries({ queryKey: ["doctor"] }),
+        invalidateCareGraph(qc),
       ]);
     },
   });
@@ -122,8 +123,8 @@ export function useRuralSync() {
     onSuccess: async () => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["rural"] }),
-        qc.invalidateQueries({ queryKey: ["doctor"] }),
         qc.invalidateQueries({ queryKey: ["predict"] }),
+        invalidateCareGraph(qc),
       ]);
     },
   });

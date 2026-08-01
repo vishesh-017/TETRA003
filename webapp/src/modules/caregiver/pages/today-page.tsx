@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 
 import { CareTimeline } from "@/modules/caregiver/components/care-timeline";
 import { FamilySwitcher } from "@/modules/caregiver/components/family-switcher";
+import { CaregiverInvestigationStatus } from "@/modules/caregiver/components/investigation-status";
 import { SmartAlerts } from "@/modules/caregiver/components/smart-alerts";
 import { useCaregiver } from "@/modules/caregiver/context";
 
@@ -18,14 +19,20 @@ export function CaregiverTodayPage() {
           {selected.name.split(" ")[0]}&apos;s day
         </h1>
         <p className="mt-2 text-muted-foreground">
-          A calm timeline of medicines, vitals, walks, and reminders — so you always know
-          what comes next.
+          Medicines, vitals, walks, and investigation reminders — so you always
+          know what comes next.
         </p>
       </motion.div>
       <FamilySwitcher />
       <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
         <CareTimeline items={timeline} title="Care timeline" />
-        <SmartAlerts alerts={alerts} title="Needs attention" />
+        <div className="space-y-5">
+          <SmartAlerts alerts={alerts} title="Needs attention" />
+          <CaregiverInvestigationStatus
+            patientId={selected.id}
+            patientName={selected.name}
+          />
+        </div>
       </div>
     </div>
   );

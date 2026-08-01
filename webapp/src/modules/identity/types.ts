@@ -60,7 +60,8 @@ export interface TimelineEvent {
     | "appointment"
     | "report"
     | "vaccination"
-    | "note";
+    | "note"
+    | "investigation";
   title: string;
   summary: string;
   at: string;

@@ -68,6 +68,11 @@ const AppointmentsPage = lazy(() =>
     default: m.AppointmentsPage,
   })),
 );
+const DoctorInvestigationsPage = lazy(() =>
+  import("@/modules/doctor/pages/investigations-page").then((m) => ({
+    default: m.InvestigationsPage,
+  })),
+);
 
 const PatientHomePage = lazy(() =>
   import("@/modules/patient/pages/home-page").then((m) => ({
@@ -77,6 +82,11 @@ const PatientHomePage = lazy(() =>
 const CarePlanPage = lazy(() =>
   import("@/modules/patient/pages/care-plan-page").then((m) => ({
     default: m.CarePlanPage,
+  })),
+);
+const PatientInvestigationsPage = lazy(() =>
+  import("@/modules/patient/pages/investigations-page").then((m) => ({
+    default: m.PatientInvestigationsPage,
   })),
 );
 const CheckInPage = lazy(() =>
@@ -381,6 +391,14 @@ export function AppRouter() {
                 </Lazy>
               }
             />
+            <Route
+              path="/doctor/investigations"
+              element={
+                <Lazy>
+                  <DoctorInvestigationsPage />
+                </Lazy>
+              }
+            />
           </Route>
         </Route>
 
@@ -399,6 +417,14 @@ export function AppRouter() {
               element={
                 <Lazy>
                   <CarePlanPage />
+                </Lazy>
+              }
+            />
+            <Route
+              path="/patient/investigations"
+              element={
+                <Lazy>
+                  <PatientInvestigationsPage />
                 </Lazy>
               }
             />
