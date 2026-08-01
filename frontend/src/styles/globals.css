@@ -1,0 +1,137 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Source Serif 4", ui-serif, Georgia, serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Healthcare: Blue primary, Green secondary, White surfaces */
+  --background: 210 40% 98%;
+  --foreground: 215 32% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 32% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 32% 16%;
+  --primary: 211 82% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 152 48% 40%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 210 30% 94%;
+  --muted-foreground: 215 16% 42%;
+  --accent: 204 70% 94%;
+  --accent-foreground: 211 70% 28%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 28% 88%;
+  --input: 214 28% 88%;
+  --ring: 211 82% 42%;
+  --success: 152 48% 40%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 26 83% 14%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 215 32% 16%;
+  --sidebar-border: 214 28% 90%;
+  --sidebar-accent: 210 40% 96%;
+  --radius: 0.9rem;
+  --shadow-soft: 0 8px 30px rgba(15, 53, 96, 0.08);
+}
+
+.dark {
+  --background: 222 40% 8%;
+  --foreground: 210 30% 96%;
+  --card: 222 34% 11%;
+  --card-foreground: 210 30% 96%;
+  --popover: 222 34% 11%;
+  --popover-foreground: 210 30% 96%;
+  --primary: 211 90% 58%;
+  --primary-foreground: 222 40% 8%;
+  --secondary: 152 45% 42%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 222 24% 16%;
+  --muted-foreground: 215 16% 68%;
+  --accent: 215 30% 18%;
+  --accent-foreground: 210 30% 96%;
+  --destructive: 0 70% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 20% 20%;
+  --input: 222 20% 20%;
+  --ring: 211 90% 58%;
+  --success: 152 45% 42%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 26 83% 14%;
+  --sidebar: 222 34% 10%;
+  --sidebar-foreground: 210 30% 96%;
+  --sidebar-border: 222 20% 18%;
+  --sidebar-accent: 222 24% 14%;
+  --shadow-soft: 0 10px 36px rgba(0, 0, 0, 0.35);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply min-h-dvh bg-background font-sans text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top left, hsl(211 82% 42% / 0.06), transparent 28%),
+      radial-gradient(circle at top right, hsl(152 48% 40% / 0.05), transparent 24%);
+  }
+
+  #root {
+    @apply min-h-dvh;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
