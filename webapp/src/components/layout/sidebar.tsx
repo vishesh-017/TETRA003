@@ -7,6 +7,7 @@ import {
   HeartPulse,
   Hospital,
   LayoutDashboard,
+  LogOut,
   MapPinned,
   Pill,
   Settings,
@@ -17,7 +18,7 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { env } from "@/config/env";
@@ -71,9 +72,16 @@ const NAV_BY_ROLE: Record<
 };
 
 export function Sidebar({ open = false, onClose }: SidebarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role ?? "patient";
   const items = NAV_BY_ROLE[role];
+
+  const handleLogout = async () => {
+    onClose?.();
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <>
@@ -136,10 +144,20 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
+        <div className="space-y-3 border-t border-sidebar-border p-4">
           <div className="rounded-xl bg-sidebar-accent p-3 text-xs text-muted-foreground">
             AI Care Companion assists clinicians. Doctors remain in control.
           </div>
+          {user ? (
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => void handleLogout()}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          ) : null}
         </div>
       </aside>
     </>

@@ -1,94 +1,62 @@
-import {
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-} from "recharts";
 import { Link } from "react-router-dom";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ErrorState } from "@/components/feedback/error-state";
-import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import {
+  AlertBanner,
+  InsightsPanel,
+  RecoveryCard,
+  RiskCard,
+  TrendCard,
+} from "@/components/health-engine";
 import { buttonVariants } from "@/components/ui/button";
+import { useHealthIntelligence } from "@/hooks/health-engine";
 import { cn } from "@/lib/utils";
-import { ProgressBar } from "@/modules/patient/components/progress-ring";
-import { usePatientRecovery } from "@/modules/patient/hooks";
 
 export function RecoveryPage() {
-  const query = usePatientRecovery();
+  const intel = useHealthIntelligence();
 
-  if (query.isLoading)
-    return <LoadingScreen label="Loading recovery score…" fullScreen={false} />;
-  if (query.isError || !query.data)
+  if (!intel) {
     return (
-      <ErrorState
-        description="Could not load recovery score."
-        onRetry={() => query.refetch()}
-      />
-    );
-
-  const data = query.data;
-  const chart = [
-    { factor: "Medicines", value: data.factors.medicine_adherence },
-    { factor: "Check-ins", value: data.factors.daily_checkins },
-    { factor: "Tasks", value: data.factors.task_completion },
-    { factor: "Sleep", value: data.factors.sleep },
-  ];
-
-  return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 pb-10">
-      <div>
-        <h1 className="font-display text-3xl font-semibold">Recovery Score</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Updates as you complete tasks, medicines, and check-ins.
+      <div className="mx-auto max-w-xl space-y-4 pb-10">
+        <h1 className="font-display text-3xl font-semibold">
+          Health Intelligence
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Sign in as a patient to evaluate recovery signals.
         </p>
       </div>
+    );
+  }
 
-      <Card>
-        <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Current score</p>
-            <p className="font-display text-5xl font-semibold text-primary">
-              {data.score}
-              <span className="text-lg text-muted-foreground"> / 100</span>
-            </p>
-            <Badge className="mt-2 capitalize" variant="secondary">
-              Readmission risk: {data.risk_level}
-            </Badge>
-          </div>
-          <div className="w-full max-w-xs space-y-2">
-            <ProgressBar value={data.score} />
-            <Link
-              to="/patient/lifestyle-simulator"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
-              Open Lifestyle Simulator
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+  return (
+    <div className="mx-auto flex max-w-5xl flex-col gap-5 pb-10">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-semibold">
+            Health Intelligence
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Continuous post-discharge monitoring in the app — assistive only.
+            Doctors decide.
+          </p>
+        </div>
+        <Link
+          to="/patient/lifestyle-simulator"
+          className={cn(buttonVariants({ variant: "outline" }))}
+        >
+          Open Lifestyle Simulator
+        </Link>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Factor breakdown</CardTitle>
-        </CardHeader>
-        <CardContent className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={chart}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="factor" />
-              <Radar
-                dataKey="value"
-                stroke="hsl(var(--primary))"
-                fill="hsl(var(--primary))"
-                fillOpacity={0.35}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <AiDisclaimer />
+      <AlertBanner alert={intel.alerts} />
+      <RecoveryCard recovery={intel.recovery} />
+      <RiskCard
+        readmission={intel.readmission}
+        progression={intel.progression.assessments}
+      />
+      <InsightsPanel explain={intel.explain} recovery={intel.recovery} />
+      <TrendCard trends={intel.trends} />
     </div>
   );
 }

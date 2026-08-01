@@ -64,6 +64,13 @@ def health() -> HealthResponse:
             "health-assistant",
             "education",
             "government-guidance",
+            "predict/recovery-score",
+            "predict/readmission",
+            "predict/disease-progression",
+            "predict/trends",
+            "predict/lifestyle-simulation",
+            "predict/alerts",
+            "predict/explain",
         ],
     )
 
@@ -75,5 +82,6 @@ def root() -> dict[str, str]:
         "docs": "/docs",
         "health": "/health",
         "ai_prefix": "/ai",
+        "predict_prefix": "/predict",
         "role": "ai_care_companion",
     }

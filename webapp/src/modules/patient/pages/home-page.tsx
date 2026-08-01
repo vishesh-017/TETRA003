@@ -2,11 +2,13 @@ import { CalendarDays, HeartPulse } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
+import { AlertBanner } from "@/components/health-engine";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { ErrorState } from "@/components/feedback/error-state";
 import { buttonVariants } from "@/components/ui/button";
+import { useHealthIntelligence } from "@/hooks/health-engine";
 import { cn } from "@/lib/utils";
 import { ProgressBar } from "@/modules/patient/components/progress-ring";
 import { PassportPreview } from "@/modules/patient/components/passport-preview";
@@ -29,6 +31,7 @@ export function PatientHomePage() {
   const dash = useTodayDashboard();
   const passport = usePatientPassport();
   const { setTaskStatus } = usePatientMutations();
+  const intel = useHealthIntelligence();
 
   if (dash.isLoading)
     return <LoadingScreen label="Loading your recovery journey…" fullScreen={false} />;
@@ -65,7 +68,24 @@ export function PatientHomePage() {
           </div>
           <ProgressBar value={data.progress_percent} />
         </div>
+
+        {intel ? (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Badge variant="outline">
+              Recovery Score {intel.recovery.recovery_score.toFixed(0)}
+            </Badge>
+            <Badge className="capitalize">{intel.readmission.risk_category} risk</Badge>
+            <Link
+              to="/patient/recovery-score"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
+              View insights
+            </Link>
+          </div>
+        ) : null}
       </motion.section>
+
+      {intel ? <AlertBanner alert={intel.alerts} /> : null}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

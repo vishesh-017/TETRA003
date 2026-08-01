@@ -26,6 +26,8 @@ Clean architecture: **routes → services → providers**. No CRUD APIs.
 
 ## Modules
 
+### Care Companion AI (`/ai/*`)
+
 | Endpoint | Module |
 |---|---|
 | `POST /ai/care-companion` | Organize discharge → daily schedule JSON |
@@ -33,6 +35,20 @@ Clean architecture: **routes → services → providers**. No CRUD APIs.
 | `POST /ai/health-assistant` | Exa-grounded education (+ sources) |
 | `POST /ai/education` | Localized education (en / hi / gu) |
 | `POST /ai/government-guidance` | PM-JAY guidance via curated + Exa |
+
+### Predictive Intelligence Engine (`/predict/*`)
+
+| Endpoint | Module |
+|---|---|
+| `POST /predict/recovery-score` | Recovery Score 0–100 + factors |
+| `POST /predict/readmission` | Readmission % + explainable drivers |
+| `POST /predict/disease-progression` | Condition worsening risk |
+| `POST /predict/trends` | Trend detection + NL summaries |
+| `POST /predict/lifestyle-simulation` | Before/after lifestyle counterfactuals |
+| `POST /predict/alerts` | Alert decision policy |
+| `POST /predict/explain` | Structured WHY attribution |
+
+Rule-based now; XGBoost/RF can swap behind `app/prediction/models` without API changes.
 
 Also: `GET /health`, `GET /docs`
 

@@ -1,5 +1,5 @@
-import { Bell, Menu, Moon, Sun } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Bell, LogOut, Menu, Moon, Sun } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
@@ -14,6 +14,12 @@ interface NavbarProps {
 export function Navbar({ onMenuClick, title }: NavbarProps) {
   const { user, logout, isDemoMode } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-card/80 backdrop-blur-md">
@@ -59,10 +65,19 @@ export function Navbar({ onMenuClick, title }: NavbarProps) {
                 {user?.role?.replace("_", " ")}
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void logout()}>
+            <Button variant="outline" size="sm" onClick={() => void handleLogout()}>
               Logout
             </Button>
           </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="sm:hidden"
+            aria-label="Logout"
+            onClick={() => void handleLogout()}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </header>

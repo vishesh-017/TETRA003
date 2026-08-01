@@ -17,6 +17,7 @@ import { MedicinesPage } from "@/modules/patient/pages/medicines-page";
 import { NotificationsPage } from "@/modules/patient/pages/notifications-page";
 import { PassportPage } from "@/modules/patient/pages/passport-page";
 import { ProfilePage } from "@/modules/patient/pages/profile-page";
+import { LifestyleSimulatorPage } from "@/modules/patient/pages/lifestyle-simulator-page";
 import { RecoveryPage } from "@/modules/patient/pages/recovery-page";
 import { SettingsPage } from "@/modules/patient/pages/settings-page";
 import { LoginPage } from "@/pages/auth/login-page";
@@ -59,13 +60,7 @@ export function AppRouter() {
             <Route path="/patient/recovery-score" element={<RecoveryPage />} />
             <Route
               path="/patient/lifestyle-simulator"
-              element={
-                <ModulePlaceholder
-                  title="Lifestyle Simulator"
-                  description="Adjust weight, exercise, sleep, water intake, and medication adherence to visualize Recovery Score and risk. Full simulator UI in a later pass."
-                  showAiDisclaimer
-                />
-              }
+              element={<LifestyleSimulatorPage />}
             />
           </Route>
         </Route>

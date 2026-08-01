@@ -2,13 +2,21 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import {
+  AlertBanner,
+  InsightsPanel,
+  RecoveryCard,
+  RiskCard,
+} from "@/components/health-engine";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import { evaluateHealth } from "@/lib/health-engine";
 import { cn } from "@/lib/utils";
+import { buildObservationsForPatient } from "@/modules/prediction/adapters";
 import { CarePlanReview } from "@/modules/doctor/components/care-plan-review";
 import { DischargeForm } from "@/modules/doctor/components/discharge-form";
 import { RiskBadge } from "@/modules/doctor/components/risk-badge";
@@ -73,6 +81,12 @@ export function PatientDetailPage() {
   }
 
   const data = patient.data;
+
+  const health = useMemo(
+    () =>
+      patientId ? evaluateHealth(buildObservationsForPatient(patientId)) : null,
+    [patientId, checkins.dataUpdatedAt, medicines.dataUpdatedAt],
+  );
 
   const saveDischarge = (values: DischargeFormSchema) => {
     if (!patientId) return;
@@ -260,11 +274,34 @@ export function PatientDetailPage() {
       ) : null}
 
       {tab === "risk" ? (
-        <div className="grid gap-4 md:grid-cols-3">
-          <InfoCard title="Readmission risk" value={data.risk_level || "unknown"} />
-          <InfoCard title="Disease progression" value={data.disease_progression || "stable"} />
-          <InfoCard title="Recovery Score" value={data.recovery_score ?? "—"} />
-        </div>
+        health ? (
+          <div className="space-y-4">
+            <AlertBanner alert={health.alerts} />
+            <RecoveryCard recovery={health.recovery} />
+            <RiskCard
+              readmission={health.readmission}
+              progression={health.progression.assessments}
+            />
+            <InsightsPanel
+              explain={health.explain}
+              recovery={health.recovery}
+            />
+            <p className="text-xs text-muted-foreground">
+              In-app Health Intelligence Engine — assistive CDS only. Stored risk
+              band: {data.risk_level || "unknown"} · progression:{" "}
+              {data.disease_progression || "stable"}.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            <InfoCard title="Readmission risk" value={data.risk_level || "unknown"} />
+            <InfoCard
+              title="Disease progression"
+              value={data.disease_progression || "stable"}
+            />
+            <InfoCard title="Recovery Score" value={data.recovery_score ?? "—"} />
+          </div>
+        )
       ) : null}
 
       {tab === "passport" ? (
