@@ -134,8 +134,8 @@ export interface CheckInInput {
 }
 
 export interface RecoveryView {
-  score: number;
-  risk_level: RiskLevel;
+  score: number | null;
+  risk_level: RiskLevel | null;
   factors: {
     medicine_adherence: number;
     daily_checkins: number;

@@ -565,7 +565,7 @@ export function AppointmentsPage() {
                         className="bg-emerald-600 text-white hover:bg-emerald-700"
                         onClick={() => {
                           setPostVisitFor(appt);
-                          setRx("");
+                          setRxLines([]);
                           setVisitNotes("");
                         }}
                       >
