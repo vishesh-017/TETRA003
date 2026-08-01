@@ -6,6 +6,8 @@
 **Classification:** Internal Product Engineering  
 **Tagline:** *Connecting Patients, Doctors & AI Beyond Hospital Walls.*
 
+> **Binding update (v1.1):** See [`FINALIZED_ARCHITECTURE.md`](./FINALIZED_ARCHITECTURE.md) for finalized decisions on Recovery Score, Lifestyle Simulator, demo OCR, rule-based PM-JAY, mock ABHA, simplified offline sync, three analytics charts, Ahmedabad maps, and AI Care Companion provider abstraction. Where this document conflicts with v1.1, **v1.1 wins**.
+
 ---
 
 ## Document Control
@@ -39,7 +41,7 @@ HealNexus is an AI-assisted **Continuity of Care** platform that extends clinica
 | Data | Supabase PostgreSQL | Managed Postgres, Row Level Security |
 | AI | Exa AI + internal orchestration | Retrieval + explanation; never clinical authority |
 | ML | Rule engine → RF/XGBoost | Explainable risk scores with doctor override |
-| Offline | Local store + sync queue | Rural health worker resilience |
+| Offline | IndexedDB / localStorage + simulated sync | Rural health worker resilience (no conflict engine) |
 | Maps | Leaflet + OpenStreetMap | Hospital finder (Ahmedabad focus initially) |
 
 ## 1.3 High-Level System Context
@@ -80,7 +82,7 @@ HealNexus is an AI-assisted **Continuity of Care** platform that extends clinica
 6. **Rural Care** — offline screening, sync, local language education  
 7. **Intelligence** — Care Companion, Health Assistant, summaries, explanations  
 8. **Geo Services** — Ahmedabad hospital finder, directions  
-9. **Analytics & Reporting** — adherence, trends, weekly AI report, PDF export  
+9. **Analytics & Reporting** — exactly three charts: Blood Sugar, Blood Pressure, Recovery Score / Readmission · Recovery Score as primary KPI · Lifestyle Simulator  
 
 ## 1.5 Non-Negotiable Clinical Safety Boundary
 
@@ -741,11 +743,14 @@ Check-in / missed meds / worsening vitals
 ### Maps
 - `GET /maps/hospitals` (filters: type, pmjay, emergency, bbox)
 
-### Analytics
-- `GET /analytics/adherence`  
-- `GET /analytics/trends`  
-- `GET /analytics/weekly-report`  
-- `POST /analytics/weekly-report/export-pdf`
+### Analytics (exactly three chart series)
+- `GET /analytics/blood-sugar-trend`  
+- `GET /analytics/blood-pressure-trend`  
+- `GET /analytics/recovery-readmission-trend`  
+
+### Recovery Score & Lifestyle Simulator
+- `GET /patients/{id}/recovery-score`  
+- `POST /patients/{id}/lifestyle-simulator`
 
 ### System
 - `GET /health` · `GET /ready`
@@ -828,7 +833,7 @@ PatientShell
 | Auth session | Supabase client + thin AuthProvider | JWT user, role |
 | UI ephemeral | React local state / URL search params | Filters, drawers, tabs |
 | Cross-route UI | Zustand (optional, minimal) | Sidebar collapsed, offline banner |
-| Rural offline | IndexedDB + sync engine | Queued mutations, cached education |
+| Rural offline | IndexedDB / localStorage + simulated sync | Pending → synced demo flow |
 | AI streaming | Query mutation + local stream buffer | Assistant tokens |
 
 **Rules**
@@ -864,7 +869,7 @@ PatientShell
 | Env vars | `SCREAMING_SNAKE` | `EXA_API_KEY` |
 | Test files | `*.test.ts` / `test_*.py` | `test_risk_service.py` |
 
-**Module file set (frontend) recommended:**
+**Module file set (webapp / TypeScript core) recommended:**
 `index.ts` · `routes.tsx` · `api.ts` · `schemas.ts` · `components/` · `hooks/` · `pages/`
 
 ---
@@ -1067,41 +1072,31 @@ Separate from model:
 
 ---
 
-# 18. Offline Synchronization Strategy
+# 18. Offline Mode Strategy (Simplified)
 
 ## 18.1 Scope
 
-Applies primarily to **Rural Module** (and optionally patient check-in resilience later).
+Applies primarily to **Rural Module**.
 
 ## 18.2 Client Local Store
 
-- Screening sessions  
-- Pending mutations (check-ins, vitals, education acknowledgements)  
-- Cached PM-JAY / education content packs by locale  
-- Last successful `pull_cursor`
+- IndexedDB when available, otherwise `localStorage`  
+- Screening / offline records with `sync_state: pending | synced`  
+- Cached education / PM-JAY rule content for demo use  
 
-## 18.3 Sync Protocol
+## 18.3 Simulated Sync
 
-1. **Push:** send batch of mutations with unique `client_mutation_id`  
-2. Server applies idempotently; returns accepted / conflict / rejected  
-3. **Pull:** fetch patient assignment updates, care plan snapshots, education packs  
-4. Update local DB; clear acknowledged mutations  
+1. Capture records offline  
+2. User taps **Sync now**  
+3. Client marks pending records as synced (and may POST to API later)  
+4. **No** complex conflict-resolution engine in MVP  
 
-## 18.4 Conflict Policy
+## 18.4 UX Requirements
 
-| Conflict | Resolution |
-|---|---|
-| Duplicate mutation id | Ignore (success) |
-| Concurrent check-ins | Keep both if different timestamps; else server wins |
-| Care plan edits offline | Reject; care plans are doctor-authoritative online |
-| Alert ack offline | Last ack wins |
-
-## 18.5 UX Requirements
-
-- Persistent sync status chip  
+- Offline status chip  
 - Pending count  
 - Manual “Sync now”  
-- Clear offline education availability  
+- Clear demo labeling  
 
 ---
 

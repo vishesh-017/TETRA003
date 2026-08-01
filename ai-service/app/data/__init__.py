@@ -1,0 +1,1 @@
+"""Static curated content packs."""

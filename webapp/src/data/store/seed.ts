@@ -1,0 +1,403 @@
+import {
+  IDS,
+  type CareTaskRow,
+  type HealNexusStore,
+  type MedicineRow,
+  type NotificationRow,
+  STORE_VERSION,
+} from "./types";
+
+function iso(daysOffset = 0, hour = 12): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  d.setHours(hour, 0, 0, 0);
+  return d.toISOString();
+}
+
+function uid(suffix: string): string {
+  return `00000000-0000-4000-8000-${suffix.padStart(12, "0")}`;
+}
+
+function defaultTasks(patientId: string, carePlanId: string): CareTaskRow[] {
+  const items: Array<[string, string, CareTaskRow["period"], number]> = [
+    ["Morning Medicine", "Take prescribed morning dose with water", "morning", 1],
+    ["Breakfast", "Eat a balanced low-sugar breakfast", "morning", 2],
+    ["Water Reminder", "Drink a full glass of water", "morning", 3],
+    ["Blood Pressure Check", "Record BP using your home monitor", "morning", 4],
+    ["Sugar Check", "Check fasting / post-meal sugar as advised", "afternoon", 1],
+    ["30 Minute Walk", "Gentle walk outdoors or indoors", "afternoon", 2],
+    ["Afternoon Medicine", "Take midday medicines if prescribed", "afternoon", 3],
+    ["Exercise", "Light stretching or physio as advised", "afternoon", 4],
+    ["Evening Medicine", "Take evening dose on schedule", "evening", 1],
+    ["Dinner Reminder", "Eat a light, doctor-approved dinner", "evening", 2],
+    ["Sleep Reminder", "Aim for 7–8 hours of rest", "night", 1],
+  ];
+  return items.map(([title, description, period, sort_order], i) => ({
+    id: uid(`4${String(i + 1).padStart(11, "0")}`),
+    patient_id: patientId,
+    care_plan_id: carePlanId,
+    title,
+    description,
+    period,
+    sort_order,
+    active: true,
+  }));
+}
+
+function defaultMedicines(patientId: string, carePlanId: string): MedicineRow[] {
+  return [
+    {
+      id: uid("500000000001"),
+      patient_id: patientId,
+      care_plan_id: carePlanId,
+      name: "Metformin",
+      dose: "500 mg",
+      frequency: "Twice daily",
+      time_slots: ["08:00", "20:00"],
+      instructions: "Take after food. Do not skip doses.",
+      active: true,
+    },
+    {
+      id: uid("500000000002"),
+      patient_id: patientId,
+      care_plan_id: carePlanId,
+      name: "Amlodipine",
+      dose: "5 mg",
+      frequency: "Once daily",
+      time_slots: ["08:00"],
+      instructions: "Take in the morning with water.",
+      active: true,
+    },
+    {
+      id: uid("500000000003"),
+      patient_id: patientId,
+      care_plan_id: carePlanId,
+      name: "Atorvastatin",
+      dose: "10 mg",
+      frequency: "Once at night",
+      time_slots: ["21:00"],
+      instructions: "Take after dinner.",
+      active: true,
+    },
+  ];
+}
+
+function defaultNotifications(userId: string): NotificationRow[] {
+  return [
+    {
+      id: uid("600000000001"),
+      user_id: userId,
+      type: "medicine",
+      title: "Morning medicine reminder",
+      body: "Metformin 500 mg is due at 08:00.",
+      read: false,
+      created_at: iso(0, 7),
+    },
+    {
+      id: uid("600000000002"),
+      user_id: userId,
+      type: "appointment",
+      title: "Upcoming follow-up",
+      body: "Your appointment at Civil Hospital is in 3 days.",
+      read: false,
+      created_at: iso(0, 8),
+    },
+    {
+      id: uid("600000000003"),
+      user_id: userId,
+      type: "doctor_message",
+      title: "Message from Dr. Demo Clinician",
+      body: "Please keep logging sugar readings twice daily.",
+      read: false,
+      created_at: iso(-1, 16),
+    },
+    {
+      id: uid("600000000004"),
+      user_id: userId,
+      type: "health_tip",
+      title: "Hydration tip",
+      body: "Sip water through the day — aim for 8 glasses.",
+      read: true,
+      created_at: iso(-2, 10),
+    },
+    {
+      id: uid("600000000005"),
+      user_id: userId,
+      type: "emergency",
+      title: "When to seek urgent care",
+      body: "Chest pain, confusion, or very high sugar needs emergency care.",
+      read: true,
+      created_at: iso(-3, 12),
+    },
+  ];
+}
+
+export function createSeedStore(): HealNexusStore {
+  const carePlanId = IDS.carePlan;
+  const patientId = IDS.patient;
+
+  return {
+    version: STORE_VERSION,
+    profiles: [
+      {
+        id: IDS.doctorUser,
+        email: "doctor@healnexus.demo",
+        full_name: "Dr. Demo Clinician",
+        phone: "+91-9876500001",
+        role: "doctor",
+        locale: "en",
+        address: null,
+        notification_prefs: {
+          medicine: true,
+          appointment: true,
+          tips: true,
+          doctor_messages: true,
+        },
+      },
+      {
+        id: IDS.patientUser,
+        email: "asha@healnexus.demo",
+        full_name: "Asha Patel",
+        phone: "+91-9876511111",
+        role: "patient",
+        locale: "en",
+        address: { line1: "Navrangpura", city: "Ahmedabad", state: "Gujarat" },
+        notification_prefs: {
+          medicine: true,
+          appointment: true,
+          tips: true,
+          doctor_messages: true,
+        },
+      },
+      {
+        id: IDS.patient2User,
+        email: "ravi@healnexus.demo",
+        full_name: "Ravi Shah",
+        phone: "+91-9876522222",
+        role: "patient",
+        locale: "en",
+        address: { city: "Ahmedabad" },
+        notification_prefs: {
+          medicine: true,
+          appointment: true,
+          tips: true,
+          doctor_messages: true,
+        },
+      },
+      {
+        id: IDS.patient3User,
+        email: "meera@healnexus.demo",
+        full_name: "Meera Desai",
+        phone: "+91-9876533333",
+        role: "patient",
+        locale: "en",
+        address: { city: "Ahmedabad" },
+        notification_prefs: {
+          medicine: true,
+          appointment: true,
+          tips: true,
+          doctor_messages: true,
+        },
+      },
+    ],
+    doctors: [
+      {
+        id: IDS.doctor,
+        user_id: IDS.doctorUser,
+        specialty: "Internal Medicine",
+        hospital_affiliation: "Civil Hospital Ahmedabad",
+      },
+    ],
+    patients: [
+      {
+        id: patientId,
+        user_id: IDS.patientUser,
+        date_of_birth: "1978-04-12",
+        sex: "female",
+        blood_group: "B+",
+        abha_id_demo: "12-3456-7890-0201",
+        address: { line1: "Navrangpura", city: "Ahmedabad", state: "Gujarat" },
+        chronic_diseases: ["Type 2 Diabetes", "Hypertension"],
+        allergies: ["Penicillin"],
+        medical_history: "Type 2 Diabetes; Hypertension",
+        emergency_contact: {
+          name: "Kiran Patel",
+          phone: "+91-9876599999",
+          relationship: "Spouse",
+        },
+        caregiver_info: {
+          name: "Priya Patel",
+          phone: "+91-9876588888",
+          relationship: "Daughter",
+        },
+        preferred_language: "en",
+        status: "active",
+        is_archived: false,
+        created_at: iso(-10),
+      },
+      {
+        id: IDS.patient2,
+        user_id: IDS.patient2User,
+        date_of_birth: "1965-09-03",
+        sex: "male",
+        blood_group: "O+",
+        abha_id_demo: "12-3456-7890-0202",
+        address: { city: "Ahmedabad" },
+        chronic_diseases: ["COPD"],
+        allergies: [],
+        medical_history: "COPD",
+        emergency_contact: { name: "Family", phone: "+91-9876500000" },
+        caregiver_info: null,
+        preferred_language: "en",
+        status: "active",
+        is_archived: false,
+        created_at: iso(-8),
+      },
+      {
+        id: IDS.patient3,
+        user_id: IDS.patient3User,
+        date_of_birth: "1990-01-22",
+        sex: "female",
+        blood_group: "A+",
+        abha_id_demo: "12-3456-7890-0203",
+        address: { city: "Ahmedabad" },
+        chronic_diseases: ["Post-operative recovery"],
+        allergies: ["Sulfa"],
+        medical_history: "Post-operative recovery",
+        emergency_contact: { name: "Family", phone: "+91-9876500000" },
+        caregiver_info: null,
+        preferred_language: "en",
+        status: "active",
+        is_archived: false,
+        created_at: iso(-6),
+      },
+    ],
+    passports: [
+      {
+        patient_id: patientId,
+        qr_token: "HNASHA201QRDEMO",
+        abha_id_demo: "12-3456-7890-0201",
+        allergies: ["Penicillin"],
+        medical_history: "Type 2 Diabetes; Hypertension",
+        emergency_contacts: {
+          name: "Kiran Patel",
+          phone: "+91-9876599999",
+          relationship: "Spouse",
+        },
+        current_medicines: [
+          { name: "Metformin", dose: "500 mg", time: "08:00, 20:00" },
+          { name: "Amlodipine", dose: "5 mg", time: "08:00" },
+          { name: "Atorvastatin", dose: "10 mg", time: "21:00" },
+        ],
+        blood_group: "B+",
+      },
+    ],
+    relationships: [
+      { doctor_id: IDS.doctor, patient_id: patientId, status: "active" },
+      { doctor_id: IDS.doctor, patient_id: IDS.patient2, status: "active" },
+      { doctor_id: IDS.doctor, patient_id: IDS.patient3, status: "active" },
+    ],
+    recoveryScores: [
+      { patient_id: patientId, score: 82, computed_at: iso(0) },
+      { patient_id: IDS.patient2, score: 72, computed_at: iso(0) },
+      { patient_id: IDS.patient3, score: 86, computed_at: iso(0) },
+    ],
+    risks: [
+      { patient_id: patientId, score: 28, level: "low", computed_at: iso(0) },
+      {
+        patient_id: IDS.patient2,
+        score: 55,
+        level: "moderate",
+        computed_at: iso(0),
+      },
+      { patient_id: IDS.patient3, score: 18, level: "low", computed_at: iso(0) },
+    ],
+    carePlans: [
+      {
+        id: carePlanId,
+        patient_id: patientId,
+        doctor_id: IDS.doctor,
+        status: "active",
+        caregiver_instructions:
+          "Help Asha take medicines on time and monitor sugar twice daily.",
+        patient_friendly_instructions:
+          "Your doctor approved this recovery plan. Follow medicines, walk daily, and log vitals.",
+        ai_summary:
+          "Organized recovery plan for diabetes and BP management. Focus on adherence, hydration, and gentle activity.",
+        approved_at: iso(-2),
+        created_at: iso(-2),
+      },
+    ],
+    careTasks: defaultTasks(patientId, carePlanId),
+    taskCompletions: [
+      {
+        id: uid("700000000001"),
+        patient_id: patientId,
+        task_id: uid("400000000001"),
+        date: new Date().toISOString().slice(0, 10),
+        status: "completed",
+        updated_at: iso(0, 8),
+      },
+      {
+        id: uid("700000000002"),
+        patient_id: patientId,
+        task_id: uid("400000000004"),
+        date: new Date().toISOString().slice(0, 10),
+        status: "completed",
+        updated_at: iso(0, 8),
+      },
+    ],
+    medicines: defaultMedicines(patientId, carePlanId),
+    medicineEvents: [],
+    checkins: [],
+    appointments: [
+      {
+        id: uid("800000000001"),
+        patient_id: patientId,
+        doctor_id: IDS.doctor,
+        doctor_name: "Dr. Demo Clinician",
+        scheduled_at: iso(3, 16),
+        location: "OPD Room 2, Civil Hospital Ahmedabad",
+        status: "scheduled",
+        appointment_type: "follow_up",
+        notes: "Bring latest sugar log",
+      },
+      {
+        id: uid("800000000002"),
+        patient_id: patientId,
+        doctor_id: IDS.doctor,
+        doctor_name: "Dr. Demo Clinician",
+        scheduled_at: iso(-14, 11),
+        location: "OPD Room 2",
+        status: "completed",
+        appointment_type: "follow_up",
+        notes: null,
+      },
+      {
+        id: uid("800000000003"),
+        patient_id: IDS.patient2,
+        doctor_id: IDS.doctor,
+        doctor_name: "Dr. Demo Clinician",
+        scheduled_at: iso(0, 16),
+        location: "OPD Room 2",
+        status: "scheduled",
+        appointment_type: "follow_up",
+        notes: null,
+      },
+    ],
+    notifications: defaultNotifications(IDS.patientUser),
+    discharges: [],
+    alerts: [
+      {
+        id: uid("900000000001"),
+        patient_id: IDS.patient2,
+        alert_type: "recovery_decline",
+        severity: "moderate",
+        title: "Recovery needs attention",
+        body: "Missed check-ins detected (demo).",
+        status: "open",
+        created_at: iso(0, 9),
+      },
+    ],
+  };
+}
