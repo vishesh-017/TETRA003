@@ -71,6 +71,8 @@ export interface DemoHospital {
   pmjay_empanelled: boolean;
   is_emergency: boolean;
   phone?: string;
+  /** Demo services list for executive / map detail panels */
+  services?: string[];
 }
 
 export type OfflineSyncState = "pending" | "syncing" | "synced" | "failed";

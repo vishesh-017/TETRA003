@@ -40,7 +40,7 @@ const NAV_BY_ROLE: Record<
     { label: "Patients", href: "/doctor/patients", icon: Users },
     { label: "High Risk", href: "/doctor/high-risk", icon: Activity },
     { label: "Appointments", href: "/doctor/appointments", icon: CalendarDays },
-    { label: "Analytics", href: "/doctor/analytics", icon: ChartColumn },
+    { label: "Executive Analytics", href: "/doctor/analytics", icon: ChartColumn },
     { label: "Benefits", href: "/government/benefits", icon: Sparkles },
     { label: "PM-JAY", href: "/government/pmjay", icon: Hospital },
     { label: "Hospitals", href: "/maps", icon: MapPinned },

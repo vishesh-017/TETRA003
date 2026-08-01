@@ -81,7 +81,7 @@ export function IntelligenceCenterPage() {
             All patients
           </Link>
           <Link to="/doctor/analytics" className={cn(buttonVariants())}>
-            Analytics
+            Executive Analytics
           </Link>
         </div>
       </motion.header>
