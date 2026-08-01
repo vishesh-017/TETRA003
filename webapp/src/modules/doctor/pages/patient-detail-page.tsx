@@ -16,6 +16,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { evaluateHealth } from "@/lib/health-engine";
 import { cn } from "@/lib/utils";
+import { EmergencyCard } from "@/modules/identity/components/emergency-card";
+import { MedicalTimeline } from "@/modules/identity/components/medical-timeline";
+import {
+  PassportDetailGrid,
+  PassportWallet,
+} from "@/modules/identity/components/passport-wallet";
+import { identityRepository } from "@/modules/identity/repository";
 import { buildObservationsForPatient } from "@/modules/prediction/adapters";
 import { CarePlanReview } from "@/modules/doctor/components/care-plan-review";
 import { DischargeForm } from "@/modules/doctor/components/discharge-form";
@@ -86,6 +93,17 @@ export function PatientDetailPage() {
     () =>
       patientId ? evaluateHealth(buildObservationsForPatient(patientId)) : null,
     [patientId, checkins.dataUpdatedAt, medicines.dataUpdatedAt],
+  );
+
+  const digitalPassport = useMemo(
+    () =>
+      patientId ? identityRepository.getDigitalPassport(patientId) : null,
+    [patientId, patient.dataUpdatedAt],
+  );
+
+  const timeline = useMemo(
+    () => (patientId ? identityRepository.getTimeline(patientId) : []),
+    [patientId, checkins.dataUpdatedAt, discharges.dataUpdatedAt],
   );
 
   const saveDischarge = (values: DischargeFormSchema) => {
@@ -304,32 +322,13 @@ export function PatientDetailPage() {
         )
       ) : null}
 
-      {tab === "passport" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Patient Passport preview</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2 text-sm">
-            <InfoCard
-              title="QR token"
-              value={String(data.passport?.qr_token || "Not generated")}
-            />
-            <InfoCard
-              title="ABHA ID (Demo)"
-              value={String(data.passport?.abha_id_demo || data.abha_id_demo || "—")}
-            />
-            <div className="rounded-xl border border-border p-4 md:col-span-2">
-              <p className="font-medium">Emergency contacts</p>
-              <pre className="mt-2 overflow-auto text-xs text-muted-foreground">
-                {JSON.stringify(
-                  data.passport?.emergency_contacts || data.emergency_contact,
-                  null,
-                  2,
-                )}
-              </pre>
-            </div>
-          </CardContent>
-        </Card>
+      {tab === "passport" && digitalPassport ? (
+        <div className="space-y-4">
+          <PassportWallet passport={digitalPassport} />
+          <EmergencyCard passport={digitalPassport} />
+          <PassportDetailGrid passport={digitalPassport} />
+          <MedicalTimeline events={timeline} />
+        </div>
       ) : null}
 
       {tab === "discharge" ? (

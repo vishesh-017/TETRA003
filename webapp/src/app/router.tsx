@@ -8,6 +8,11 @@ import { DashboardPage } from "@/modules/doctor/pages/dashboard-page";
 import { HighRiskPage } from "@/modules/doctor/pages/high-risk-page";
 import { PatientDetailPage } from "@/modules/doctor/pages/patient-detail-page";
 import { PatientsPage } from "@/modules/doctor/pages/patients-page";
+import { AbhaPage } from "@/modules/identity/pages/abha-page";
+import { BenefitsPage } from "@/modules/identity/pages/benefits-page";
+import { EmergencyProfilePage } from "@/modules/identity/pages/emergency-profile-page";
+import { HospitalMapPage } from "@/modules/identity/pages/hospital-map-page";
+import { PmjayPage } from "@/modules/identity/pages/pmjay-page";
 import { AiAssistantPage } from "@/modules/patient/pages/ai-assistant-page";
 import { AppointmentsPage as PatientAppointmentsPage } from "@/modules/patient/pages/appointments-page";
 import { CarePlanPage } from "@/modules/patient/pages/care-plan-page";
@@ -34,6 +39,9 @@ export function AppRouter() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
         </Route>
+
+        {/* Public QR emergency profile — no auth */}
+        <Route path="/emergency/:token" element={<EmergencyProfilePage />} />
 
         <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
           <Route element={<AppLayout />}>
@@ -145,40 +153,12 @@ export function AppRouter() {
             />
             <Route
               path="/documents"
-              element={
-                <ModulePlaceholder
-                  title="Documents"
-                  description="Demo upload, sample prescription, and sample lab report."
-                />
-              }
+              element={<Navigate to="/government/abha" replace />}
             />
-            <Route
-              path="/maps"
-              element={
-                <ModulePlaceholder
-                  title="Ahmedabad Hospital Finder"
-                  description="Leaflet + OpenStreetMap. Ahmedabad only — 3–5 demo hospitals."
-                />
-              }
-            />
-            <Route
-              path="/government/pmjay"
-              element={
-                <ModulePlaceholder
-                  title="PM-JAY Guidance"
-                  description="Rule-based guidance (not a live API)."
-                />
-              }
-            />
-            <Route
-              path="/government/abha"
-              element={
-                <ModulePlaceholder
-                  title="Mock ABHA Import"
-                  description="Structured demo ABHA records only. No real ABDM APIs."
-                />
-              }
-            />
+            <Route path="/maps" element={<HospitalMapPage />} />
+            <Route path="/government/pmjay" element={<PmjayPage />} />
+            <Route path="/government/abha" element={<AbhaPage />} />
+            <Route path="/government/benefits" element={<BenefitsPage />} />
           </Route>
         </Route>
 

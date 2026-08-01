@@ -228,6 +228,46 @@ export interface AlertRow {
   created_at: string;
 }
 
+export type HealthRecordCategory =
+  | "prescription"
+  | "lab_report"
+  | "allergy"
+  | "chronic_disease"
+  | "vaccination"
+  | "hospital_visit"
+  | "doctor_note";
+
+/** ABDM-compatible health record item (demo / future API). */
+export interface HealthRecordRow {
+  id: string;
+  patient_id: string;
+  category: HealthRecordCategory;
+  title: string;
+  summary: string;
+  recorded_at: string;
+  source: "abha_demo" | "local" | "manual";
+  facility?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export type PmjayStatus =
+  | "unknown"
+  | "likely_eligible"
+  | "needs_review"
+  | "not_likely";
+
+export interface GovernmentProfileRow {
+  patient_id: string;
+  abha_id: string | null;
+  abha_linked: boolean;
+  abha_linked_at: string | null;
+  pmjay_status: PmjayStatus;
+  pmjay_confidence: number;
+  pmjay_answers: Record<string, string>;
+  pmjay_assessed_at: string | null;
+  linked_record_count: number;
+}
+
 export interface HealNexusStore {
   version: number;
   profiles: ProfileRow[];
@@ -247,9 +287,11 @@ export interface HealNexusStore {
   notifications: NotificationRow[];
   discharges: DischargeRow[];
   alerts: AlertRow[];
+  healthRecords: HealthRecordRow[];
+  governmentProfiles: GovernmentProfileRow[];
 }
 
-export const STORE_VERSION = 2;
+export const STORE_VERSION = 3;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {
