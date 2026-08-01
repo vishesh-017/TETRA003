@@ -28,6 +28,8 @@ class HealthResponse(BaseModel):
     service: str
     environment: str
     exa_configured: bool
+    openrouter_configured: bool = False
+    openrouter_model: str = ""
     supabase_configured: bool
     ml_hook_configured: bool
     modules: list[str]

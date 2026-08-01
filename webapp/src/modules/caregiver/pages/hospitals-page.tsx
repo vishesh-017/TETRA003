@@ -3,36 +3,14 @@ import { MapPinned, Navigation } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { buttonVariants } from "@/components/ui/button";
+import { AHMEDABAD_DEMO_HOSPITALS } from "@/data/ahmedabad-hospitals";
 import { cn } from "@/lib/utils";
 import { FamilySwitcher } from "@/modules/caregiver/components/family-switcher";
 import { useCaregiver } from "@/modules/caregiver/context";
 
-const NEARBY = [
-  {
-    name: "Civil Hospital Ahmedabad",
-    distance: "4.2 km",
-    eta: "14 min",
-    phone: "+91 79 2268 0201",
-    type: "Government · Trauma ready",
-  },
-  {
-    name: "UN Mehta Institute of Cardiology",
-    distance: "5.1 km",
-    eta: "18 min",
-    phone: "+91 79 2268 2200",
-    type: "Cardiac specialty",
-  },
-  {
-    name: "SVP Hospital",
-    distance: "6.4 km",
-    eta: "22 min",
-    phone: "+91 79 2268 3700",
-    type: "Multi-specialty",
-  },
-];
-
 export function CaregiverHospitalsPage() {
   const { selected, emergency } = useCaregiver();
+  const hospitals = AHMEDABAD_DEMO_HOSPITALS;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 pb-12">
@@ -50,9 +28,9 @@ export function CaregiverHospitalsPage() {
       <FamilySwitcher />
 
       <div className="space-y-3">
-        {NEARBY.map((h, i) => (
+        {hospitals.map((h, i) => (
           <motion.article
-            key={h.name}
+            key={h.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
@@ -61,21 +39,30 @@ export function CaregiverHospitalsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="font-semibold">{h.name}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{h.type}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {h.hospital_type}
+                  {h.is_emergency ? " · Trauma ready" : ""}
+                  {h.pmjay_empanelled ? " · PM-JAY" : ""}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{h.address}</p>
               </div>
               <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">
-                {h.distance} · {h.eta}
+                {h.city}
               </span>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
+              {h.phone ? (
+                <a
+                  href={`tel:${h.phone.replace(/\s/g, "")}`}
+                  className={cn(buttonVariants({ size: "sm" }))}
+                >
+                  Call
+                </a>
+              ) : null}
               <a
-                href={`tel:${h.phone.replace(/\s/g, "")}`}
-                className={cn(buttonVariants({ size: "sm" }))}
-              >
-                Call
-              </a>
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name)}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  `${h.name} ${h.address}`,
+                )}`}
                 target="_blank"
                 rel="noreferrer"
                 className={cn(buttonVariants({ size: "sm", variant: "secondary" }))}

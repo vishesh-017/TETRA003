@@ -88,12 +88,15 @@ export function PatientDetailPage() {
     () => (discharges.data || []).find((item) => item.status === "finalized"),
     [discharges.data],
   );
-  const activeCarePlan = useMemo(
-    () =>
-      (carePlans.data || []).find((item) => item.status === "ai_draft") ||
-      (carePlans.data || [])[0],
-    [carePlans.data],
-  );
+  const reviewCarePlan = useMemo(() => {
+    const list = carePlans.data || [];
+    return (
+      list.find((item) => item.status === "generating") ||
+      list.find((item) => item.status === "ai_draft") ||
+      list.find((item) => item.status === "active") ||
+      list[0]
+    );
+  }, [carePlans.data]);
 
   const health = useMemo(
     () =>
@@ -511,19 +514,70 @@ export function PatientDetailPage() {
             </CardContent>
           </Card>
 
-          {activeCarePlan ? (
-            <CarePlanReview
-              carePlan={activeCarePlan}
-              approving={mutations.approveCarePlan.isPending}
-              onApprove={(notes) =>
-                patientId &&
-                mutations.approveCarePlan.mutate({
-                  carePlanId: activeCarePlan.id,
-                  patientId,
-                  body: { doctor_review_notes: notes },
-                })
-              }
-            />
+          {mutations.finalizeDischarge.isPending || reviewCarePlan ? (
+            <div className="space-y-3">
+              <h2 className="font-display text-xl font-semibold">
+                AI Care Companion Review
+              </h2>
+              {mutations.finalizeDischarge.isPending ||
+              reviewCarePlan?.status === "generating" ? (
+                <CarePlanReview
+                  carePlan={
+                    reviewCarePlan?.status === "generating"
+                      ? reviewCarePlan
+                      : {
+                          id: "generating",
+                          patient_id: patientId || "",
+                          doctor_id: "",
+                          status: "generating",
+                          version: 0,
+                          warning_signs: [],
+                          next_steps: [],
+                          daily_schedule: null,
+                          source_discharge: null,
+                          medicines: [],
+                          daily_tasks: [],
+                          disclaimer:
+                            "AI Care Companion assists only. It never diagnoses, never prescribes, and never replaces doctors.",
+                        }
+                  }
+                  generating
+                  onApprove={() => undefined}
+                  onReject={() => undefined}
+                />
+              ) : reviewCarePlan ? (
+                <CarePlanReview
+                  carePlan={reviewCarePlan}
+                  approving={mutations.approveCarePlan.isPending}
+                  rejecting={mutations.rejectCarePlan.isPending}
+                  saving={mutations.updateCarePlanDraft.isPending}
+                  onApprove={(body) =>
+                    patientId &&
+                    mutations.approveCarePlan.mutate({
+                      carePlanId: reviewCarePlan.id,
+                      patientId,
+                      body,
+                    })
+                  }
+                  onReject={(notes) =>
+                    patientId &&
+                    mutations.rejectCarePlan.mutate({
+                      carePlanId: reviewCarePlan.id,
+                      patientId,
+                      body: { doctor_review_notes: notes },
+                    })
+                  }
+                  onSaveDraft={(body) =>
+                    patientId &&
+                    mutations.updateCarePlanDraft.mutate({
+                      carePlanId: reviewCarePlan.id,
+                      patientId,
+                      body,
+                    })
+                  }
+                />
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}

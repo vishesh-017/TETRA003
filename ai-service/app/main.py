@@ -18,10 +18,12 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     logger.info(
-        "Starting %s env=%s exa=%s",
+        "Starting %s env=%s exa=%s openrouter=%s model=%s",
         settings.app_name,
         settings.app_env,
         settings.exa_configured,
+        settings.openrouter_configured,
+        settings.openrouter_model if settings.openrouter_configured else "-",
     )
     yield
     logger.info("Shutting down HealNexus AI Service")
@@ -56,6 +58,10 @@ def health() -> HealthResponse:
         service="healnexus-ai-service",
         environment=settings.app_env,
         exa_configured=settings.exa_configured,
+        openrouter_configured=settings.openrouter_configured,
+        openrouter_model=settings.openrouter_model
+        if settings.openrouter_configured
+        else "",
         supabase_configured=settings.supabase_configured,
         ml_hook_configured=bool(settings.ml_inference_url),
         modules=[

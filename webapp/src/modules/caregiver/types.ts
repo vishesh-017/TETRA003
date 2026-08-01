@@ -18,12 +18,15 @@ export interface CareVitalChip {
 
 export interface FamilyMember {
   id: string;
+  userId: string;
   name: string;
   relationship: string;
   shortLabel: string;
   age: number;
   avatarEmoji: string;
   recoveryScore: number;
+  riskLevel: string;
+  progression: string;
   status: CareStatus;
   statusLabel: string;
   todayProgress: number;
@@ -76,6 +79,8 @@ export interface SmartAlert {
 
 export interface MedicineDose {
   id: string;
+  medicineId: string;
+  timeSlot: string;
   name: string;
   dosage: string;
   instruction: string;
@@ -128,25 +133,31 @@ export interface ActivityItem {
   tone: "ok" | "info" | "alert";
 }
 
-export interface CaregiverDemoBundle {
-  caregiverName: string;
-  family: FamilyMember[];
-  timeline: Record<string, CareTimelineItem[]>;
-  insights: Record<string, HealthInsight[]>;
-  doctorMessages: Record<string, DoctorMessage[]>;
-  alerts: Record<string, SmartAlert[]>;
-  medicines: Record<string, MedicineDose[]>;
-  appointments: Record<string, CareAppointment[]>;
-  passports: Record<string, PassportPreviewData>;
-  aiInsights: Record<string, AiCareInsight>;
-  education: EducationTip[];
-  activity: Record<string, ActivityItem[]>;
-  emergency: {
-    doctorPhone: string;
-    videoLink: string;
-    emergencyPhone: string;
-    hospitalName: string;
-    hospitalPhone: string;
-    ambulance: string;
-  };
+export interface CaregiverCarePlanSupport {
+  version: number;
+  instructions: string[];
+  warningSigns: string[];
+  emergencyAdvice: string;
+  medicineTimeline: string[];
+  doctorNotes: string | null;
+  upcomingAppointment: string | null;
+  nextSteps: string[];
+  patientSummary: string | null;
+}
+
+export interface CaregiverEmergencyContacts {
+  doctorPhone: string;
+  videoLink: string;
+  emergencyPhone: string;
+  hospitalName: string;
+  hospitalPhone: string;
+  ambulance: string;
+}
+
+export interface FamilyHealthSummary {
+  memberCount: number;
+  overallWellness: number;
+  attentionCount: number;
+  upcomingAppointments: number;
+  criticalAlerts: number;
 }

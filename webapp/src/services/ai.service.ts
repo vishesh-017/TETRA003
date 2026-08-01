@@ -22,18 +22,30 @@ export interface AiAssistantResult {
   provider: string;
 }
 
+export interface CareCompanionScheduleItem {
+  title: string;
+  detail: string;
+  category: string;
+}
+
 export interface CareCompanionResult {
   daily_schedule: {
-    morning: Array<{ title: string; detail: string; category: string }>;
-    afternoon: Array<{ title: string; detail: string; category: string }>;
-    evening: Array<{ title: string; detail: string; category: string }>;
-    night: Array<{ title: string; detail: string; category: string }>;
+    morning: CareCompanionScheduleItem[];
+    afternoon: CareCompanionScheduleItem[];
+    evening: CareCompanionScheduleItem[];
+    night: CareCompanionScheduleItem[];
   };
   patient_friendly_explanation: string;
   caregiver_instructions: string;
   warning_signs: string[];
   next_steps: string[];
-  meta: { provider: string; disclaimer: string };
+  organized_medicines?: Array<{
+    name: string;
+    dose?: string | null;
+    frequency?: string | null;
+    instructions?: string | null;
+  }>;
+  meta: { provider: string; disclaimer: string; model_hint?: string };
 }
 
 export function isAiServiceConfigured(): boolean {
@@ -112,14 +124,36 @@ export async function organizeCareCompanion(input: {
   diet_advice?: string;
   exercise_advice?: string;
   restrictions?: string;
+  special_instructions?: string;
   follow_up_date?: string;
+  hospital_name?: string;
   patient_name?: string;
-}): Promise<CareCompanionResult | null> {
-  if (!isAiServiceConfigured()) return null;
-  return aiRequest<CareCompanionResult>("/ai/care-companion", {
-    method: "POST",
-    body: input,
-  });
+}): Promise<CareCompanionResult> {
+  const { organizeCareCompanionLocal } = await import(
+    "@/services/care-companion-local"
+  );
+
+  if (!isAiServiceConfigured()) {
+    return organizeCareCompanionLocal(input);
+  }
+
+  try {
+    const data = await aiRequest<CareCompanionResult>("/ai/care-companion", {
+      method: "POST",
+      body: { ...input, locale: "en" },
+    });
+    return {
+      ...data,
+      organized_medicines: data.organized_medicines ?? [],
+      meta: {
+        provider: data.meta?.provider || "ai-service",
+        disclaimer: data.meta?.disclaimer || DISCLAIMER,
+        model_hint: data.meta?.model_hint,
+      },
+    };
+  } catch {
+    return organizeCareCompanionLocal(input);
+  }
 }
 
 export async function fetchPatientSummary(payload: Record<string, unknown>) {

@@ -5,6 +5,12 @@ import {
   todayKey,
   updateStore,
 } from "@/data/store";
+import {
+  buildFollowupTimeline,
+  scheduleToTaskRows,
+  timeSlotsFromFrequency,
+  toDailySchedule,
+} from "@/modules/doctor/care-companion-integration";
 import type {
   AppointmentItem,
   CarePlan,
@@ -16,6 +22,8 @@ import type {
   PatientDetail,
   PatientListItem,
 } from "@/modules/doctor/types";
+import { organizeCareCompanion } from "@/services/ai.service";
+import { getSupabaseClient } from "@/lib/supabase";
 
 function ageFromDob(dob?: string | null): number | null {
   if (!dob) return null;
@@ -145,7 +153,11 @@ export const doctorRepository = {
       passport: (store.passports.find((p) => p.patient_id === patientId) ??
         null) as Record<string, unknown> | null,
       ai_summary:
-        store.carePlans.find((c) => c.patient_id === patientId)?.ai_summary ?? null,
+        store.carePlans.find(
+          (c) => c.patient_id === patientId && c.status === "active",
+        )?.ai_summary ??
+        store.carePlans.find((c) => c.patient_id === patientId)?.ai_summary ??
+        null,
       disease_progression:
         risk === "high" || risk === "critical"
           ? "worsening"
@@ -365,42 +377,124 @@ export const doctorRepository = {
     return getStore().discharges.find((d) => d.id === id)! as DischargeSummary;
   },
 
-  finalizeDischarge(userId: string, dischargeId: string): CarePlan {
+  async finalizeDischarge(userId: string, dischargeId: string): Promise<CarePlan> {
     const doctor = ensureDoctor(userId);
     const store = getStore();
     const discharge = store.discharges.find((d) => d.id === dischargeId);
     if (!discharge) throw new Error("Discharge not found");
+
+    const patient = store.patients.find((p) => p.id === discharge.patient_id);
+    const profile = store.profiles.find((p) => p.id === patient?.user_id);
     const planId = newId();
+    const now = new Date().toISOString();
+    const nextVersion =
+      Math.max(
+        0,
+        ...store.carePlans
+          .filter((c) => c.patient_id === discharge.patient_id)
+          .map((c) => c.version || 0),
+      ) + 1;
+
     updateStore((draft) => {
       const d = draft.discharges.find((x) => x.id === dischargeId)!;
       d.status = "finalized";
-      d.finalized_at = new Date().toISOString();
+      d.finalized_at = now;
+      d.updated_at = now;
+
+      for (const plan of draft.carePlans) {
+        if (
+          plan.patient_id === d.patient_id &&
+          (plan.status === "ai_draft" || plan.status === "generating")
+        ) {
+          plan.status = "superseded";
+          plan.updated_at = now;
+        }
+      }
+
       draft.carePlans.unshift({
         id: planId,
         patient_id: d.patient_id,
         doctor_id: doctor.id,
-        status: "ai_draft",
-        caregiver_instructions: "Support medicine adherence and daily check-ins.",
-        patient_friendly_instructions:
-          "Follow medicines, walk daily, hydrate, and log vitals.",
-        ai_summary: `Organized plan for: ${d.diagnosis_text || "recovery"}. Medicines: ${d.medicines_text || "as prescribed"}.`,
+        discharge_id: d.id,
+        status: "generating",
+        version: nextVersion,
+        caregiver_instructions: null,
+        patient_friendly_instructions: null,
+        ai_summary: "Generating AI recovery plan from discharge summary…",
+        warning_signs: [],
+        next_steps: [],
+        daily_schedule: null,
+        doctor_review_notes: null,
+        approved_by: null,
         approved_at: null,
-        created_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
       });
-      if (d.medicines_text) {
+    });
+
+    const organized = await organizeCareCompanion({
+      diagnosis: discharge.diagnosis_text || undefined,
+      medicines: discharge.medicines_text || undefined,
+      doctor_notes: discharge.doctor_notes || undefined,
+      diet_advice: discharge.diet_advice || undefined,
+      exercise_advice: discharge.exercise_advice || undefined,
+      restrictions: discharge.restrictions || undefined,
+      special_instructions: discharge.special_instructions || undefined,
+      follow_up_date: discharge.follow_up_date || undefined,
+      hospital_name: discharge.hospital_name || undefined,
+      patient_name: profile?.full_name,
+    });
+
+    const filledAt = new Date().toISOString();
+    updateStore((draft) => {
+      const plan = draft.carePlans.find((c) => c.id === planId);
+      if (!plan) return;
+
+      plan.status = "ai_draft";
+      plan.caregiver_instructions = organized.caregiver_instructions;
+      plan.patient_friendly_instructions =
+        organized.patient_friendly_explanation;
+      plan.ai_summary = organized.patient_friendly_explanation;
+      plan.warning_signs = organized.warning_signs || [];
+      plan.next_steps = organized.next_steps || [];
+      plan.daily_schedule = toDailySchedule(organized.daily_schedule);
+      plan.updated_at = filledAt;
+
+      const meds = organized.organized_medicines?.length
+        ? organized.organized_medicines
+        : [];
+
+      for (const med of meds) {
         draft.medicines.push({
           id: newId(),
-          patient_id: d.patient_id,
+          patient_id: plan.patient_id,
           care_plan_id: planId,
-          name: d.medicines_text.split("\n")[0] || "Prescribed medicine",
-          dose: null,
-          frequency: "As directed",
-          time_slots: ["08:00", "20:00"],
-          instructions: "Take exactly as prescribed by your doctor.",
-          active: true,
+          name: med.name,
+          dose: med.dose ?? null,
+          frequency: med.frequency ?? "As directed",
+          time_slots: timeSlotsFromFrequency(med.frequency),
+          instructions:
+            med.instructions ||
+            "Take exactly as prescribed by your doctor.",
+          active: false,
+        });
+      }
+
+      const tasks = scheduleToTaskRows(organized.daily_schedule);
+      for (const task of tasks) {
+        draft.careTasks.push({
+          id: newId(),
+          patient_id: plan.patient_id,
+          care_plan_id: planId,
+          title: task.title,
+          description: task.description,
+          period: task.period,
+          sort_order: task.sort_order,
+          active: false,
         });
       }
     });
+
     return this.getCarePlan(userId, planId);
   },
 
@@ -408,26 +502,56 @@ export const doctorRepository = {
     ensureDoctor(userId);
     return getStore()
       .carePlans.filter((c) => c.patient_id === patientId)
+      .sort((a, b) => b.version - a.version || b.created_at.localeCompare(a.created_at))
       .map((c) => this.getCarePlan(userId, c.id));
   },
 
   getCarePlan(userId: string, carePlanId: string): CarePlan {
     ensureDoctor(userId);
-    const plan = getStore().carePlans.find((c) => c.id === carePlanId);
+    const store = getStore();
+    const plan = store.carePlans.find((c) => c.id === carePlanId);
     if (!plan) throw new Error("Care plan not found");
-    const meds = getStore().medicines.filter((m) => m.care_plan_id === carePlanId);
+    const meds = store.medicines.filter((m) => m.care_plan_id === carePlanId);
+    const discharge = plan.discharge_id
+      ? store.discharges.find((d) => d.id === plan.discharge_id) || null
+      : store.discharges
+          .filter((d) => d.patient_id === plan.patient_id)
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] || null;
+
     return {
       id: plan.id,
       patient_id: plan.patient_id,
       doctor_id: plan.doctor_id,
-      discharge_id: null,
+      discharge_id: plan.discharge_id,
       status: plan.status,
+      version: plan.version,
       caregiver_instructions: plan.caregiver_instructions,
       patient_friendly_instructions: plan.patient_friendly_instructions,
-      followup_timeline: [],
-      doctor_review_notes: null,
+      warning_signs: plan.warning_signs || [],
+      next_steps: plan.next_steps || [],
+      daily_schedule: plan.daily_schedule,
+      followup_timeline: buildFollowupTimeline(
+        plan.next_steps || [],
+        discharge?.follow_up_date,
+      ),
+      doctor_review_notes: plan.doctor_review_notes,
       ai_summary: plan.ai_summary,
+      approved_by: plan.approved_by,
       approved_at: plan.approved_at,
+      updated_at: plan.updated_at,
+      source_discharge: discharge
+        ? {
+            diagnosis_text: discharge.diagnosis_text,
+            medicines_text: discharge.medicines_text,
+            doctor_notes: discharge.doctor_notes,
+            diet_advice: discharge.diet_advice,
+            exercise_advice: discharge.exercise_advice,
+            restrictions: discharge.restrictions,
+            special_instructions: discharge.special_instructions,
+            follow_up_date: discharge.follow_up_date,
+            hospital_name: discharge.hospital_name,
+          }
+        : null,
       medicines: meds.map((m) => ({
         id: m.id,
         care_plan_id: carePlanId,
@@ -438,8 +562,9 @@ export const doctorRepository = {
         schedule: { times: m.time_slots },
         instructions: m.instructions,
       })),
-      daily_tasks: getStore()
-        .careTasks.filter((t) => t.care_plan_id === carePlanId)
+      daily_tasks: store.careTasks
+        .filter((t) => t.care_plan_id === carePlanId)
+        .sort((a, b) => a.sort_order - b.sort_order)
         .map((t) => ({
           id: t.id,
           care_plan_id: carePlanId,
@@ -454,18 +579,171 @@ export const doctorRepository = {
     };
   },
 
-  approveCarePlan(
+  updateCarePlanDraft(
     userId: string,
     carePlanId: string,
-    _body: Record<string, unknown>,
+    body: Record<string, unknown>,
   ): CarePlan {
     ensureDoctor(userId);
+    const now = new Date().toISOString();
     updateStore((draft) => {
       const plan = draft.carePlans.find((c) => c.id === carePlanId);
       if (!plan) throw new Error("Care plan not found");
-      plan.status = "active";
-      plan.approved_at = new Date().toISOString();
+      if (plan.status !== "ai_draft" && plan.status !== "generating") {
+        throw new Error("Only AI drafts can be edited before approval");
+      }
+      if (typeof body.caregiver_instructions === "string") {
+        plan.caregiver_instructions = body.caregiver_instructions;
+      }
+      if (typeof body.patient_friendly_instructions === "string") {
+        plan.patient_friendly_instructions = body.patient_friendly_instructions;
+        plan.ai_summary = body.patient_friendly_instructions;
+      }
+      if (typeof body.doctor_review_notes === "string") {
+        plan.doctor_review_notes = body.doctor_review_notes;
+      }
+      if (Array.isArray(body.warning_signs)) {
+        plan.warning_signs = body.warning_signs.map(String);
+      }
+      if (Array.isArray(body.next_steps)) {
+        plan.next_steps = body.next_steps.map(String);
+      }
+      plan.updated_at = now;
     });
+    return this.getCarePlan(userId, carePlanId);
+  },
+
+  rejectCarePlan(
+    userId: string,
+    carePlanId: string,
+    body: Record<string, unknown> = {},
+  ): CarePlan {
+    ensureDoctor(userId);
+    const now = new Date().toISOString();
+    updateStore((draft) => {
+      const plan = draft.carePlans.find((c) => c.id === carePlanId);
+      if (!plan) throw new Error("Care plan not found");
+      plan.status = "rejected";
+      plan.doctor_review_notes =
+        (body.doctor_review_notes as string) ||
+        plan.doctor_review_notes ||
+        "Rejected by doctor — AI draft not published.";
+      plan.updated_at = now;
+      for (const task of draft.careTasks) {
+        if (task.care_plan_id === carePlanId) task.active = false;
+      }
+      for (const med of draft.medicines) {
+        if (med.care_plan_id === carePlanId) med.active = false;
+      }
+    });
+    return this.getCarePlan(userId, carePlanId);
+  },
+
+  async approveCarePlan(
+    userId: string,
+    carePlanId: string,
+    body: Record<string, unknown>,
+  ): Promise<CarePlan> {
+    const doctor = ensureDoctor(userId);
+    const now = new Date().toISOString();
+    let patientUserId: string | null = null;
+    let patientName = "Patient";
+
+    updateStore((draft) => {
+      const plan = draft.carePlans.find((c) => c.id === carePlanId);
+      if (!plan) throw new Error("Care plan not found");
+      if (plan.status === "rejected" || plan.status === "superseded") {
+        throw new Error("This care plan can no longer be approved");
+      }
+
+      const patient = draft.patients.find((p) => p.id === plan.patient_id);
+      const profile = draft.profiles.find((p) => p.id === patient?.user_id);
+      patientUserId = patient?.user_id ?? null;
+      patientName = profile?.full_name || "Patient";
+
+      if (typeof body.caregiver_instructions === "string") {
+        plan.caregiver_instructions = body.caregiver_instructions;
+      }
+      if (typeof body.patient_friendly_instructions === "string") {
+        plan.patient_friendly_instructions = body.patient_friendly_instructions;
+        plan.ai_summary = body.patient_friendly_instructions;
+      }
+      if (typeof body.doctor_review_notes === "string") {
+        plan.doctor_review_notes = body.doctor_review_notes;
+      }
+      if (Array.isArray(body.warning_signs)) {
+        plan.warning_signs = body.warning_signs.map(String);
+      }
+      if (Array.isArray(body.next_steps)) {
+        plan.next_steps = body.next_steps.map(String);
+      }
+
+      for (const other of draft.carePlans) {
+        if (
+          other.patient_id === plan.patient_id &&
+          other.id !== plan.id &&
+          (other.status === "active" || other.status === "doctor_approved")
+        ) {
+          other.status = "superseded";
+          other.updated_at = now;
+        }
+      }
+
+      for (const task of draft.careTasks) {
+        if (task.patient_id === plan.patient_id) {
+          task.active = task.care_plan_id === plan.id;
+        }
+      }
+      for (const med of draft.medicines) {
+        if (med.patient_id === plan.patient_id) {
+          med.active = med.care_plan_id === plan.id;
+        }
+      }
+
+      plan.status = "active";
+      plan.approved_by = doctor.user_id;
+      plan.approved_at = now;
+      plan.updated_at = now;
+
+      if (patientUserId) {
+        draft.notifications.unshift({
+          id: newId(),
+          user_id: patientUserId,
+          type: "doctor_message",
+          title: "Recovery Plan Ready",
+          body: "Your recovery plan is ready. Open Today's Recovery Journey to begin.",
+          read: false,
+          created_at: now,
+        });
+      }
+
+      const caregivers = draft.caregiverArrangements.filter(
+        (a) => a.patient_id === plan.patient_id && a.status === "active",
+      );
+      for (const cg of caregivers) {
+        draft.notifications.unshift({
+          id: newId(),
+          user_id: cg.caregiver_user_id,
+          type: "doctor_message",
+          title: "New Care Instructions",
+          body: `Updated caregiver instructions for ${patientName} are ready to review.`,
+          read: false,
+          created_at: now,
+        });
+      }
+
+      draft.notifications.unshift({
+        id: newId(),
+        user_id: doctor.user_id,
+        type: "doctor_message",
+        title: "Plan Successfully Published",
+        body: `AI Care Companion plan v${plan.version} for ${patientName} is now live.`,
+        read: false,
+        created_at: now,
+      });
+    });
+
+    await persistApprovedCarePlan(carePlanId);
     return this.getCarePlan(userId, carePlanId);
   },
 
@@ -579,3 +857,33 @@ export const doctorRepository = {
     return this.updateAppointment(userId, id, { status: "cancelled" });
   },
 };
+
+async function persistApprovedCarePlan(carePlanId: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+  const plan = getStore().carePlans.find((c) => c.id === carePlanId);
+  if (!plan) return;
+  try {
+    await supabase.from("care_plans").upsert({
+      id: plan.id,
+      patient_id: plan.patient_id,
+      doctor_id: plan.doctor_id,
+      discharge_id: plan.discharge_id,
+      status: plan.status,
+      version: plan.version,
+      caregiver_instructions: plan.caregiver_instructions,
+      patient_friendly_instructions: plan.patient_friendly_instructions,
+      ai_summary: plan.ai_summary,
+      warning_signs: plan.warning_signs,
+      next_steps: plan.next_steps,
+      daily_schedule: plan.daily_schedule,
+      doctor_review_notes: plan.doctor_review_notes,
+      approved_by: plan.approved_by,
+      approved_at: plan.approved_at,
+      updated_at: plan.updated_at,
+      created_at: plan.created_at,
+    });
+  } catch {
+    // Demo store remains source of truth when remote schema is unavailable.
+  }
+}

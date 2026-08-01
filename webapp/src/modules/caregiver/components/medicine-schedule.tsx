@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Pill } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCaregiver } from "@/modules/caregiver/context";
 import { medicineStateClass, medicineStateLabel } from "@/modules/caregiver/lib";
 import type { MedicineDose, MedicineSlot } from "@/modules/caregiver/types";
 
@@ -16,6 +16,25 @@ const SLOT_LABEL: Record<MedicineSlot, string> = {
 };
 
 export function MedicineSchedule({ medicines }: { medicines: MedicineDose[] }) {
+  const { selected, markMedicine } = useCaregiver();
+  const busy = markMedicine.isPending;
+
+  if (!medicines.length) {
+    return (
+      <section className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-soft">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Medicine Timeline
+        </p>
+        <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
+          Doses by time of day
+        </h2>
+        <p className="mt-4 text-sm text-muted-foreground">
+          No active medicines on the approved care plan for {selected.name.split(" ")[0]}.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-soft backdrop-blur sm:p-6">
       <div className="mb-5">
@@ -64,15 +83,18 @@ export function MedicineSchedule({ medicines }: { medicines: MedicineDose[] }) {
                         </span>
                       </div>
                       <p className="mt-0.5 text-sm text-muted-foreground">
-                        {dose.dosage} · {dose.instruction}
+                        {dose.dosage} · {dose.instruction} · {dose.timeSlot}
                       </p>
                       {dose.state === "pending" || dose.state === "missed" ? (
                         <div className="mt-2 flex gap-2">
                           <Button
                             size="sm"
+                            disabled={busy}
                             onClick={() =>
-                              toast.success(`${dose.name} marked taken`, {
-                                description: "Nice — keeping the routine on track.",
+                              markMedicine.mutate({
+                                patientUserId: selected.userId,
+                                medicineId: dose.medicineId,
+                                status: "taken",
                               })
                             }
                           >
@@ -81,9 +103,12 @@ export function MedicineSchedule({ medicines }: { medicines: MedicineDose[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
+                            disabled={busy}
                             onClick={() =>
-                              toast.message(`${dose.name} skipped`, {
-                                description: "Noted for the doctor summary.",
+                              markMedicine.mutate({
+                                patientUserId: selected.userId,
+                                medicineId: dose.medicineId,
+                                status: "skipped",
                               })
                             }
                           >

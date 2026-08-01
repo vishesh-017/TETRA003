@@ -58,7 +58,8 @@ export function PatientHomePage() {
           {greetingPrefix()}, {data.greeting_name}
         </h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Complete today's tasks, take medicines on time, and keep your recovery moving.
+          Morning → afternoon → evening → night tasks from your doctor-approved AI
+          Care Companion plan. Complete them to keep recovery on track.
         </p>
 
         <div className="mt-6 space-y-2">

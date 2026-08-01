@@ -3,10 +3,13 @@ export type RiskLevel = "low" | "moderate" | "high" | "critical";
 export type TaskStatus = "pending" | "completed" | "skipped";
 export type Period = "morning" | "afternoon" | "evening" | "night";
 export type CarePlanStatus =
+  | "generating"
   | "ai_draft"
   | "doctor_approved"
   | "active"
-  | "completed";
+  | "completed"
+  | "rejected"
+  | "superseded";
 export type AppointmentStatus =
   | "scheduled"
   | "completed"
@@ -198,16 +201,37 @@ export interface AppointmentRow {
   notes: string | null;
 }
 
+export interface CarePlanSchedulePeriod {
+  title: string;
+  detail: string;
+  category: string;
+}
+
+export interface CarePlanDailySchedule {
+  morning: CarePlanSchedulePeriod[];
+  afternoon: CarePlanSchedulePeriod[];
+  evening: CarePlanSchedulePeriod[];
+  night: CarePlanSchedulePeriod[];
+}
+
 export interface CarePlanRow {
   id: string;
   patient_id: string;
   doctor_id: string;
+  discharge_id: string | null;
   status: CarePlanStatus;
+  version: number;
   caregiver_instructions: string | null;
   patient_friendly_instructions: string | null;
   ai_summary: string | null;
+  warning_signs: string[];
+  next_steps: string[];
+  daily_schedule: CarePlanDailySchedule | null;
+  doctor_review_notes: string | null;
+  approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface NotificationRow {
@@ -350,7 +374,7 @@ export interface HealNexusStore {
   homeVisits: HomeVisitRow[];
 }
 
-export const STORE_VERSION = 6;
+export const STORE_VERSION = 8;
 export const STORAGE_KEY = "healnexus-dynamic-store-v2";
 
 export const IDS = {

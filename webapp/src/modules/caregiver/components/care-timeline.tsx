@@ -21,6 +21,13 @@ export function CareTimeline({
         <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">{title}</h2>
       </div>
 
+      {!items.length ? (
+        <p className="text-sm text-muted-foreground">
+          Today&apos;s checklist will appear from the approved care plan, medicines,
+          and check-in status.
+        </p>
+      ) : null}
+
       <ol className="relative space-y-0">
         <span className="absolute bottom-3 left-[19px] top-3 w-px bg-gradient-to-b from-sky-300 via-teal-200 to-transparent" />
         {items.map((item, index) => (

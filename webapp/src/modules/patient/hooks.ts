@@ -15,6 +15,7 @@ import type { CheckInInput } from "./types";
 const keys = {
   today: (uid: string) => ["patient", "today", uid] as const,
   carePlan: (uid: string) => ["patient", "care-plan", uid] as const,
+  activeCarePlan: (uid: string) => ["patient", "active-care-plan", uid] as const,
   medicines: (uid: string) => ["patient", "medicines", uid] as const,
   appointments: (uid: string) => ["patient", "appointments", uid] as const,
   passport: (uid: string) => ["patient", "passport", uid] as const,
@@ -50,9 +51,20 @@ export function useTodayDashboard() {
 
 export function useCarePlanTimeline() {
   const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
   return useQuery({
     queryKey: keys.carePlan(userId),
     queryFn: () => patientRepository.getCarePlanTimeline(userId),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useActiveCarePlan() {
+  const userId = usePatientUserId();
+  useInvalidatePatientOnStore();
+  return useQuery({
+    queryKey: keys.activeCarePlan(userId),
+    queryFn: () => patientRepository.getActiveCarePlan(userId),
     enabled: Boolean(userId),
   });
 }

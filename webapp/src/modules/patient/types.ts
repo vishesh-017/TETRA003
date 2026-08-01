@@ -36,6 +36,16 @@ export interface CarePlanTimeline {
   tasks: TodayTask[];
 }
 
+export interface ActiveCarePlanView {
+  id: string;
+  version: number;
+  patient_summary: string | null;
+  caregiver_instructions: string | null;
+  warning_signs: string[];
+  next_steps: string[];
+  follow_up_date: string | null;
+}
+
 export interface MedicineView {
   id: string;
   name: string;

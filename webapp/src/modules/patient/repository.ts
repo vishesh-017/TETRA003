@@ -11,6 +11,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { env } from "@/config/env";
 
 import type {
+  ActiveCarePlanView,
   AppointmentView,
   CarePlanTimeline,
   CheckInInput,
@@ -49,11 +50,19 @@ function daysUntil(isoDate: string): number {
 
 function mapTasks(patientId: string, date = todayKey()): TodayTask[] {
   const store = getStore();
+  const activePlan = store.carePlans.find(
+    (c) => c.patient_id === patientId && c.status === "active",
+  );
   const completions = store.taskCompletions.filter(
     (c) => c.patient_id === patientId && c.date === date,
   );
   return store.careTasks
-    .filter((t) => t.patient_id === patientId && t.active)
+    .filter(
+      (t) =>
+        t.patient_id === patientId &&
+        t.active &&
+        (!activePlan || t.care_plan_id === activePlan.id),
+    )
     .sort((a, b) => a.sort_order - b.sort_order || a.period.localeCompare(b.period))
     .map((t) => ({
       id: t.id,
@@ -174,6 +183,29 @@ export const patientRepository = {
       label: PERIOD_LABELS[period],
       tasks: tasks.filter((t) => t.period === period),
     }));
+  },
+
+  getActiveCarePlan(userId: string): ActiveCarePlanView | null {
+    const patientId = resolvePatientId(userId);
+    const store = getStore();
+    const plan = store.carePlans.find(
+      (c) => c.patient_id === patientId && c.status === "active",
+    );
+    if (!plan) return null;
+    const discharge = plan.discharge_id
+      ? store.discharges.find((d) => d.id === plan.discharge_id)
+      : store.discharges
+          .filter((d) => d.patient_id === patientId && d.status === "finalized")
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    return {
+      id: plan.id,
+      version: plan.version,
+      patient_summary: plan.patient_friendly_instructions,
+      caregiver_instructions: plan.caregiver_instructions,
+      warning_signs: plan.warning_signs || [],
+      next_steps: plan.next_steps || [],
+      follow_up_date: discharge?.follow_up_date ?? null,
+    };
   },
 
   async setTaskStatus(userId: string, taskId: string, status: TaskStatus) {

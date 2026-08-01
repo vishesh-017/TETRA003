@@ -99,13 +99,37 @@ export const doctorApi = {
   },
 
   finalizeDischarge: (token: string | null, dischargeId: string) =>
-    Promise.resolve(
-      doctorRepository.finalizeDischarge(actorId(token), dischargeId) as CarePlan,
-    ),
+    doctorRepository.finalizeDischarge(actorId(token), dischargeId) as Promise<CarePlan>,
 
   listCarePlans: (token: string | null, patientId: string) =>
     Promise.resolve(
       doctorRepository.listCarePlans(actorId(token), patientId) as CarePlan[],
+    ),
+
+  updateCarePlanDraft: (
+    token: string | null,
+    carePlanId: string,
+    body: Record<string, unknown>,
+  ) =>
+    Promise.resolve(
+      doctorRepository.updateCarePlanDraft(
+        actorId(token),
+        carePlanId,
+        body,
+      ) as CarePlan,
+    ),
+
+  rejectCarePlan: (
+    token: string | null,
+    carePlanId: string,
+    body: Record<string, unknown> = {},
+  ) =>
+    Promise.resolve(
+      doctorRepository.rejectCarePlan(
+        actorId(token),
+        carePlanId,
+        body,
+      ) as CarePlan,
     ),
 
   approveCarePlan: (
@@ -113,13 +137,11 @@ export const doctorApi = {
     carePlanId: string,
     body: Record<string, unknown>,
   ) =>
-    Promise.resolve(
-      doctorRepository.approveCarePlan(
-        actorId(token),
-        carePlanId,
-        body,
-      ) as CarePlan,
-    ),
+    doctorRepository.approveCarePlan(
+      actorId(token),
+      carePlanId,
+      body,
+    ) as Promise<CarePlan>,
 
   aiSummary: (token: string | null, patientId: string) =>
     Promise.resolve(

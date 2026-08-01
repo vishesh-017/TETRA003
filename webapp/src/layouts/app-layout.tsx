@@ -8,11 +8,11 @@ import { ShellProvider } from "@/contexts/shell-context";
 export function AppLayout() {
   return (
     <ShellProvider>
-      <div className="flex min-h-dvh bg-background">
+      <div className="flex h-dvh max-h-dvh overflow-hidden bg-background">
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <Navbar />
-          <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
             <PageTransition>
               <Outlet />
             </PageTransition>

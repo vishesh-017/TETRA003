@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { CalendarClock, MapPinned, Route } from "lucide-react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCaregiver } from "@/modules/caregiver/context";
 import type { CareAppointment } from "@/modules/caregiver/types";
 
 export function AppointmentSpotlight({
@@ -12,8 +12,15 @@ export function AppointmentSpotlight({
 }: {
   appointments: CareAppointment[];
 }) {
+  const { selected, appointmentAction } = useCaregiver();
   const appt = appointments[0];
-  if (!appt) return null;
+  if (!appt) {
+    return (
+      <section className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 text-sm text-muted-foreground shadow-soft">
+        No upcoming appointments scheduled for {selected.name.split(" ")[0]}.
+      </section>
+    );
+  }
 
   return (
     <motion.section
@@ -74,9 +81,12 @@ export function AppointmentSpotlight({
           size="sm"
           variant="ghost"
           className="text-white hover:bg-white/10 hover:text-white"
+          disabled={appointmentAction.isPending}
           onClick={() =>
-            toast.message("Reschedule requested", {
-              description: "Demo note sent to the clinic desk.",
+            appointmentAction.mutate({
+              patientUserId: selected.userId,
+              appointmentId: appt.id,
+              action: "reschedule",
             })
           }
         >

@@ -187,9 +187,8 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[1100] flex flex-col border-r border-sidebar-border bg-sidebar/95 text-sidebar-foreground shadow-soft backdrop-blur-xl transition-[width,transform] duration-300 ease-out md:static md:z-auto md:translate-x-0",
+          "fixed inset-y-0 left-0 z-[1100] flex h-dvh max-h-dvh w-72 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/95 text-sidebar-foreground shadow-soft backdrop-blur-xl transition-[width,transform] duration-300 ease-out md:static md:z-auto md:translate-x-0",
           collapsed ? "md:w-[76px]" : "md:w-72",
-          "w-72",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
         aria-label="Main navigation"
@@ -217,7 +216,7 @@ export function Sidebar() {
           </Button>
         </div>
 
-        <nav className="flex-1 space-y-5 overflow-y-auto p-3">
+        <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-3">
           {groups.map((group) => (
             <div key={group.id}>
               <p
@@ -257,7 +256,7 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="space-y-2 border-t border-sidebar-border p-3">
+        <div className="shrink-0 space-y-2 border-t border-sidebar-border p-3">
           <p
             className={cn(
               "rounded-xl bg-sidebar-accent px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground",

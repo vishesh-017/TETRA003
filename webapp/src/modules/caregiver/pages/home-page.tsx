@@ -4,12 +4,14 @@ import { HeartHandshake } from "lucide-react";
 import { ActivityFeed } from "@/modules/caregiver/components/activity-feed";
 import { AiCareInsights } from "@/modules/caregiver/components/ai-insights";
 import { AppointmentSpotlight } from "@/modules/caregiver/components/appointment-spotlight";
+import { CarePlanBrief } from "@/modules/caregiver/components/care-plan-brief";
 import { CareTimeline } from "@/modules/caregiver/components/care-timeline";
 import { DoctorMessages } from "@/modules/caregiver/components/doctor-messages";
 import { EducationCarousel } from "@/modules/caregiver/components/education-carousel";
 import { CaregiverEmergencyBanner } from "@/modules/caregiver/components/emergency-banner";
 import { EmergencyPanel } from "@/modules/caregiver/components/emergency-panel";
 import { FamilyCard } from "@/modules/caregiver/components/family-card";
+import { FamilyHealthSummaryCard } from "@/modules/caregiver/components/family-health-summary";
 import { FamilySwitcher } from "@/modules/caregiver/components/family-switcher";
 import { HealthRing } from "@/modules/caregiver/components/health-ring";
 import { InsightCards } from "@/modules/caregiver/components/insight-cards";
@@ -35,6 +37,8 @@ export function CaregiverHomePage() {
     aiInsight,
     education,
     activity,
+    carePlan,
+    familySummary,
     source,
   } = useCaregiver();
 
@@ -65,8 +69,8 @@ export function CaregiverHomePage() {
             </p>
             <p className="mt-2 inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-teal-900 ring-1 ring-teal-100">
               {source === "live"
-                ? "Live care arrangements"
-                : "Demo family preview"}
+                ? "Live assigned patients"
+                : "Waiting for assignments"}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50/90 px-4 py-3 text-sm text-muted-foreground ring-1 ring-border/70">
@@ -81,6 +85,8 @@ export function CaregiverHomePage() {
       </motion.header>
 
       <FamilySwitcher />
+
+      <FamilyHealthSummaryCard summary={familySummary} />
 
       <CaregiverEmergencyBanner />
 
@@ -108,6 +114,8 @@ export function CaregiverHomePage() {
             <HealthRing member={selected} />
             <CareTimeline items={timeline} />
           </div>
+
+          <CarePlanBrief plan={carePlan} />
 
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <InsightCards insights={insights} />

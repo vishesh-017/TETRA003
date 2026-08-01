@@ -380,15 +380,86 @@ export function createSeedStore(): HealNexusStore {
         id: carePlanId,
         patient_id: patientId,
         doctor_id: IDS.doctor,
+        discharge_id: uid("a00000000001"),
         status: "active",
+        version: 1,
         caregiver_instructions:
           "Help Asha take medicines on time and monitor sugar twice daily.",
         patient_friendly_instructions:
           "Your doctor approved this recovery plan. Follow medicines, walk daily, and log vitals.",
         ai_summary:
           "Organized recovery plan for diabetes and BP management. Focus on adherence, hydration, and gentle activity.",
+        warning_signs: [
+          "Chest pain or pressure",
+          "Severe shortness of breath",
+          "Confusion or fainting",
+          "Blood sugar far outside the doctor's range",
+        ],
+        next_steps: [
+          "Follow today's medicine and meal schedule",
+          "Complete daily check-ins",
+          "Attend the next clinic follow-up",
+        ],
+        daily_schedule: {
+          morning: [
+            {
+              title: "Morning Medicine",
+              detail: "Metformin / Amlodipine as prescribed",
+              category: "medicine",
+            },
+            {
+              title: "Breakfast",
+              detail: "Low sugar, low salt breakfast",
+              category: "meal",
+            },
+            {
+              title: "Hydration",
+              detail: "Drink a full glass of water",
+              category: "hydration",
+            },
+          ],
+          afternoon: [
+            {
+              title: "Gentle walk",
+              detail: "30 minute walk as advised",
+              category: "activity",
+            },
+            {
+              title: "Afternoon medicine",
+              detail: "If listed on discharge schedule",
+              category: "medicine",
+            },
+          ],
+          evening: [
+            {
+              title: "Evening medicine",
+              detail: "Take evening dose on schedule",
+              category: "medicine",
+            },
+            {
+              title: "Dinner",
+              detail: "Light doctor-approved dinner",
+              category: "meal",
+            },
+          ],
+          night: [
+            {
+              title: "Night medicine",
+              detail: "Atorvastatin after dinner if prescribed",
+              category: "medicine",
+            },
+            {
+              title: "Sleep reminder",
+              detail: "Aim for restful sleep",
+              category: "rest",
+            },
+          ],
+        },
+        doctor_review_notes: null,
+        approved_by: IDS.doctorUser,
         approved_at: iso(-2),
         created_at: iso(-2),
+        updated_at: iso(-2),
       },
     ],
     careTasks: defaultTasks(patientId, carePlanId),
@@ -490,6 +561,29 @@ export function createSeedStore(): HealNexusStore {
         finalized_at: iso(-10),
         created_at: iso(-10),
         updated_at: iso(-10),
+      },
+      {
+        id: uid("a00000000002"),
+        patient_id: IDS.patient2,
+        doctor_id: IDS.doctor,
+        source: "manual",
+        diagnosis_text: "Post-discharge recovery after hypertensive urgency",
+        medicines_text:
+          "Amlodipine 5mg once daily\nAspirin 75mg once daily\nAtorvastatin 10mg at night",
+        doctor_notes:
+          "Monitor BP twice daily. Keep salt low. Return sooner if headache with very high BP.",
+        diet_advice: "Low salt meals; avoid fried snacks",
+        exercise_advice: "Short walks twice daily if BP is stable",
+        restrictions: "No heavy lifting for 1 week",
+        special_instructions: "Caregiver should help with evening medicines",
+        follow_up_date: iso(5).slice(0, 10),
+        discharge_date: iso(0).slice(0, 10),
+        hospital_name: "Civil Hospital Ahmedabad",
+        file_url: null,
+        status: "draft",
+        finalized_at: null,
+        created_at: iso(0),
+        updated_at: iso(0),
       },
     ],
     alerts: [

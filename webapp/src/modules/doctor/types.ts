@@ -2,10 +2,13 @@ export type RiskLevel = "low" | "moderate" | "high" | "critical";
 export type ProgressionBand = "improving" | "stable" | "watch" | "worsening";
 export type DischargeStatus = "draft" | "finalized";
 export type CarePlanStatus =
+  | "generating"
   | "ai_draft"
   | "doctor_approved"
   | "active"
-  | "completed";
+  | "completed"
+  | "rejected"
+  | "superseded";
 export type AppointmentStatus =
   | "scheduled"
   | "completed"
@@ -150,18 +153,50 @@ export interface DailyTaskItem {
   active: boolean;
 }
 
+export interface CarePlanScheduleItem {
+  title: string;
+  detail: string;
+  category: string;
+}
+
+export interface CarePlanDailySchedule {
+  morning: CarePlanScheduleItem[];
+  afternoon: CarePlanScheduleItem[];
+  evening: CarePlanScheduleItem[];
+  night: CarePlanScheduleItem[];
+}
+
+export interface CarePlanSourceDischarge {
+  diagnosis_text?: string | null;
+  medicines_text?: string | null;
+  doctor_notes?: string | null;
+  diet_advice?: string | null;
+  exercise_advice?: string | null;
+  restrictions?: string | null;
+  special_instructions?: string | null;
+  follow_up_date?: string | null;
+  hospital_name?: string | null;
+}
+
 export interface CarePlan {
   id: string;
   patient_id: string;
   doctor_id: string;
   discharge_id?: string | null;
   status: CarePlanStatus;
+  version: number;
   caregiver_instructions?: string | null;
   patient_friendly_instructions?: string | null;
+  warning_signs: string[];
+  next_steps: string[];
+  daily_schedule: CarePlanDailySchedule | null;
   followup_timeline?: Array<Record<string, unknown>> | null;
   doctor_review_notes?: string | null;
   ai_summary?: string | null;
+  approved_by?: string | null;
   approved_at?: string | null;
+  updated_at?: string | null;
+  source_discharge: CarePlanSourceDischarge | null;
   medicines: MedicineItem[];
   daily_tasks: DailyTaskItem[];
   disclaimer: string;

@@ -14,7 +14,24 @@ const LOCALES: { id: TipLocale; label: string }[] = [
 export function EducationCarousel({ tips }: { tips: EducationTip[] }) {
   const [index, setIndex] = useState(0);
   const [locale, setLocale] = useState<TipLocale>("en");
-  const tip = tips[index] ?? tips[0]!;
+  const tip = tips[index] ?? tips[0];
+
+  if (!tips.length || !tip) {
+    return (
+      <section className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-soft">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Caregiver Education
+        </p>
+        <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
+          Daily tips for families
+        </h2>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Education tips appear here from the doctor-approved AI Care Companion
+          plan (diet, activity, warning signs, and next steps).
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-soft backdrop-blur">

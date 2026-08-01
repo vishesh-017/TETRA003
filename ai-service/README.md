@@ -63,7 +63,7 @@ python -m venv .venv
 
 pip install -r requirements.txt
 copy .env.example .env
-# set EXA_API_KEY in .env (server-side only)
+# set EXA_API_KEY and OPENROUTER_API_KEY in .env (server-side only)
 
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
@@ -74,7 +74,12 @@ Frontend:
 VITE_AI_API_BASE_URL=http://127.0.0.1:8001
 ```
 
-**Never** put `EXA_API_KEY` in the TypeScript webapp (`webapp/.env`) for production — keep secrets on this service only.
+**Never** put `EXA_API_KEY` or `OPENROUTER_API_KEY` in the TypeScript webapp (`webapp/.env`) — keep secrets on this service only.
+
+| Key | Role |
+|---|---|
+| `EXA_API_KEY` | Trusted medical knowledge search |
+| `OPENROUTER_API_KEY` | LLM synthesis for Health Assistant answers |
 
 ## Example
 
