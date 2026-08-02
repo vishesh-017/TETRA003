@@ -54,7 +54,12 @@ interface CaregiverContextValue {
   carePlan: CaregiverCarePlanSupport | null;
   emergency: CaregiverEmergencyContacts;
   familySummary: FamilyHealthSummary;
-  trendSeries: Array<{ day: string; score: number }>;
+  trendSeries: Array<{
+    day: string;
+    score: number;
+    sugar?: number | null;
+    bp?: number | null;
+  }>;
   allAlerts: SmartAlert[];
   source: "live" | "empty";
   arrangementCount: number;

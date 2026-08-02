@@ -230,6 +230,11 @@ const CaregiverSettingsPage = lazy(() =>
     default: m.CaregiverSettingsPage,
   })),
 );
+const CaregiverEducationPage = lazy(() =>
+  import("@/modules/caregiver/pages/education-page").then((m) => ({
+    default: m.CaregiverEducationPage,
+  })),
+);
 const RuralShell = lazy(() =>
   import("@/modules/rural/components/rural-shell").then((m) => ({
     default: m.RuralShell,
@@ -636,6 +641,14 @@ export function AppRouter() {
                 element={
                   <Lazy>
                     <CaregiverSettingsPage />
+                  </Lazy>
+                }
+              />
+              <Route
+                path="/caregiver/education"
+                element={
+                  <Lazy>
+                    <CaregiverEducationPage />
                   </Lazy>
                 }
               />

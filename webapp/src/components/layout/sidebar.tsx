@@ -4,6 +4,7 @@ import {
   Bell,
   Bot,
   CalendarDays,
+  BookOpen,
   ChartColumn,
   ClipboardList,
   FlaskConical,
@@ -137,6 +138,7 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
           href: "/caregiver/appointments",
           icon: CalendarDays,
         },
+        { label: "Education", href: "/caregiver/education", icon: BookOpen },
       ],
     },
     {
@@ -158,9 +160,9 @@ const NAV_GROUPS: Record<UserRole, NavGroup[]> = {
       items: [
         { label: "Home", href: "/rural", icon: LayoutDashboard },
         { label: "Field work", href: "/rural/screening", icon: HeartPulse },
-        { label: "Patients & map", href: "/rural/patients", icon: Users },
+        { label: "Camps & map", href: "/rural/patients", icon: MapPinned },
         { label: "Sync", href: "/rural/sync", icon: WifiOff },
-        { label: "Education", href: "/rural/education", icon: Stethoscope },
+        { label: "Education", href: "/rural/education", icon: BookOpen },
         { label: "Alerts", href: "/rural/notifications", icon: Bell },
       ],
     },

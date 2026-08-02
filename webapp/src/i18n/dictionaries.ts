@@ -2,7 +2,7 @@ import guJson from "@/i18n/gu.json";
 
 export type AppLocale = "en" | "hi" | "gu" | "mr";
 
-export const LOCALE_CODES: AppLocale[] = ["en", "hi", "gu", "mr"];
+export const LOCALE_CODES: AppLocale[] = ["en", "hi", "gu"];
 
 export const LOCALE_LABELS: Record<AppLocale, string> = {
   en: "EN",
@@ -351,6 +351,7 @@ export const NAV_LABEL_KEYS: Record<string, DictKey> = {
   Visits: "nav_visits",
   Sync: "nav_sync",
   Education: "nav_education",
+  "Camps & map": "nav_patients",
 };
 
 export const GROUP_LABEL_KEYS: Record<string, DictKey> = {

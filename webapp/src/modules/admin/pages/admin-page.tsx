@@ -13,9 +13,20 @@ import {
   listPeople,
   removePerson,
 } from "@/modules/admin/admin-repository";
+import {
+  areaKeys,
+  createCampByAdmin,
+  listSelectableCamps,
+  type CampLocation,
+} from "@/modules/rural/services/camps.service";
 
 export function AdminPage() {
   const [people, setPeople] = useState(() => listPeople());
+  const [camps, setCamps] = useState<CampLocation[]>(() =>
+    listSelectableCamps(),
+  );
+  const [campName, setCampName] = useState("");
+  const [campArea, setCampArea] = useState("Navrangpura");
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -85,6 +96,77 @@ export function AdminPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Ahmedabad camp</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <p className="text-sm text-muted-foreground">
+              Only admins create camps. Health workers pick them from a dropdown
+              on Field work — they cannot invent camp names.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Camp name</Label>
+            <Input
+              value={campName}
+              onChange={(e) => setCampName(e.target.value)}
+              placeholder="e.g. NCD Camp — Paldi Morning"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Ahmedabad area</Label>
+            <Select
+              value={campArea}
+              onChange={(e) => setCampArea(e.target.value)}
+            >
+              {areaKeys().map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button
+            className="sm:col-span-2"
+            type="button"
+            onClick={() => {
+              try {
+                const row = createCampByAdmin({
+                  name: campName,
+                  areaKey: campArea,
+                });
+                setCamps(listSelectableCamps());
+                setCampName("");
+                toast.success(`Camp created: ${row.name}`);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Failed");
+              }
+            }}
+            disabled={!campName.trim()}
+          >
+            Create camp for field workers
+          </Button>
+          <div className="sm:col-span-2 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Active camps ({camps.length})
+            </p>
+            {camps.map((c) => (
+              <div
+                key={c.id}
+                className="rounded-xl border border-border px-3 py-2 text-sm"
+              >
+                <p className="font-medium">{c.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.place} · {c.screened} screened · {c.status}
+                </p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

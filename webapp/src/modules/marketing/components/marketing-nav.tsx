@@ -17,6 +17,7 @@ const LINKS = [
   { label: "For Doctors", href: "/#for-doctors" },
   { label: "For Patients", href: "/#for-patients" },
   { label: "About", href: "/about" },
+  { label: "Pricing", href: "/pricing" },
 ];
 
 export function MarketingNav() {

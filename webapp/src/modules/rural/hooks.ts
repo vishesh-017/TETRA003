@@ -106,6 +106,7 @@ export function useSaveScreening() {
           full_name: payload.patient_name.trim(),
           phone: payload.phone || undefined,
           village: payload.village || undefined,
+          username: payload.portal_username || undefined,
         });
         payload = { ...payload, patient_id: patientId };
       }

@@ -1,15 +1,15 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { BookOpen } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { EducationTip, TipLocale } from "@/modules/caregiver/types";
 
-const LOCALES: { id: TipLocale; label: string }[] = [
-  { id: "en", label: "EN" },
-  { id: "hi", label: "HI" },
-  { id: "gu", label: "GU" },
-  { id: "mr", label: "MR" },
+const LOCALES: { id: TipLocale; label: string; full: string }[] = [
+  { id: "en", label: "EN", full: "English" },
+  { id: "hi", label: "HI", full: "Hindi" },
+  { id: "gu", label: "GU", full: "Gujarati" },
 ];
 
 export function EducationCarousel({ tips }: { tips: EducationTip[] }) {
@@ -27,16 +27,15 @@ export function EducationCarousel({ tips }: { tips: EducationTip[] }) {
           Daily tips for families
         </h2>
         <p className="mt-4 text-sm text-muted-foreground">
-          Education tips appear here from the doctor-approved AI Care Companion
-          plan (diet, activity, warning signs, and next steps).
+          Education tips will appear here once a care plan is linked.
         </p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-soft backdrop-blur">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <section className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-gradient-to-br from-white via-sky-50/40 to-teal-50/50 shadow-soft backdrop-blur">
+      <div className="space-y-3 p-5 pb-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Caregiver Education
@@ -45,22 +44,34 @@ export function EducationCarousel({ tips }: { tips: EducationTip[] }) {
             Daily tips for families
           </h2>
         </div>
-        <div className="flex gap-1 rounded-full bg-slate-100 p-1">
-          {LOCALES.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              onClick={() => setLocale(l.id)}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-semibold transition",
-                locale === l.id
-                  ? "bg-white text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {l.label}
-            </button>
-          ))}
+        <div
+          className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100/90 p-1"
+          role="tablist"
+          aria-label="Language"
+        >
+          {LOCALES.map((l) => {
+            const active = locale === l.id;
+            return (
+              <button
+                key={l.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setLocale(l.id)}
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-xl px-2 py-2 transition",
+                  active
+                    ? "bg-white text-teal-800 shadow-sm ring-1 ring-teal-200/80"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className="text-xs font-bold">{l.label}</span>
+                <span className="text-[10px] font-medium opacity-80">
+                  {l.full}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -71,21 +82,24 @@ export function EducationCarousel({ tips }: { tips: EducationTip[] }) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -16 }}
           transition={{ duration: 0.22 }}
-          className="rounded-2xl bg-gradient-to-br from-sky-50 to-teal-50/50 p-5"
+          className="px-5 pb-5"
         >
-          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-800 shadow-sm">
-            {tip.categoryLabel}
-          </span>
-          <h3 className="mt-3 font-display text-xl font-semibold tracking-tight">
-            {tip.title[locale]}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {tip.body[locale]}
-          </p>
+          <div className="rounded-2xl bg-white/80 p-4 ring-1 ring-border/50">
+            <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-teal-900">
+              <BookOpen className="h-3 w-3" />
+              {tip.categoryLabel}
+            </span>
+            <h3 className="mt-3 font-display text-xl font-semibold tracking-tight">
+              {tip.title[locale]}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {tip.body[locale]}
+            </p>
+          </div>
         </motion.div>
       </AnimatePresence>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="flex items-center justify-between border-t border-border/50 px-5 py-4">
         <div className="flex gap-1.5">
           {tips.map((t, i) => (
             <button

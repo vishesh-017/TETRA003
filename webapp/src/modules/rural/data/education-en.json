@@ -2,8 +2,8 @@
   {
     "id": "medicine",
     "topic": "medicine",
-    "title": "How to take medicines",
-    "body": "Give medicines at the same time every day. Do not skip doses.",
+    "title": "How to take medicines safely",
+    "body": "Give medicines at the same time every day. Skipping doses raises sugar and BP risk.",
     "bullets": [
       "Take after food if the doctor said so",
       "Keep medicines in a cool dry place",
@@ -13,8 +13,8 @@
   {
     "id": "diet",
     "topic": "diet",
-    "title": "Simple diet tips",
-    "body": "Eat home-cooked food. Reduce sugar, salt, and fried snacks.",
+    "title": "Simple diabetes-friendly diet",
+    "body": "Prefer home-cooked meals. Cut sugar, salt, and fried snacks for steadier recovery.",
     "bullets": [
       "Drink clean water through the day",
       "Prefer vegetables, dal, and whole grains",
@@ -24,7 +24,7 @@
   {
     "id": "exercise",
     "topic": "exercise",
-    "title": "Gentle exercise",
+    "title": "Gentle daily activity",
     "body": "A short daily walk helps recovery. Rest if chest pain or dizziness starts.",
     "bullets": [
       "Walk 20–30 minutes if the doctor allows",
@@ -36,7 +36,7 @@
     "id": "warning",
     "topic": "warning_signs",
     "title": "Warning signs to watch",
-    "body": "Contact the health worker or doctor early if problems grow.",
+    "body": "Contact the health worker or doctor early if problems grow — do not wait for the next camp.",
     "bullets": [
       "Sugar or BP readings staying very high",
       "Fever that does not improve",
@@ -57,8 +57,8 @@
   {
     "id": "emergency",
     "topic": "emergency",
-    "title": "Emergency symptoms",
-    "body": "Go to the nearest hospital or call 108 for these signs.",
+    "title": "Emergency symptoms — call 108",
+    "body": "Go to the nearest hospital or call 108 for these signs. Do not drive alone if dizzy.",
     "bullets": [
       "Chest pain or severe breathlessness",
       "Fainting, confusion, or seizure",

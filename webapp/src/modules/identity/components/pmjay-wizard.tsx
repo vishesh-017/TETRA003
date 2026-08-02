@@ -137,18 +137,35 @@ export function PmjayWizard() {
           {step === 2 ? (
             <div className="space-y-3">
               <Choice
-                label="Income category"
+                label="Household income category (illustrative annual ranges)"
                 value={answers.income_category}
                 options={[
-                  { value: "bpl", label: "BPL / Antyodaya" },
-                  { value: "low", label: "Low income" },
-                  { value: "middle", label: "Middle income" },
-                  { value: "high", label: "Higher income" },
+                  {
+                    value: "bpl",
+                    label: "BPL / Antyodaya — typically under ₹1.5 lakh / year",
+                  },
+                  {
+                    value: "low",
+                    label: "Low income — about ₹1.5–3 lakh / year",
+                  },
+                  {
+                    value: "middle",
+                    label: "Middle income — about ₹3–8 lakh / year",
+                  },
+                  {
+                    value: "high",
+                    label: "Higher income — above ₹8 lakh / year",
+                  },
                 ]}
                 onChange={(v) =>
                   setAnswers((a) => ({ ...a, income_category: v }))
                 }
               />
+              <p className="rounded-2xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                Ranges are for guided demo estimates only — official PM-JAY
+                eligibility uses SECC / state beneficiary lists, not self-declared
+                income alone. Verify at an empanelled hospital or helpline 14555.
+              </p>
               <Choice
                 label="Ayushman card / eligible ID?"
                 value={answers.has_ayushman_card}

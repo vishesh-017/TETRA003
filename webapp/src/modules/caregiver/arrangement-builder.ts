@@ -53,7 +53,12 @@ export interface CaregiverWorkspaceMember {
   carePlan: CaregiverCarePlanSupport | null;
   education: EducationTip[];
   emergency: CaregiverEmergencyContacts;
-  trendSeries: Array<{ day: string; score: number }>;
+  trendSeries: Array<{
+    day: string;
+    score: number;
+    sugar?: number | null;
+    bp?: number | null;
+  }>;
 }
 
 export interface CaregiverWorkspace {
@@ -574,6 +579,38 @@ function tip(
   };
 }
 
+/** Curated family education tips — text only. */
+const CORE_EDUCATION: EducationTip[] = [
+  tip(
+    "edu-medicine",
+    "medicine",
+    "Medicines",
+    "Help with daily medicines",
+    "Give medicines at the same time each day. Do not skip or double doses — ask the doctor if a dose is missed.",
+  ),
+  tip(
+    "edu-diet",
+    "diet",
+    "Diet",
+    "Simple plate for recovery",
+    "Prefer home-cooked meals with vegetables and dal. Reduce sugar, salt, and fried snacks to keep readings steadier.",
+  ),
+  tip(
+    "edu-exercise",
+    "exercise",
+    "Activity",
+    "Gentle movement at home",
+    "A short daily walk helps recovery when the doctor allows it. Stop if chest pain, dizziness, or severe breathlessness starts.",
+  ),
+  tip(
+    "edu-emergency",
+    "emergency",
+    "Watch for",
+    "When to call 108",
+    "Chest pain, fainting, confusion, or severe breathlessness need emergency care — call 108 or go to the nearest hospital.",
+  ),
+];
+
 function buildEducation(
   carePlan: CaregiverCarePlanSupport | null,
   discharge: {
@@ -581,9 +618,9 @@ function buildEducation(
     exercise_advice: string | null;
   } | null,
 ): EducationTip[] {
-  const tips: EducationTip[] = [];
+  const tips: EducationTip[] = [...CORE_EDUCATION];
   if (carePlan?.nextSteps?.length) {
-    tips.push(
+    tips.unshift(
       tip(
         "today",
         "today",
@@ -594,15 +631,17 @@ function buildEducation(
     );
   }
   if (discharge?.diet_advice) {
-    tips.push(tip("diet", "diet", "Diet", "Diet guidance", discharge.diet_advice));
+    tips.push(
+      tip("diet-plan", "diet", "Diet", "Doctor diet note", discharge.diet_advice),
+    );
   }
   if (discharge?.exercise_advice) {
     tips.push(
       tip(
-        "exercise",
+        "exercise-plan",
         "exercise",
         "Activity",
-        "Exercise guidance",
+        "Doctor activity note",
         discharge.exercise_advice,
       ),
     );
@@ -610,22 +649,11 @@ function buildEducation(
   if (carePlan?.warningSigns?.length) {
     tips.push(
       tip(
-        "emergency",
+        "plan-warnings",
         "emergency",
         "Watch for",
-        "Warning signs",
+        "Care-plan warning signs",
         carePlan.warningSigns.slice(0, 4).join(" · "),
-      ),
-    );
-  }
-  if (carePlan?.medicineTimeline?.length) {
-    tips.push(
-      tip(
-        "medicine",
-        "medicine",
-        "Medicines",
-        "Medicine support",
-        "Help the patient take medicines exactly as written by the doctor.",
       ),
     );
   }
@@ -698,10 +726,10 @@ function buildDoctorMessages(
 function buildTrendSeries(patientId: string, currentScore: number) {
   const checkins = getStore()
     .checkins.filter((c) => c.patient_id === patientId)
-    .slice(0, 7)
-    .reverse();
+    .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at))
+    .slice(-7);
   if (!checkins.length) {
-    return [{ day: "Now", score: Math.round(currentScore) }];
+    return [{ day: "Now", score: Math.round(currentScore), sugar: null as number | null, bp: null as number | null }];
   }
   return checkins.map((c, i) => ({
     day: format(parseISO(c.recorded_at), "EEE"),
@@ -717,6 +745,8 @@ function buildTrendSeries(patientId: string, currentScore: number) {
         ),
       ),
     ),
+    sugar: c.blood_sugar,
+    bp: c.bp_systolic,
   }));
 }
 

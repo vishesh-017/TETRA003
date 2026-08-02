@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { HeartHandshake } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { ActivityFeed } from "@/modules/caregiver/components/activity-feed";
 import { AiCareInsights } from "@/modules/caregiver/components/ai-insights";
@@ -142,7 +143,15 @@ export function CaregiverHomePage() {
 
           <div className="grid gap-5 lg:grid-cols-2">
             <AiCareInsights insight={aiInsight} />
-            <EducationCarousel tips={education} />
+            <div className="space-y-3">
+              <EducationCarousel tips={education} />
+              <Link
+                to="/caregiver/education"
+                className="inline-flex text-sm font-semibold text-teal-700 underline-offset-4 hover:underline"
+              >
+                Open full education hub →
+              </Link>
+            </div>
           </div>
 
           <ActivityFeed items={activity} />

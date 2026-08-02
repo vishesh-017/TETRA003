@@ -13,7 +13,12 @@ import {
   useSaveScreening,
 } from "@/modules/rural/hooks";
 import { useRuralLocale } from "@/modules/rural/i18n/locale-context";
+import { Select } from "@/components/ui/select";
 import { ruralRepository } from "@/modules/rural/repository";
+import {
+  listSelectableCamps,
+  upsertCampBatch,
+} from "@/modules/rural/services/camps.service";
 import { evaluateEmergency } from "@/modules/rural/services/emergency.service";
 import type { RuralScreeningInput } from "@/modules/rural/types";
 
@@ -79,6 +84,33 @@ function sanitizeCampVitals(form: RuralScreeningInput): {
 
 type Mode = "camp" | "verify";
 
+type CampPerson = {
+  id: string;
+  name: string;
+  /** Optional HealNexus portal username */
+  portal_username: string;
+  bp_systolic: number | null;
+  bp_diastolic: number | null;
+  blood_sugar: number | null;
+  oxygen: number | null;
+  symptoms: string[];
+  open: boolean;
+};
+
+function newCampPerson(name: string): CampPerson {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name,
+    portal_username: "",
+    bp_systolic: null,
+    bp_diastolic: null,
+    blood_sugar: null,
+    oxygen: null,
+    symptoms: [],
+    open: true,
+  };
+}
+
 export function RuralScreeningPage() {
   const { t } = useRuralLocale();
   const patients = useAssignedPatients();
@@ -94,8 +126,14 @@ export function RuralScreeningPage() {
     village: string | null;
     phone: string | null;
   } | null>(null);
-  const [campName, setCampName] = useState("Sanand morning camp");
-  const [campQueue, setCampQueue] = useState<string[]>([]);
+  const selectableCamps = listSelectableCamps();
+  const [campId, setCampId] = useState(
+    () => listSelectableCamps()[0]?.id || "",
+  );
+  const selectedCamp =
+    selectableCamps.find((c) => c.id === campId) || selectableCamps[0];
+  const campName = selectedCamp?.name || "";
+  const [campQueue, setCampQueue] = useState<CampPerson[]>([]);
   const [campDraftName, setCampDraftName] = useState("");
 
   const liveEmergency = useMemo(() => evaluateEmergency(form), [form]);
@@ -138,33 +176,59 @@ export function RuralScreeningPage() {
   };
 
   const onSubmitCampBatch = async () => {
+    if (!campName) {
+      toast.error("Select a camp from the dropdown — admins create camps");
+      return;
+    }
     if (!campQueue.length) {
       toast.error("Add people to the camp queue first");
       return;
     }
-    const vitals = sanitizeCampVitals(form);
-    if (vitals.warning) toast.message(vitals.warning);
     let saved = 0;
     const errors: string[] = [];
-    for (const name of campQueue) {
+    for (const person of campQueue) {
+      const row: RuralScreeningInput = {
+        ...empty,
+        patient_id: null,
+        patient_name: person.name,
+        portal_username: person.portal_username.trim() || null,
+        village: selectedCamp?.villageKey || "Ahmedabad",
+        bp_systolic: person.bp_systolic,
+        bp_diastolic: person.bp_diastolic,
+        blood_sugar: person.blood_sugar,
+        oxygen: person.oxygen,
+        symptoms: person.symptoms,
+        notes: `Camp: ${campName}`,
+      };
+      const vitals = sanitizeCampVitals(row);
+      if (vitals.warning) toast.message(`${person.name}: ${vitals.warning}`);
       try {
-        await save.mutateAsync({
-          ...form,
-          ...vitals.values,
-          patient_id: null,
-          patient_name: name,
-          notes: `Camp: ${campName}`,
-        });
+        await save.mutateAsync({ ...row, ...vitals.values });
         saved += 1;
       } catch (e) {
         errors.push(
-          `${name}: ${e instanceof Error ? e.message : "save failed"}`,
+          `${person.name}: ${e instanceof Error ? e.message : "save failed"}`,
         );
       }
     }
     if (saved > 0) {
+      if (!campName) {
+        toast.error("Select a camp from the dropdown (admin creates camps)");
+        return;
+      }
+      const updated = upsertCampBatch({
+        name: campName,
+        screened: saved,
+        portalUsernames: campQueue
+          .map((p) => p.portal_username.trim())
+          .filter(Boolean),
+      });
+      if (!updated) {
+        toast.error("Camp not found — ask admin to create it first");
+        return;
+      }
       toast.success(
-        `Saved ${saved} person(s) in this browser — see Patients & map or Sync`,
+        `Saved ${saved} person(s) — ${campName} updated on Camps & map`,
       );
       setCampQueue([]);
       setDoneId("camp-batch");
@@ -287,56 +351,195 @@ export function RuralScreeningPage() {
 
       {mode === "camp" ? (
         <section className="space-y-3 rounded-3xl border border-border bg-card p-4">
-          <Label>Camp name</Label>
-          <Input
-            value={campName}
-            onChange={(e) => setCampName(e.target.value)}
-          />
+          <Label>Camp (admin-created)</Label>
+          <Select
+            value={selectedCamp?.id || campId}
+            onChange={(e) => setCampId(e.target.value)}
+            disabled={!selectableCamps.length}
+          >
+            {!selectableCamps.length ? (
+              <option value="">No camps yet — ask admin to create one</option>
+            ) : (
+              selectableCamps.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} · {c.villageKey}
+                </option>
+              ))
+            )}
+          </Select>
+          {selectedCamp ? (
+            <p className="text-xs text-muted-foreground">
+              {selectedCamp.place} · Ahmedabad
+            </p>
+          ) : null}
           <p className="text-xs text-muted-foreground">
-            Add names as people arrive — one batch save for the whole camp.
-            Saves in this browser (IndexedDB / localStorage) — no cookies or
-            downloads needed. Works offline; open Sync to confirm.
+            Pick a camp from the list (only admins can create camps). Add each
+            person with their own BP, sugar, SpO₂ and symptoms. Batch save stores
+            everyone offline.
           </p>
           <div className="flex gap-2">
             <Input
               value={campDraftName}
               onChange={(e) => setCampDraftName(e.target.value)}
               placeholder="Person name"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (!campDraftName.trim()) return;
+                  setCampQueue((q) => [
+                    ...q.map((p) => ({ ...p, open: false })),
+                    newCampPerson(campDraftName.trim()),
+                  ]);
+                  setCampDraftName("");
+                }
+              }}
             />
             <Button
               type="button"
               variant="secondary"
               onClick={() => {
                 if (!campDraftName.trim()) return;
-                setCampQueue((q) => [...q, campDraftName.trim()]);
+                setCampQueue((q) => [
+                  ...q.map((p) => ({ ...p, open: false })),
+                  newCampPerson(campDraftName.trim()),
+                ]);
                 setCampDraftName("");
               }}
             >
               Add
             </Button>
           </div>
-          <ul className="space-y-1 text-sm">
-            {campQueue.map((name, i) => (
+          <ul className="space-y-3">
+            {campQueue.map((person, i) => (
               <li
-                key={`${name}-${i}`}
-                className="flex justify-between rounded-lg bg-muted/50 px-3 py-2"
+                key={person.id}
+                className="rounded-2xl border border-border bg-muted/30 p-3"
               >
-                <span>
-                  {i + 1}. {name}
-                </span>
-                <button
-                  type="button"
-                  className="text-destructive text-xs"
-                  onClick={() =>
-                    setCampQueue((q) => q.filter((_, idx) => idx !== i))
-                  }
-                >
-                  Remove
-                </button>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className="text-left text-sm font-medium"
+                    onClick={() =>
+                      setCampQueue((q) =>
+                        q.map((p) =>
+                          p.id === person.id
+                            ? { ...p, open: !p.open }
+                            : { ...p, open: false },
+                        ),
+                      )
+                    }
+                  >
+                    {i + 1}. {person.name}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {person.open ? "· hide vitals" : "· edit vitals"}
+                      {person.bp_systolic != null
+                        ? ` · BP ${person.bp_systolic}/${person.bp_diastolic ?? "—"}`
+                        : ""}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="text-destructive text-xs"
+                    onClick={() =>
+                      setCampQueue((q) => q.filter((p) => p.id !== person.id))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+                {person.open ? (
+                  <div className="mt-3 space-y-2">
+                    <div>
+                      <Label className="text-xs">
+                        Portal username (optional)
+                      </Label>
+                      <Input
+                        value={person.portal_username}
+                        onChange={(e) =>
+                          setCampQueue((q) =>
+                            q.map((p) =>
+                              p.id === person.id
+                                ? { ...p, portal_username: e.target.value }
+                                : p,
+                            ),
+                          )
+                        }
+                        placeholder="e.g. asha.patel — leave blank if new"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(
+                        [
+                          ["bp_systolic", "BP systolic"],
+                          ["bp_diastolic", "BP diastolic"],
+                          ["blood_sugar", "Blood sugar"],
+                          ["oxygen", "SpO₂"],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <div key={key}>
+                          <Label className="text-xs">{label}</Label>
+                          <Input
+                            type="number"
+                            value={person[key] ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setCampQueue((q) =>
+                                q.map((p) =>
+                                  p.id === person.id
+                                    ? {
+                                        ...p,
+                                        [key]:
+                                          v === "" ? null : Number(v),
+                                      }
+                                    : p,
+                                ),
+                              );
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <Label className="text-xs">Symptoms</Label>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {SYMPTOM_CHIPS.map((s) => {
+                          const on = person.symptoms.includes(s);
+                          return (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() =>
+                                setCampQueue((q) =>
+                                  q.map((p) =>
+                                    p.id === person.id
+                                      ? {
+                                          ...p,
+                                          symptoms: on
+                                            ? p.symptoms.filter((x) => x !== s)
+                                            : [...p.symptoms, s],
+                                        }
+                                      : p,
+                                  ),
+                                )
+                              }
+                              className={
+                                on
+                                  ? "rounded-full bg-primary px-2.5 py-1 text-xs text-primary-foreground"
+                                  : "rounded-full border border-border px-2.5 py-1 text-xs"
+                              }
+                            >
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
-          <VitalsFields form={form} setForm={setForm} />
           <Button
             className="h-12 w-full"
             onClick={() => void onSubmitCampBatch()}
@@ -386,8 +589,8 @@ export function RuralScreeningPage() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Assigned patients: {(patients.data || []).length}. Open Patients & map
-        for locations.
+        Assigned patients: {(patients.data || []).length}. Open Camps & map for
+        Ahmedabad camp + patient pins.
       </p>
     </div>
   );

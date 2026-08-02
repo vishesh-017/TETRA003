@@ -5,6 +5,8 @@ export type RuralLocale = "en" | "hi" | "gu";
 export interface RuralScreeningInput {
   patient_id?: string | null;
   patient_name: string;
+  /** Optional HealNexus portal username when known. */
+  portal_username?: string | null;
   phone?: string | null;
   village?: string | null;
   bp_systolic: number | null;

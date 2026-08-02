@@ -10,10 +10,13 @@ import type { PassportPreviewData } from "@/modules/caregiver/types";
 
 export function PassportTiltCard({
   passport,
-  href = "/caregiver/passport",
+  href = "/caregiver/passport#full-passport",
+  onOpenFull,
 }: {
   passport: PassportPreviewData;
   href?: string;
+  /** Prefer this over navigation when already on the passport page. */
+  onOpenFull?: () => void;
 }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -85,15 +88,28 @@ export function PassportTiltCard({
           />
         </div>
 
-        <Link
-          to={href}
-          className={cn(
-            buttonVariants({ size: "sm" }),
-            "relative mt-5 w-full border-0 bg-white text-slate-900 hover:bg-white/90",
-          )}
-        >
-          Open full passport
-        </Link>
+        {onOpenFull ? (
+          <button
+            type="button"
+            onClick={onOpenFull}
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "relative mt-5 w-full border-0 bg-white text-slate-900 hover:bg-white/90",
+            )}
+          >
+            Open full passport
+          </button>
+        ) : (
+          <Link
+            to={href}
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "relative mt-5 w-full border-0 bg-white text-slate-900 hover:bg-white/90",
+            )}
+          >
+            Open full passport
+          </Link>
+        )}
       </div>
     </motion.div>
   );

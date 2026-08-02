@@ -158,6 +158,7 @@ export const ruralRepository = {
     full_name: string;
     phone?: string;
     village?: string;
+    username?: string;
   }) {
     // Creates a lightweight patient in the main store so screenings can link.
     // Works offline via local store; syncs when connectivity returns.
@@ -165,6 +166,14 @@ export const ruralRepository = {
     updateStore((draft) => {
       const userId = newOfflineUserId();
       patientId = newOfflineUserId();
+      const fromName =
+        input.full_name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ".")
+          .replace(/^\.|\.$/g, "")
+          .slice(0, 24) || `patient.${userId.slice(-4)}`;
+      const username =
+        input.username?.trim().toLowerCase().replace(/\s+/g, ".") || fromName;
       draft.profiles.push({
         id: userId,
         email: null,
@@ -172,12 +181,7 @@ export const ruralRepository = {
         phone: input.phone ?? null,
         role: "patient",
         locale: "gu",
-        username:
-          input.full_name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, ".")
-            .replace(/^\.|\.$/g, "")
-            .slice(0, 24) || `patient.${userId.slice(-4)}`,
+        username,
         password: null,
         address: { village: input.village ?? "Village", city: "Ahmedabad" },
         notification_prefs: {

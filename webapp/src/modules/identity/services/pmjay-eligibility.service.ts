@@ -32,13 +32,16 @@ export function assessPmjayEligibility(
     score += 8;
   }
 
+  const incomeNote = incomeRangeNote(answers.income_category);
   if (answers.income_category === "bpl" || answers.income_category === "low") {
     score += 15;
-    reasons.push("Income category aligns with typical PM-JAY targeting");
+    reasons.push(incomeNote);
   } else if (answers.income_category === "middle") {
     score += 4;
+    reasons.push(incomeNote);
   } else {
     score -= 8;
+    reasons.push(incomeNote);
   }
 
   if (answers.rural === "yes") score += 6;
@@ -53,7 +56,7 @@ export function assessPmjayEligibility(
   return {
     status,
     confidence: Number(confidence.toFixed(2)),
-    headline: headlineFor(status),
+    headline: `${headlineFor(status)} ${incomeHeadline(answers.income_category)}`,
     benefits: [
       "Cashless treatment at empanelled hospitals (illustrative)",
       "Coverage for secondary and tertiary care packages (live summary)",
@@ -99,5 +102,36 @@ function headlineFor(status: PmjayStatus): string {
       return "Based on the information provided, PM-JAY benefits may be less likely — please verify locally.";
     default:
       return "More information is needed to estimate possible PM-JAY benefits.";
+  }
+}
+
+/** Illustrative annual household income bands used only for assistive messaging. */
+function incomeRangeNote(category: string): string {
+  switch (category) {
+    case "bpl":
+      return "Income band: BPL / Antyodaya (illustrative under ₹1.5 lakh/year) — strongly aligns with typical PM-JAY targeting";
+    case "low":
+      return "Income band: Low (illustrative ₹1.5–3 lakh/year) — often considered for state / SECC-linked pathways";
+    case "middle":
+      return "Income band: Middle (illustrative ₹3–8 lakh/year) — may need SECC / state list verification; income alone is not enough";
+    case "high":
+      return "Income band: Higher (illustrative above ₹8 lakh/year) — PM-JAY is less likely unless already listed as a beneficiary";
+    default:
+      return "Income band not specified — verify locally";
+  }
+}
+
+function incomeHeadline(category: string): string {
+  switch (category) {
+    case "bpl":
+      return "(Your answers place the household in the BPL / under ₹1.5L band.)";
+    case "low":
+      return "(Your answers place the household in the low ₹1.5–3L band.)";
+    case "middle":
+      return "(Your answers place the household in the middle ₹3–8L band.)";
+    case "high":
+      return "(Your answers place the household in the higher >₹8L band.)";
+    default:
+      return "";
   }
 }

@@ -1,45 +1,25 @@
-import { motion } from "framer-motion";
-
-import { useEducationCards } from "@/modules/rural/hooks";
-import { useRuralLocale } from "@/modules/rural/i18n/locale-context";
+import { WatchLearnHub } from "@/modules/education/watch-learn-hub";
 
 export function RuralEducationPage() {
-  const { t } = useRuralLocale();
-  const cards = useEducationCards();
-
   return (
-    <div className="space-y-3">
-      <h2 className="font-display text-xl font-semibold">{t("education")}</h2>
-      <p className="text-sm text-muted-foreground">
-        {t("tips")} Switch language above (EN/HI/GU). Caregivers also get
-        localized tips (EN/HI/GU/MR) on their home screen.
-      </p>
-      {cards.map((card, i) => (
-        <motion.article
-          key={card.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
-          className="rounded-3xl border border-border bg-card p-5 shadow-soft"
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {card.topic.replaceAll("_", " ")}
-          </p>
-          <h3 className="mt-1 font-display text-xl font-semibold">
-            {card.title}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {card.body}
-          </p>
-          <ul className="mt-3 space-y-1.5 text-sm">
-            {card.bullets.map((b) => (
-              <li key={b} className="rounded-xl bg-muted/50 px-3 py-2">
-                • {b}
-              </li>
-            ))}
-          </ul>
-        </motion.article>
-      ))}
+    <div className="space-y-2">
+      <div className="mb-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Health worker education
+        </p>
+        <h2 className="font-display text-2xl font-semibold">
+          Field skills · camps · counseling
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Screening camps, adherence, diet counseling and emergencies — clear
+          text lessons in EN / HI / GU.
+        </p>
+      </div>
+      <WatchLearnHub
+        audience="health_worker"
+        suggestedLabel="NCD outreach · camp screening & follow-up"
+        defaultTopic="screening"
+      />
     </div>
   );
 }
